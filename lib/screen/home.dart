@@ -9,8 +9,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     const Color brandGold = Color(0xFFF4C025);
     const Color backgroundGray = Color.fromARGB(255, 255, 255, 255);
-    const String logoUrl =
-        "https://www.figma.com/api/mcp/asset/4b722029-6546-45ca-8640-248159180d47";
+    const String logoAsset = 'assets/images/gothai_logo.png';
     const double designWidth = 412;
     const double designHeight = 917;
 
@@ -30,7 +29,7 @@ class HomeScreen extends StatelessWidget {
                       left: 53,
                       top: 143,
                       child: Text(
-                        "Welcome to My App",
+                        "Welcome to my app",
                         style: TextStyle(
                           color: brandGold,
                           fontSize: 32,
@@ -44,7 +43,7 @@ class HomeScreen extends StatelessWidget {
                       top: 294,
                       width: 248,
                       height: 288,
-                      child: Image.network(logoUrl, fit: BoxFit.contain),
+                      child: Image.asset(logoAsset, fit: BoxFit.contain),
                     ),
                     Positioned(
                       left: 22,
