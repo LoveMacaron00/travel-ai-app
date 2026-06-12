@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/screen/home.dart';
+import 'package:myapp/screen/welcome_screen.dart';
+import 'package:myapp/screen/main_navigation_screen.dart';
+import 'package:myapp/services/api_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ApiService.initSession();
   runApp(const MyApp());
 }
 
@@ -14,7 +18,7 @@ class MyApp extends StatelessWidget {
       title: 'My App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.amber, useMaterial3: false),
-      home: HomeScreen(),
+      home: ApiService.token != null ? const MainNavigationScreen() : const HomeScreen(),
     );
   }
 }

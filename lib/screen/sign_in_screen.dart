@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:form_field_validator/form_field_validator.dart';
 import 'package:myapp/model/profile.dart';
-import 'package:myapp/screen/home.dart';
-import 'package:myapp/screen/register.dart';
+import 'package:myapp/screen/sign_up_screen.dart';
+import 'package:myapp/screen/main_navigation_screen.dart';
 import 'package:myapp/services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -40,7 +40,8 @@ class _LoginScreenState extends State<LoginScreen> {
         if (mounted) {
           setState(() {
             _errorMessage =
-                loginResult['message']?.toString() ?? 'Login failed. Please try again.';
+                loginResult['message']?.toString() ??
+                'Login failed. Please try again.';
           });
         }
         return;
@@ -49,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
         );
       }
     } catch (e) {
@@ -101,11 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: errorRed, width: 1.5),
       ),
-      errorStyle: const TextStyle(
-        color: errorRed,
-        fontSize: 12,
-        height: 1.2,
-      ),
+      errorStyle: const TextStyle(color: errorRed, fontSize: 12, height: 1.2),
     );
   }
 
@@ -127,9 +124,16 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back, size: 24, color: Colors.black87),
+                  icon: const Icon(
+                    Icons.arrow_back,
+                    size: 24,
+                    color: Colors.black87,
+                  ),
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                  constraints: const BoxConstraints(
+                    minWidth: 24,
+                    minHeight: 24,
+                  ),
                 ),
                 const SizedBox(height: 34),
                 const Text(
@@ -187,7 +191,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 10),
                 TextFormField(
-                  validator: RequiredValidator(errorText: 'Password is required').call,
+                  validator: RequiredValidator(
+                    errorText: 'Password is required',
+                  ).call,
                   obscureText: _obscurePassword,
                   onSaved: (value) => profile.password = value,
                   style: const TextStyle(fontSize: 15, color: borderGray),
@@ -233,15 +239,25 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 6),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFEBEE),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFE53935), width: 1),
+                      border: Border.all(
+                        color: const Color(0xFFE53935),
+                        width: 1,
+                      ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline, color: Color(0xFFE53935), size: 18),
+                        const Icon(
+                          Icons.error_outline,
+                          color: Color(0xFFE53935),
+                          size: 18,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -280,7 +296,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             height: 22,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.5,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : const Text('Sign In'),
@@ -290,7 +308,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 Center(
                   child: TextButton(
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 8,
+                      ),
                     ),
                     onPressed: () {
                       Navigator.push(

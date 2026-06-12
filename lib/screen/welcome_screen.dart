@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/screen/login.dart';
-import 'package:myapp/screen/register.dart';
+import 'package:myapp/screen/sign_in_screen.dart';
+import 'package:myapp/screen/sign_up_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -26,10 +26,10 @@ class HomeScreen extends StatelessWidget {
                 child: Stack(
                   children: [
                     const Positioned(
-                      left: 53,
+                      left: 35,
                       top: 143,
                       child: Text(
-                        "Welcome to my app",
+                        "Welcome to Application",
                         style: TextStyle(
                           color: brandGold,
                           fontSize: 32,

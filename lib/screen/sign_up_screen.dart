@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:form_field_validator/form_field_validator.dart';
 import 'package:myapp/model/profile.dart';
-import 'package:myapp/screen/home.dart';
+import 'package:myapp/screen/main_navigation_screen.dart';
 import 'package:myapp/services/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -38,7 +38,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           );
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
           );
         }
       } else {
@@ -56,9 +56,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       formkey.currentState!.reset();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Registration failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Registration failed: $e')));
       }
     } finally {
       if (mounted) {
@@ -103,11 +103,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: errorRed, width: 1.5),
       ),
-      errorStyle: const TextStyle(
-        color: errorRed,
-        fontSize: 12,
-        height: 1.2,
-      ),
+      errorStyle: const TextStyle(color: errorRed, fontSize: 12, height: 1.2),
     );
   }
 
@@ -129,9 +125,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back, size: 24, color: Colors.black87),
+                  icon: const Icon(
+                    Icons.arrow_back,
+                    size: 24,
+                    color: Colors.black87,
+                  ),
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                  constraints: const BoxConstraints(
+                    minWidth: 24,
+                    minHeight: 24,
+                  ),
                 ),
                 const SizedBox(height: 34),
                 const Text(
@@ -179,7 +182,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   validator: MultiValidator([
                     RequiredValidator(errorText: 'Password is required'),
-                    MinLengthValidator(8, errorText: 'Password must be at least 8 characters'),
+                    MinLengthValidator(
+                      8,
+                      errorText: 'Password must be at least 8 characters',
+                    ),
                   ]).call,
                   obscureText: _obscurePassword,
                   onSaved: (value) => profile.password = value,
@@ -236,7 +242,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             height: 22,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.5,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : const Text('Sign Up'),
