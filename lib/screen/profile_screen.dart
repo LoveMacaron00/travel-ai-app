@@ -25,10 +25,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // State for provinces visited
   List<String> _visitedProvinces = [];
   final List<String> _allProvinces = [
-    'Bangkok', 'Chiang Mai', 'Phuket', 'Krabi', 'Chonburi', 
-    'Surat Thani', 'Chiang Rai', 'Ayutthaya', 'Mae Hong Son', 
-    'Kanchanaburi', 'Sukhothai', 'Nakhon Ratchasima', 'Nong Khai',
-    'Rayong', 'Trang', 'Phang Nga', 'Phetchaburi'
+    'Bangkok',
+    'Chiang Mai',
+    'Phuket',
+    'Krabi',
+    'Chonburi',
+    'Surat Thani',
+    'Chiang Rai',
+    'Ayutthaya',
+    'Mae Hong Son',
+    'Kanchanaburi',
+    'Sukhothai',
+    'Nakhon Ratchasima',
+    'Nong Khai',
+    'Rayong',
+    'Trang',
+    'Phang Nga',
+    'Phetchaburi',
   ];
 
   @override
@@ -40,10 +53,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _loadUserData() {
     final user = ApiService.currentUser;
     if (user != null) {
-      _username = user['username'] ?? user['email']?.split('@')[0] ?? '';
+      _username = user['username'] ?? '';
       _shareLocation = !(user['is_private_location'] ?? false);
       _profileImageUrl = user['profile_image_url'] ?? '';
-      
+
       // Load interests
       if (user['interests'] != null) {
         if (user['interests'] is List) {
@@ -62,7 +75,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadVisitedProvinces() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _visitedProvinces = prefs.getStringList('visited_provinces') ?? ['Bangkok', 'Chiang Mai'];
+      _visitedProvinces =
+          prefs.getStringList('visited_provinces') ?? ['Bangkok', 'Chiang Mai'];
     });
   }
 
@@ -74,9 +88,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  Future<void> _updateProfile({String? username, List<String>? interests, bool? isPrivateLocation, String? profileImageUrl}) async {
+  Future<void> _updateProfile({
+    String? username,
+    List<String>? interests,
+    bool? isPrivateLocation,
+    String? profileImageUrl,
+  }) async {
     setState(() => _isLoading = true);
-    
+
     final finalUsername = username ?? _username;
     final finalInterests = interests ?? _interests;
     final finalPrivateLocation = isPrivateLocation ?? !_shareLocation;
@@ -100,7 +119,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'Failed to update profile')),
+          SnackBar(
+            content: Text(result['message'] ?? 'Failed to update profile'),
+          ),
         );
       }
     }
@@ -126,23 +147,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() => _isLoading = false);
         if (result['success']) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile picture updated successfully!')),
+            const SnackBar(
+              content: Text('Profile picture updated successfully!'),
+            ),
           );
           setState(() {
             _loadUserData();
           });
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? 'Failed to upload image')),
+            SnackBar(
+              content: Text(result['message'] ?? 'Failed to upload image'),
+            ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error choosing image: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error choosing image: $e')));
       }
     }
   }
@@ -156,9 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           title: const Text('Edit Profile Image URL'),
           content: TextField(
             controller: controller,
-            decoration: const InputDecoration(
-              hintText: 'Enter image URL',
-            ),
+            decoration: const InputDecoration(hintText: 'Enter image URL'),
           ),
           actions: [
             TextButton(
@@ -210,9 +233,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: const Color(0xFFF4C025).withOpacity(0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.photo_library, color: Color(0xFFF4C025)),
+                    child: const Icon(
+                      Icons.photo_library,
+                      color: Color(0xFFF4C025),
+                    ),
                   ),
-                  title: const Text('Choose from Gallery', style: TextStyle(fontWeight: FontWeight.w600)),
+                  title: const Text(
+                    'Choose from Gallery',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     _pickAndUploadImage(ImageSource.gallery);
@@ -227,9 +256,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: const Color(0xFFF4C025).withOpacity(0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.camera_alt, color: Color(0xFFF4C025)),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      color: Color(0xFFF4C025),
+                    ),
                   ),
-                  title: const Text('Take a Photo', style: TextStyle(fontWeight: FontWeight.w600)),
+                  title: const Text(
+                    'Take a Photo',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     _pickAndUploadImage(ImageSource.camera);
@@ -246,7 +281,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     child: const Icon(Icons.link, color: Color(0xFFF4C025)),
                   ),
-                  title: const Text('Enter Image URL', style: TextStyle(fontWeight: FontWeight.w600)),
+                  title: const Text(
+                    'Enter Image URL',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     _showUrlInputDialog();
@@ -269,9 +307,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           title: const Text('Edit Username'),
           content: TextField(
             controller: controller,
-            decoration: const InputDecoration(
-              hintText: 'Enter your username',
-            ),
+            decoration: const InputDecoration(hintText: 'Enter your username'),
           ),
           actions: [
             TextButton(
@@ -295,7 +331,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _showEditInterestsDialog() {
     final List<String> availableInterests = [
-      'Food', 'Cafe', 'Nature', 'Beach', 'Temple', 'Adventure', 'Shopping', 'Nightlife', 'Culture'
+      'Food',
+      'Cafe',
+      'Nature',
+      'Beach',
+      'Temple',
+      'Adventure',
+      'Shopping',
+      'Nightlife',
+      'Culture',
     ];
     List<String> tempSelected = List.from(_interests);
 
@@ -470,7 +514,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: brandGold),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: brandGold,
+                  ),
                 ),
               ),
             ),
@@ -502,7 +549,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         radius: 54,
                         backgroundColor: Colors.grey,
                         backgroundImage: NetworkImage(
-                          ApiService.getFullImageUrl(_profileImageUrl).isNotEmpty
+                          ApiService.getFullImageUrl(
+                                _profileImageUrl,
+                              ).isNotEmpty
                               ? ApiService.getFullImageUrl(_profileImageUrl)
                               : ApiService.defaultAvatarUrl,
                         ),
@@ -535,7 +584,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  _username.isNotEmpty ? _username : 'Explorer',
+                  _username.isNotEmpty ? _username : 'กรุณาตั้งชื่อ',
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -550,10 +599,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             Text(
               userEmail,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
             const SizedBox(height: 30),
 
@@ -598,7 +644,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         runSpacing: 8,
                         children: _interests.map((interest) {
                           return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
                               color: brandGold.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(20),
@@ -646,7 +695,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                
+
                 // Progress Bar
                 Row(
                   children: [
@@ -656,7 +705,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: LinearProgressIndicator(
                           value: _visitedProvinces.length / 77,
                           backgroundColor: Colors.grey.withOpacity(0.2),
-                          valueColor: const AlwaysStoppedAnimation<Color>(brandGold),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            brandGold,
+                          ),
                           minHeight: 12,
                         ),
                       ),
@@ -672,7 +723,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Province tags preview
                 _visitedProvinces.isEmpty
                     ? const Text(
@@ -710,11 +761,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Account settings tile
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.manage_accounts_outlined, color: Colors.black54),
+                  leading: const Icon(
+                    Icons.manage_accounts_outlined,
+                    color: Colors.black54,
+                  ),
                   title: const Text('Account Settings'),
                   trailing: const Icon(Icons.chevron_right, size: 20),
                   onTap: () {},
@@ -723,7 +777,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // Share location toggle
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  secondary: const Icon(Icons.location_on_outlined, color: Colors.black54),
+                  secondary: const Icon(
+                    Icons.location_on_outlined,
+                    color: Colors.black54,
+                  ),
                   title: const Text('Share location'),
                   activeColor: brandGold,
                   value: _shareLocation,
@@ -738,11 +795,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // Language selection
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.translate_outlined, color: Colors.black54),
+                  leading: const Icon(
+                    Icons.translate_outlined,
+                    color: Colors.black54,
+                  ),
                   title: const Text('Language'),
                   trailing: Text(
                     _language,
-                    style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.grey),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey,
+                    ),
                   ),
                   onTap: () {
                     setState(() {
