@@ -230,5 +230,39 @@ class ApiService {
       };
     }
   }
-}
 
+  static Future<Map<String, dynamic>> getPopularDestinations({
+    int limit = 3,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/mobile/popular-destinations?limit=$limit'),
+        headers: _getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {
+          'success': true,
+          'data': data['data'] ?? [],
+        };
+      }
+
+      String message = 'Failed to load popular destinations';
+      try {
+        final error = jsonDecode(response.body);
+        message = error['message'] ?? message;
+      } catch (_) {}
+
+      return {
+        'success': false,
+        'message': message,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: $e',
+      };
+    }
+  }
+}
