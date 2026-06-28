@@ -265,4 +265,43 @@ class ApiService {
       };
     }
   }
+
+  static Future<Map<String, dynamic>> askTravelAssistant({
+    required String message,
+    String? province,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/mobile/chat'),
+        headers: _getHeaders(),
+        body: jsonEncode({
+          'message': message,
+          if (province != null && province.isNotEmpty) 'province': province,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': jsonDecode(response.body),
+        };
+      }
+
+      String errorMessage = 'Failed to ask travel assistant';
+      try {
+        final error = jsonDecode(response.body);
+        errorMessage = error['message'] ?? errorMessage;
+      } catch (_) {}
+
+      return {
+        'success': false,
+        'message': errorMessage,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: $e',
+      };
+    }
+  }
 }

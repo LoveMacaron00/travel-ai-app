@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
+import 'package:myapp/screen/chatbot_screen.dart';
 import 'package:myapp/services/api_service.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -36,9 +37,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     const Color brandGold = Color(0xFFF4C025);
     const Color lightGold = Color(0xFFFFD54F);
-
-        ApiService.currentUser?['email']?.split('@')[0] ??
-        'Explorer';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -175,11 +173,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               brandGold,
                             ),
                             _buildFeatureItem(
-                              Icons.camera_alt,
-                              "AI Lens",
+                              Icons.forum,
+                              "Chatbot",
                               brandGold,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const ChatbotScreen(),
+                                  ),
+                                );
+                              },
                             ),
-                            _buildFeatureItem(Icons.forum, "Chatbot", brandGold),
                             _buildFeatureItem(
                               Icons.menu_book,
                               "My Diary",
@@ -473,32 +478,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return '$value views';
   }
 
-  Widget _buildFeatureItem(IconData icon, String label, Color color) {
-    return Column(
-      children: [
-        Container(
-          width: 54,
-          height: 54,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 26,
-          ),
+  Widget _buildFeatureItem(
+    IconData icon,
+    String label,
+    Color color, {
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(40),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+        child: Column(
+          children: [
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 26,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
