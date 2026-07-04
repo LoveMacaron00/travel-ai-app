@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/screen/dashboard_screen.dart';
 import 'package:myapp/screen/profile_screen.dart';
+import 'package:myapp/screen/map_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -32,33 +33,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           });
         },
       ),
-      // Map Screen Placeholder
-      Scaffold(
-        appBar: AppBar(
-          title: const Text('Travel Map', style: TextStyle(color: Colors.black87)),
-          backgroundColor: Colors.white,
-          elevation: 0,
-          centerTitle: true,
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.map_outlined, size: 80, color: brandGold.withOpacity(0.6)),
-              const SizedBox(height: 16),
-              const Text(
-                'Explore Thailand Map',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Map integration coming soon.',
-                style: TextStyle(color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-      ),
+      const MapScreen(),
       // Plan Screen Placeholder
       Scaffold(
         appBar: AppBar(

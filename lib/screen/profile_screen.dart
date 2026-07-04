@@ -774,23 +774,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onTap: () {},
                 ),
 
-                // Share location toggle
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  secondary: const Icon(
-                    Icons.location_on_outlined,
-                    color: Colors.black54,
-                  ),
-                  title: const Text('Share location'),
-                  activeColor: brandGold,
-                  value: _shareLocation,
-                  onChanged: (val) {
-                    setState(() {
-                      _shareLocation = val;
-                    });
-                    _updateProfile(isPrivateLocation: !val);
-                  },
-                ),
+
 
                 // Language selection
                 ListTile(

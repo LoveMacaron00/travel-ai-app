@@ -232,11 +232,15 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> getPopularDestinations({
-    int limit = 3,
+    int? limit,
   }) async {
     try {
+      String url = '$baseUrl/mobile/popular-destinations';
+      if (limit != null) {
+        url += '?limit=$limit';
+      }
       final response = await http.get(
-        Uri.parse('$baseUrl/mobile/popular-destinations?limit=$limit'),
+        Uri.parse(url),
         headers: _getHeaders(),
       );
 
