@@ -15,19 +15,83 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   final MapController _mapController = MapController();
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
+
   LatLng? _currentPosition;
   PlaceMarker? _selectedMarker;
   bool _isLocating = false;
 
   List<PlaceMarker> _places = [];
+  List<PlaceMarker> _filteredPlaces = [];
+  List<PlaceMarker> _suggestions = [];
   bool _isLoadingPlaces = true;
+  bool _showSuggestions = false;
 
   @override
   void initState() {
     super.initState();
-    // Default center to Bangkok if location is not fetched yet
-    _currentPosition = const LatLng(13.7563, 100.5018); 
+    _currentPosition = const LatLng(13.7563, 100.5018);
     _loadDestinations();
+
+    _searchController.addListener(_onSearchChanged);
+    _searchFocus.addListener(() {
+      if (!_searchFocus.hasFocus) {
+        setState(() => _showSuggestions = false);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocus.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) {
+      setState(() {
+        _filteredPlaces = List.from(_places);
+        _suggestions = [];
+        _showSuggestions = false;
+      });
+      return;
+    }
+    final matched = _places.where((p) =>
+      p.title.toLowerCase().contains(query) ||
+      p.description.toLowerCase().contains(query) ||
+      p.category.toLowerCase().contains(query)
+    ).toList();
+
+    setState(() {
+      _suggestions = matched.take(5).toList();
+      _filteredPlaces = matched;
+      _showSuggestions = matched.isNotEmpty;
+    });
+  }
+
+  void _selectSuggestion(PlaceMarker place) {
+    _searchController.text = place.title;
+    _searchFocus.unfocus();
+    setState(() {
+      _showSuggestions = false;
+      _selectedMarker = place;
+      _filteredPlaces = [place];
+    });
+    _mapController.move(LatLng(place.latitude, place.longitude), 16.0);
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    _searchFocus.unfocus();
+    setState(() {
+      _filteredPlaces = List.from(_places);
+      _suggestions = [];
+      _showSuggestions = false;
+      _selectedMarker = null;
+    });
   }
 
   Future<void> _loadDestinations() async {
@@ -38,50 +102,45 @@ class _MapScreenState extends State<MapScreen> {
         List<PlaceMarker> fetchedPlaces = [];
         for (var i = 0; i < data.length; i++) {
           var item = data[i];
-          
-          if (item['latitude'] == null || item['longitude'] == null || item['latitude'].toString().trim().isEmpty || item['longitude'].toString().trim().isEmpty) {
+          if (item['latitude'] == null || item['longitude'] == null ||
+              item['latitude'].toString().trim().isEmpty ||
+              item['longitude'].toString().trim().isEmpty) {
             continue;
           }
-
           double? lat = double.tryParse(item['latitude'].toString());
           double? lng = double.tryParse(item['longitude'].toString());
-          
-          if (lat == null || lng == null) {
-            continue;
-          }
-          
-          fetchedPlaces.add(
-            PlaceMarker(
-              id: item['id']?.toString() ?? i.toString(),
-              title: item['name']?.toString() ?? item['city']?.toString() ?? 'Unknown Place',
-              description: item['location']?.toString() ?? 'Beautiful destination in Thailand.',
-              latitude: lat,
-              longitude: lng,
-              imageUrl: item['image'] != null ? ApiService.getFullImageUrl(item['image'].toString()) : 'https://images.unsplash.com/photo-1572076046187-57500d0fdb29?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-              category: item['category']?.toString() ?? 'Temple', 
-            )
-          );
+          if (lat == null || lng == null) continue;
+
+          fetchedPlaces.add(PlaceMarker(
+            id: item['id']?.toString() ?? i.toString(),
+            title: item['name']?.toString() ?? item['city']?.toString() ?? 'Unknown Place',
+            description: item['location']?.toString() ?? 'Beautiful destination in Thailand.',
+            latitude: lat,
+            longitude: lng,
+            imageUrl: item['image'] != null
+                ? ApiService.getFullImageUrl(item['image'].toString())
+                : 'https://images.unsplash.com/photo-1572076046187-57500d0fdb29?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+            category: item['category']?.toString() ?? 'Temple',
+          ));
         }
         if (mounted) {
           setState(() {
             _places = fetchedPlaces;
+            _filteredPlaces = List.from(fetchedPlaces);
             _isLoadingPlaces = false;
           });
         }
       } else {
-        if (mounted) setState(() { _isLoadingPlaces = false; });
+        if (mounted) setState(() => _isLoadingPlaces = false);
       }
     } catch (e) {
       debugPrint('Error loading destinations: $e');
-      if (mounted) setState(() { _isLoadingPlaces = false; });
+      if (mounted) setState(() => _isLoadingPlaces = false);
     }
   }
 
   Future<void> _getCurrentLocation() async {
-    setState(() {
-      _isLocating = true;
-    });
-
+    setState(() => _isLocating = true);
     var status = await Permission.location.request();
     if (status.isGranted) {
       try {
@@ -101,76 +160,88 @@ class _MapScreenState extends State<MapScreen> {
         );
       }
     }
-
-    setState(() {
-      _isLocating = false;
-    });
+    setState(() => _isLocating = false);
   }
 
-  void _zoomIn() {
-    _mapController.move(_mapController.camera.center, _mapController.camera.zoom + 1);
+  void _zoomIn() =>
+      _mapController.move(_mapController.camera.center, _mapController.camera.zoom + 1);
+
+  void _zoomOut() =>
+      _mapController.move(_mapController.camera.center, _mapController.camera.zoom - 1);
+
+  void _resetRotation() => _mapController.rotate(0.0);
+
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'Palace': return const Color(0xFFF4C025);
+      case 'Temple': return Colors.redAccent;
+      case 'Historic': return Colors.brown;
+      default: return Colors.blue;
+    }
   }
 
-  void _zoomOut() {
-    _mapController.move(_mapController.camera.center, _mapController.camera.zoom - 1);
-  }
-
-  void _resetRotation() {
-    _mapController.rotate(0.0);
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'Palace': return Icons.account_balance;
+      case 'Temple': return Icons.temple_buddhist;
+      case 'Historic': return Icons.castle;
+      default: return Icons.place;
+    }
   }
 
   Widget _buildMarkerIcon(PlaceMarker place) {
-    IconData iconData;
-    Color iconColor;
-
-    switch (place.category) {
-      case 'Palace':
-        iconData = Icons.account_balance;
-        iconColor = const Color(0xFFF4C025); // brandGold
-        break;
-      case 'Temple':
-        iconData = Icons.temple_buddhist;
-        iconColor = Colors.redAccent;
-        break;
-      case 'Historic':
-        iconData = Icons.castle;
-        iconColor = Colors.brown;
-        break;
-      default:
-        iconData = Icons.place;
-        iconColor = Colors.blue;
-    }
-
-    bool isSelected = _selectedMarker?.id == place.id;
+    final iconColor = _getCategoryColor(place.category);
+    final iconData = _getCategoryIcon(place.category);
+    final isSelected = _selectedMarker?.id == place.id;
 
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _selectedMarker = place;
-        });
+        setState(() => _selectedMarker = place);
         _mapController.move(LatLng(place.latitude, place.longitude), 16.0);
       },
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            iconData,
-            color: isSelected ? Colors.amber : iconColor,
-            size: isSelected ? 48 : 36,
+          Container(
+            padding: const EdgeInsets.all(6.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected ? Colors.orange : iconColor,
+                width: isSelected ? 3.0 : 2.0,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Icon(iconData,
+                color: isSelected ? Colors.orange : iconColor,
+                size: isSelected ? 24 : 20),
           ),
-          if (isSelected)
+          if (isSelected) ...[
+            const SizedBox(height: 4),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
-                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 2)],
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.orange, width: 1),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))
+                ],
               ),
               child: Text(
                 place.title,
-                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black87),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+          ],
         ],
       ),
     );
@@ -181,14 +252,17 @@ class _MapScreenState extends State<MapScreen> {
     return Scaffold(
       body: Stack(
         children: [
+          // ── MAP ──
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
               initialCenter: _currentPosition ?? const LatLng(13.7500, 100.4913),
               initialZoom: 15.0,
               onTap: (tapPosition, point) {
+                _searchFocus.unfocus();
                 setState(() {
-                  _selectedMarker = null; // Dismiss card on map tap
+                  _selectedMarker = null;
+                  _showSuggestions = false;
                 });
               },
             ),
@@ -198,7 +272,7 @@ class _MapScreenState extends State<MapScreen> {
                 userAgentPackageName: 'com.example.myapp',
               ),
               MarkerLayer(
-                markers: _places.map((place) {
+                markers: _filteredPlaces.map((place) {
                   return Marker(
                     width: 80.0,
                     height: 80.0,
@@ -236,42 +310,97 @@ class _MapScreenState extends State<MapScreen> {
             ],
           ),
 
-          // Search Bar
+          // ── SEARCH BAR + SUGGESTIONS ──
           Positioned(
             top: 50.0,
             left: 16.0,
             right: 16.0,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24.0),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 10.0,
-                    offset: Offset(0, 5),
+            child: Column(
+              children: [
+                // Search Input
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24.0),
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black12, blurRadius: 10.0, offset: Offset(0, 5)),
+                    ],
                   ),
-                ],
-              ),
-              child: const TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search for tourist attractions.',
-                  border: InputBorder.none,
-                  icon: Icon(Icons.search, color: Colors.orangeAccent),
-                  suffixIcon: Icon(Icons.auto_awesome, color: Colors.orangeAccent),
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocus,
+                    decoration: InputDecoration(
+                      hintText: 'Search for tourist attractions.',
+                      border: InputBorder.none,
+                      icon: const Icon(Icons.search, color: Colors.orangeAccent),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.close, color: Colors.grey, size: 20),
+                              onPressed: _clearSearch,
+                            )
+                          : const Icon(Icons.auto_awesome, color: Colors.orangeAccent),
+                    ),
+                  ),
                 ),
-              ),
+
+                // Suggestions Dropdown
+                if (_showSuggestions)
+                  Container(
+                    margin: const EdgeInsets.only(top: 6.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16.0),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black12, blurRadius: 10.0, offset: Offset(0, 4)),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16.0),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _suggestions.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1, indent: 56),
+                        itemBuilder: (context, index) {
+                          final place = _suggestions[index];
+                          final catColor = _getCategoryColor(place.category);
+                          final catIcon = _getCategoryIcon(place.category);
+                          return ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: catColor.withOpacity(0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(catIcon, color: catColor, size: 18),
+                            ),
+                            title: Text(
+                              place.title,
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                            ),
+                            subtitle: Text(
+                              place.description,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                            onTap: () => _selectSuggestion(place),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
 
-          // Map Controls
+          // ── MAP CONTROLS ──
           Positioned(
             right: 16.0,
             bottom: _selectedMarker != null ? 180.0 : 100.0,
             child: Column(
               children: [
-                // Zoom Controls
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -297,7 +426,6 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Compass
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -310,7 +438,6 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Location Toggle (GPS)
                 Container(
                   decoration: const BoxDecoration(
                     color: Colors.white,
@@ -318,7 +445,7 @@ class _MapScreenState extends State<MapScreen> {
                     boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4.0)],
                   ),
                   child: IconButton(
-                    icon: _isLocating 
+                    icon: _isLocating
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.my_location, color: Colors.orangeAccent),
                     onPressed: _getCurrentLocation,
@@ -328,7 +455,7 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ),
 
-          // Info Card
+          // ── INFO CARD ──
           if (_selectedMarker != null)
             Positioned(
               left: 16.0,
@@ -349,8 +476,12 @@ class _MapScreenState extends State<MapScreen> {
                           width: 80.0,
                           height: 80.0,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(width: 80, height: 80, color: Colors.grey),
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            width: 80,
+                            height: 80,
+                            color: Colors.grey.shade300,
+                            child: const Icon(Icons.image_not_supported, color: Colors.white),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12.0),
@@ -365,30 +496,34 @@ class _MapScreenState extends State<MapScreen> {
                                 Expanded(
                                   child: Text(
                                     _selectedMarker!.title,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16.0,
-                                    ),
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                const Text(
-                                  '0.5 km', // Mock distance
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12.0,
-                                  ),
+                                GestureDetector(
+                                  onTap: () => setState(() => _selectedMarker = null),
+                                  child: const Icon(Icons.close, size: 18, color: Colors.grey),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8.0),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                _selectedMarker!.category,
+                                style: const TextStyle(
+                                    fontSize: 11, color: Colors.orange, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            const SizedBox(height: 6.0),
                             Text(
                               _selectedMarker!.description,
-                              style: const TextStyle(
-                                color: Colors.black54,
-                                fontSize: 13.0,
-                              ),
+                              style: const TextStyle(color: Colors.black54, fontSize: 13.0),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
