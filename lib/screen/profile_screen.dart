@@ -2,8 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/services/api_service.dart';
 import 'package:myapp/screen/welcome_screen.dart';
+import 'package:myapp/screen/account_settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
   final VoidCallback onBackTap;
@@ -89,23 +89,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _updateProfile({
-    String? username,
     List<String>? interests,
     bool? isPrivateLocation,
-    String? profileImageUrl,
   }) async {
     setState(() => _isLoading = true);
 
-    final finalUsername = username ?? _username;
     final finalInterests = interests ?? _interests;
     final finalPrivateLocation = isPrivateLocation ?? !_shareLocation;
-    final finalProfileImageUrl = profileImageUrl ?? _profileImageUrl;
 
     final result = await ApiService.updateUserProfile(
-      username: finalUsername,
+      username: _username,
       interests: finalInterests,
       isPrivateLocation: finalPrivateLocation,
-      profileImageUrl: finalProfileImageUrl,
+      profileImageUrl: _profileImageUrl,
     );
 
     if (mounted) {
@@ -125,208 +121,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     }
-  }
-
-  Future<void> _pickAndUploadImage(ImageSource source) async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: source,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 85,
-      );
-
-      if (image == null) return;
-
-      setState(() => _isLoading = true);
-
-      final result = await ApiService.uploadProfileImageFile(image.path);
-
-      if (mounted) {
-        setState(() => _isLoading = false);
-        if (result['success']) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile picture updated successfully!'),
-            ),
-          );
-          setState(() {
-            _loadUserData();
-          });
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? 'Failed to upload image'),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error choosing image: $e')));
-      }
-    }
-  }
-
-  void _showUrlInputDialog() {
-    final controller = TextEditingController(text: _profileImageUrl);
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Profile Image URL'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(hintText: 'Enter image URL'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _updateProfile(profileImageUrl: controller.text.trim());
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showEditProfileImageDialog() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Change Profile Photo',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF4C025).withOpacity(0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.photo_library,
-                      color: Color(0xFFF4C025),
-                    ),
-                  ),
-                  title: const Text(
-                    'Choose from Gallery',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickAndUploadImage(ImageSource.gallery);
-                  },
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF4C025).withOpacity(0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt,
-                      color: Color(0xFFF4C025),
-                    ),
-                  ),
-                  title: const Text(
-                    'Take a Photo',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickAndUploadImage(ImageSource.camera);
-                  },
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF4C025).withOpacity(0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.link, color: Color(0xFFF4C025)),
-                  ),
-                  title: const Text(
-                    'Enter Image URL',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showUrlInputDialog();
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showEditUsernameDialog() {
-    final controller = TextEditingController(text: _username);
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Username'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(hintText: 'Enter your username'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                if (controller.text.trim().isNotEmpty) {
-                  _updateProfile(username: controller.text.trim());
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void _showEditInterestsDialog() {
@@ -530,72 +324,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             // User Avatar Section
             Center(
-              child: GestureDetector(
-                onTap: _showEditProfileImageDialog,
-                child: Stack(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: CircleAvatar(
-                        radius: 54,
-                        backgroundColor: Colors.grey,
-                        backgroundImage: NetworkImage(
-                          ApiService.getFullImageUrl(
-                                _profileImageUrl,
-                              ).isNotEmpty
-                              ? ApiService.getFullImageUrl(_profileImageUrl)
-                              : ApiService.defaultAvatarUrl,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 4,
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(
-                          color: brandGold,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.camera_alt,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
                     ),
                   ],
+                ),
+                child: CircleAvatar(
+                  radius: 54,
+                  backgroundColor: Colors.grey,
+                  backgroundImage: NetworkImage(
+                    ApiService.getFullImageUrl(
+                              _profileImageUrl,
+                            ).isNotEmpty
+                        ? ApiService.getFullImageUrl(_profileImageUrl)
+                        : ApiService.defaultAvatarUrl,
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 20),
 
             // Username & Email
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  _username.isNotEmpty ? _username : 'กรุณาตั้งชื่อ',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.edit, size: 18, color: Colors.grey),
-                  onPressed: _showEditUsernameDialog,
-                ),
-              ],
+            Text(
+              _username.isNotEmpty ? _username : 'กรุณาตั้งชื่อ',
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
             ),
             Text(
               userEmail,
@@ -771,7 +533,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   title: const Text('Account Settings'),
                   trailing: const Icon(Icons.chevron_right, size: 20),
-                  onTap: () {},
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AccountSettingsScreen(),
+                      ),
+                    );
+                    // Refresh profile data when returning from Account Settings
+                    setState(() => _loadUserData());
+                  },
                 ),
 
 
