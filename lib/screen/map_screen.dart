@@ -28,6 +28,16 @@ class _MapScreenState extends State<MapScreen> {
   bool _isLoadingPlaces = true;
   bool _showSuggestions = false;
 
+  String _selectedCategory = 'all';
+  final List<Map<String, String>> _categories = [
+    { 'id': 'all', 'label': 'ทุกหมวดหมู่' },
+    { 'id': 'attraction', 'label': 'สถานที่ท่องเที่ยว' },
+    { 'id': 'accommodation', 'label': 'ที่พัก' },
+    { 'id': 'restaurant', 'label': 'ร้านอาหาร' },
+    { 'id': 'shop', 'label': 'ร้านค้า' },
+    { 'id': 'other', 'label': 'อื่นๆ' }
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -50,25 +60,33 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onSearchChanged() {
+    _applyFilters();
+  }
+
+  void _applyFilters() {
     final query = _searchController.text.trim().toLowerCase();
-    if (query.isEmpty) {
-      setState(() {
-        _filteredPlaces = List.from(_places);
-        _suggestions = [];
-        _showSuggestions = false;
-      });
-      return;
-    }
-    final matched = _places.where((p) =>
-      p.title.toLowerCase().contains(query) ||
-      p.description.toLowerCase().contains(query) ||
-      p.category.toLowerCase().contains(query)
-    ).toList();
+    
+    final matched = _places.where((p) {
+      final matchesQuery = query.isEmpty ||
+        p.title.toLowerCase().contains(query) ||
+        p.description.toLowerCase().contains(query) ||
+        _getCategoryLabel(p.category).toLowerCase().contains(query);
+      
+      final matchesCategory = _selectedCategory == 'all' ||
+        p.category.toLowerCase() == _selectedCategory.toLowerCase();
+        
+      return matchesQuery && matchesCategory;
+    }).toList();
 
     setState(() {
-      _suggestions = matched.take(5).toList();
+      if (query.isNotEmpty) {
+        _suggestions = matched.take(5).toList();
+        _showSuggestions = matched.isNotEmpty;
+      } else {
+        _suggestions = [];
+        _showSuggestions = false;
+      }
       _filteredPlaces = matched;
-      _showSuggestions = matched.isNotEmpty;
     });
   }
 
@@ -87,11 +105,11 @@ class _MapScreenState extends State<MapScreen> {
     _searchController.clear();
     _searchFocus.unfocus();
     setState(() {
-      _filteredPlaces = List.from(_places);
       _suggestions = [];
       _showSuggestions = false;
       _selectedMarker = null;
     });
+    _applyFilters();
   }
 
   Future<void> _loadDestinations() async {
@@ -120,7 +138,7 @@ class _MapScreenState extends State<MapScreen> {
             imageUrl: item['image'] != null
                 ? ApiService.getFullImageUrl(item['image'].toString())
                 : 'https://images.unsplash.com/photo-1572076046187-57500d0fdb29?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-            category: item['category']?.toString() ?? 'Temple',
+            category: item['category']?.toString() ?? 'other',
           ));
         }
         if (mounted) {
@@ -171,20 +189,38 @@ class _MapScreenState extends State<MapScreen> {
 
   void _resetRotation() => _mapController.rotate(0.0);
 
+  String _getCategoryLabel(String category) {
+    switch (category.toLowerCase()) {
+      case 'all': return 'ทุกหมวดหมู่';
+      case 'attraction': return 'สถานที่ท่องเที่ยว';
+      case 'accommodation': return 'ที่พัก';
+      case 'restaurant': return 'ร้านอาหาร';
+      case 'shop': return 'ร้านค้า';
+      case 'other': return 'อื่นๆ';
+      default: return category;
+    }
+  }
+
   Color _getCategoryColor(String category) {
-    switch (category) {
-      case 'Palace': return const Color(0xFFF4C025);
-      case 'Temple': return Colors.redAccent;
-      case 'Historic': return Colors.brown;
-      default: return Colors.blue;
+    switch (category.toLowerCase()) {
+      case 'all': return Colors.grey.shade700;
+      case 'attraction': return Colors.redAccent;
+      case 'accommodation': return Colors.blueAccent;
+      case 'restaurant': return Colors.orange;
+      case 'shop': return Colors.green;
+      case 'other': return Colors.purple;
+      default: return Colors.grey;
     }
   }
 
   IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'Palace': return Icons.account_balance;
-      case 'Temple': return Icons.temple_buddhist;
-      case 'Historic': return Icons.castle;
+    switch (category.toLowerCase()) {
+      case 'all': return Icons.apps;
+      case 'attraction': return Icons.attractions;
+      case 'accommodation': return Icons.hotel;
+      case 'restaurant': return Icons.restaurant;
+      case 'shop': return Icons.shopping_bag;
+      case 'other': return Icons.category;
       default: return Icons.place;
     }
   }
@@ -341,6 +377,61 @@ class _MapScreenState extends State<MapScreen> {
                             )
                           : const Icon(Icons.auto_awesome, color: Colors.orangeAccent),
                     ),
+                  ),
+                ),
+
+                // Categories
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 36,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _categories.length,
+                    itemBuilder: (context, index) {
+                      final cat = _categories[index];
+                      final isSelected = _selectedCategory == cat['id'];
+                      final catId = cat['id']!;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: ChoiceChip(
+                          label: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _getCategoryIcon(catId),
+                                size: 16,
+                                color: isSelected ? Colors.white : _getCategoryColor(catId),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(cat['label']!),
+                            ],
+                          ),
+                          selected: isSelected,
+                          onSelected: (bool selected) {
+                            setState(() {
+                              _selectedCategory = catId;
+                              _selectedMarker = null;
+                              _applyFilters();
+                            });
+                          },
+                          selectedColor: Colors.orange,
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black87,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                          backgroundColor: Colors.white,
+                          elevation: 2,
+                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(
+                              color: isSelected ? Colors.orange : Colors.grey.shade300,
+                            ),
+                          ),
+                          showCheckmark: false,
+                        ),
+                      );
+                    },
                   ),
                 ),
 
@@ -515,7 +606,7 @@ class _MapScreenState extends State<MapScreen> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                _selectedMarker!.category,
+                                _getCategoryLabel(_selectedMarker!.category),
                                 style: const TextStyle(
                                     fontSize: 11, color: Colors.orange, fontWeight: FontWeight.w600),
                               ),
