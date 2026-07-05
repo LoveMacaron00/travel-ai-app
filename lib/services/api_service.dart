@@ -231,11 +231,11 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> getPopularDestinations({
+  static Future<Map<String, dynamic>> getDestinations({
     int? limit,
   }) async {
     try {
-      String url = '$baseUrl/mobile/popular-destinations';
+      String url = '$baseUrl/mobile/destinations';
       if (limit != null) {
         url += '?limit=$limit';
       }
@@ -252,7 +252,7 @@ class ApiService {
         };
       }
 
-      String message = 'Failed to load popular destinations';
+      String message = 'Failed to load  destinations';
       try {
         final error = jsonDecode(response.body);
         message = error['message'] ?? message;

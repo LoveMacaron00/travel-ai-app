@@ -13,16 +13,16 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  late Future<List<Map<String, dynamic>>> _popularDestinationsFuture;
+  late Future<List<Map<String, dynamic>>> _DestinationsFuture;
 
   @override
   void initState() {
     super.initState();
-    _popularDestinationsFuture = _loadPopularDestinations();
+    _DestinationsFuture = _loadDestinations();
   }
 
-  Future<List<Map<String, dynamic>>> _loadPopularDestinations() async {
-    final result = await ApiService.getPopularDestinations(limit: 3);
+  Future<List<Map<String, dynamic>>> _loadDestinations() async {
+    final result = await ApiService.getDestinations(limit: 3);
     if (result['success'] == true && result['data'] is List) {
       return List<Map<String, dynamic>>.from(
         (result['data'] as List).whereType<Map>().map(
@@ -30,7 +30,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
       );
     }
-    throw Exception(result['message'] ?? 'Failed to load popular destinations');
+    throw Exception(result['message'] ?? 'Failed to load  destinations');
   }
 
   @override
@@ -44,10 +44,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         color: brandGold,
         onRefresh: () async {
           setState(() {
-            _popularDestinationsFuture = _loadPopularDestinations();
+            _DestinationsFuture = _loadDestinations();
           });
           try {
-            await _popularDestinationsFuture;
+            await _DestinationsFuture;
           } catch (_) {}
         },
         child: SingleChildScrollView(
@@ -203,7 +203,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      "Popular Destinations",
+                      " Destinations",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -225,7 +225,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 8),
               FutureBuilder<List<Map<String, dynamic>>>(
-                future: _popularDestinationsFuture,
+                future: _DestinationsFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return _buildDestinationLoadingList();
@@ -243,7 +243,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   if (destinations.isEmpty) {
                     return _buildDestinationMessage(
                       icon: Icons.travel_explore,
-                      title: 'No popular destinations yet',
+                      title: 'No  destinations yet',
                       subtitle: 'TAT API did not return places with images.',
                     );
                   }

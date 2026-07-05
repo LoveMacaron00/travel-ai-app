@@ -96,7 +96,7 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _loadDestinations() async {
     try {
-      final result = await ApiService.getPopularDestinations();
+      final result = await ApiService.getDestinations();
       if (result['success'] == true && result['data'] is List) {
         final List<dynamic> data = result['data'];
         List<PlaceMarker> fetchedPlaces = [];
