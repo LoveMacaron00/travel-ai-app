@@ -438,7 +438,7 @@ class _MapScreenState extends State<MapScreen> {
                 // Suggestions Dropdown
                 if (_showSuggestions)
                   Container(
-                    margin: const EdgeInsets.only(top: 6.0),
+                    margin: const EdgeInsets.only(top: 4.0),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16.0),
@@ -451,6 +451,7 @@ class _MapScreenState extends State<MapScreen> {
                       child: ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
                         itemCount: _suggestions.length,
                         separatorBuilder: (_, __) => const Divider(height: 1, indent: 56),
                         itemBuilder: (context, index) {
@@ -458,23 +459,27 @@ class _MapScreenState extends State<MapScreen> {
                           final catColor = _getCategoryColor(place.category);
                           final catIcon = _getCategoryIcon(place.category);
                           return ListTile(
+                            dense: true,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 2.0),
+                            minLeadingWidth: 36,
                             leading: Container(
-                              padding: const EdgeInsets.all(6),
+                              width: 34,
+                              height: 34,
                               decoration: BoxDecoration(
                                 color: catColor.withOpacity(0.12),
                                 shape: BoxShape.circle,
                               ),
-                              child: Icon(catIcon, color: catColor, size: 18),
+                              child: Icon(catIcon, color: catColor, size: 17),
                             ),
                             title: Text(
                               place.title,
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                             ),
                             subtitle: Text(
                               place.description,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              style: const TextStyle(fontSize: 11, color: Colors.grey),
                             ),
                             onTap: () => _selectSuggestion(place),
                           );
