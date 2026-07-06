@@ -54,7 +54,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = ApiService.currentUser;
     if (user != null) {
       _username = user['username'] ?? '';
-      _shareLocation = !(user['is_private_location'] ?? false);
+      _shareLocation = false;
       _profileImageUrl = user['profile_image_url'] ?? '';
 
       // Load interests
@@ -90,17 +90,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _updateProfile({
     List<String>? interests,
-    bool? isPrivateLocation,
   }) async {
     setState(() => _isLoading = true);
 
     final finalInterests = interests ?? _interests;
-    final finalPrivateLocation = isPrivateLocation ?? !_shareLocation;
 
     final result = await ApiService.updateUserProfile(
       username: _username,
       interests: finalInterests,
-      isPrivateLocation: finalPrivateLocation,
       profileImageUrl: _profileImageUrl,
     );
 

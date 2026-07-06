@@ -125,14 +125,12 @@ class ApiService {
   static Future<Map<String, dynamic>> updateUserProfile({
     required String username,
     required List<String> interests,
-    required bool isPrivateLocation,
     String? profileImageUrl,
   }) async {
     try {
       final Map<String, dynamic> body = {
         'username': username,
         'interests': interests,
-        'is_private_location': isPrivateLocation,
       };
       if (profileImageUrl != null) {
         body['profile_image_url'] = profileImageUrl;

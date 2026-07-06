@@ -45,8 +45,6 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     final result = await ApiService.updateUserProfile(
       username: finalUsername,
       interests: List<String>.from(ApiService.currentUser?['interests'] ?? []),
-      isPrivateLocation:
-          ApiService.currentUser?['is_private_location'] ?? false,
       profileImageUrl: finalProfileImageUrl,
     );
 
