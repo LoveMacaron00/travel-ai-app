@@ -3,16 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:myapp/screen/chatbot_screen.dart';
 import 'package:myapp/services/api_service.dart';
 
-class DashboardScreen extends StatefulWidget {
+class HomeScreen extends StatefulWidget {
   final VoidCallback onProfileTap;
 
-  const DashboardScreen({super.key, required this.onProfileTap});
+  const HomeScreen({super.key, required this.onProfileTap});
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _HomeScreenState extends State<HomeScreen> {
   late Future<List<Map<String, dynamic>>> _DestinationsFuture;
 
   @override
