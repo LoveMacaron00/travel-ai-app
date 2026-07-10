@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:myapp/services/api_service.dart';
 import 'package:myapp/screen/welcome_screen.dart';
 import 'package:myapp/screen/account_settings_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
   final VoidCallback onBackTap;
@@ -18,31 +17,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
   String _username = '';
   List<String> _interests = [];
-  bool _shareLocation = false;
-  String _language = 'TH/EN';
+  String _language = 'TH';
   String _profileImageUrl = '';
-
-  // State for provinces visited
-  List<String> _visitedProvinces = [];
-  final List<String> _allProvinces = [
-    'Bangkok',
-    'Chiang Mai',
-    'Phuket',
-    'Krabi',
-    'Chonburi',
-    'Surat Thani',
-    'Chiang Rai',
-    'Ayutthaya',
-    'Mae Hong Son',
-    'Kanchanaburi',
-    'Sukhothai',
-    'Nakhon Ratchasima',
-    'Nong Khai',
-    'Rayong',
-    'Trang',
-    'Phang Nga',
-    'Phetchaburi',
-  ];
 
   @override
   void initState() {
@@ -54,7 +30,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = ApiService.currentUser;
     if (user != null) {
       _username = user['username'] ?? '';
-      _shareLocation = false;
       _profileImageUrl = user['profile_image_url'] ?? '';
 
       // Load interests
@@ -69,23 +44,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       }
     }
-    _loadVisitedProvinces();
-  }
-
-  Future<void> _loadVisitedProvinces() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _visitedProvinces =
-          prefs.getStringList('visited_provinces') ?? ['Bangkok', 'Chiang Mai'];
-    });
-  }
-
-  Future<void> _saveVisitedProvinces(List<String> provinces) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('visited_provinces', provinces);
-    setState(() {
-      _visitedProvinces = provinces;
-    });
   }
 
   Future<void> _updateProfile({
@@ -174,61 +132,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onPressed: () {
                     Navigator.pop(context);
                     _updateProfile(interests: tempSelected);
-                  },
-                  child: const Text('Save'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _showVisitedProvincesDialog() {
-    List<String> tempVisited = List.from(_visitedProvinces);
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return AlertDialog(
-              title: const Text('Visited Provinces'),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _allProvinces.length,
-                  itemBuilder: (context, index) {
-                    final province = _allProvinces[index];
-                    final isVisited = tempVisited.contains(province);
-                    return CheckboxListTile(
-                      title: Text(province),
-                      value: isVisited,
-                      activeColor: const Color(0xFFF4C025),
-                      onChanged: (checked) {
-                        setStateDialog(() {
-                          if (checked == true) {
-                            tempVisited.add(province);
-                          } else {
-                            tempVisited.remove(province);
-                          }
-                        });
-                      },
-                    );
-                  },
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _saveVisitedProvinces(tempVisited);
                   },
                   child: const Text('Save'),
                 ),
@@ -426,87 +329,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const Divider(height: 40, thickness: 1),
 
-            // Provinces Visited Section
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Provinces Visited',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black54,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: _showVisitedProvincesDialog,
-                      child: const Text(
-                        'Edit',
-                        style: TextStyle(
-                          color: brandGold,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                // Progress Bar
-                Row(
-                  children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: _visitedProvinces.length / 77,
-                          backgroundColor: Colors.grey.withOpacity(0.2),
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            brandGold,
-                          ),
-                          minHeight: 12,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      '${_visitedProvinces.length} / 77',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Province tags preview
-                _visitedProvinces.isEmpty
-                    ? const Text(
-                        'Select the provinces you have visited!',
-                        style: TextStyle(color: Colors.grey, fontSize: 13),
-                      )
-                    : Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: _visitedProvinces.map((prov) {
-                          return Chip(
-                            label: Text(
-                              prov,
-                              style: const TextStyle(fontSize: 11),
-                            ),
-                            backgroundColor: Colors.grey.withOpacity(0.08),
-                            padding: EdgeInsets.zero,
-                          );
-                        }).toList(),
-                      ),
-              ],
-            ),
-            const Divider(height: 40, thickness: 1),
-
             // Settings Section
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -561,7 +383,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   onTap: () {
                     setState(() {
-                      _language = _language == 'TH/EN' ? 'EN' : 'TH/EN';
+                      _language = _language == 'TH' ? 'EN' : 'TH';
                     });
                   },
                 ),
