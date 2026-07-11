@@ -4,6 +4,7 @@ import 'package:myapp/screen/home_screen.dart';
 import 'package:myapp/screen/profile_screen.dart';
 import 'package:myapp/screen/map_screen.dart';
 import 'package:myapp/screen/plan_screen.dart';
+import 'package:myapp/services/location_service.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -14,46 +15,57 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
+  late final List<Widget?> _screens;
 
-  void _onItemTapped(int index) {
+  @override
+  void initState() {
+    super.initState();
+    _screens = List<Widget?>.filled(4, null);
+    _screens[0] = _createScreen(0);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && LocationService.instance.currentPosition == null) {
+        LocationService.instance.refresh(openSettingsWhenDenied: false);
+      }
+    });
+  }
+
+  Widget _createScreen(int index) {
+    switch (index) {
+      case 0:
+        return HomeScreen(onProfileTap: () => _selectTab(3));
+      case 1:
+        return const MapScreen();
+      case 2:
+        return const PlanScreen();
+      case 3:
+        return ProfileScreen(onBackTap: () => _selectTab(0));
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  void _selectTab(int index) {
     setState(() {
+      _screens[index] ??= _createScreen(index);
       _selectedIndex = index;
     });
+  }
+
+  void _onItemTapped(int index) {
+    _selectTab(index);
   }
 
   @override
   Widget build(BuildContext context) {
     const Color brandGold = Color(0xFFF4C025);
 
-    // List ของหน้าจอที่จะแสดงในแต่ละแท็บ
-    final List<Widget> screens = [
-
-      HomeScreen(
-        onProfileTap: () {
-          setState(() {
-            _selectedIndex = 3; // Switch ไปยังแท็บ Profile
-          });
-        },
-      ),
-      
-      MapScreen(),
-     
-      PlanScreen(),
-
-      ProfileScreen(
-        onBackTap: () {
-          setState(() {
-            _selectedIndex = 0; // ย้อนกลับไปยังแท็บ Home
-          });
-        },
-      ),
-      
-    ];
-
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
-        children: screens,
+        children: List.generate(
+          _screens.length,
+          (index) => _screens[index] ?? const SizedBox.shrink(),
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,

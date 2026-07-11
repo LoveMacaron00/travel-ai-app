@@ -46,9 +46,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _updateProfile({
-    List<String>? interests,
-  }) async {
+  Future<void> _updateProfile({List<String>? interests}) async {
     setState(() => _isLoading = true);
 
     final finalInterests = interests ?? _interests;
@@ -239,9 +237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   radius: 54,
                   backgroundColor: Colors.grey,
                   backgroundImage: NetworkImage(
-                    ApiService.getFullImageUrl(
-                              _profileImageUrl,
-                            ).isNotEmpty
+                    ApiService.getFullImageUrl(_profileImageUrl).isNotEmpty
                         ? ApiService.getFullImageUrl(_profileImageUrl)
                         : ApiService.defaultAvatarUrl,
                   ),
@@ -363,8 +359,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     setState(() => _loadUserData());
                   },
                 ),
-
-
 
                 // Language selection
                 ListTile(

@@ -24,30 +24,93 @@ class ChatbotScreen extends StatefulWidget {
 class _ChatbotScreenState extends State<ChatbotScreen> {
   static const Color brandGold = Color(0xFFF4C025);
   final TextEditingController _controller = TextEditingController();
-  final List<ChatMessage> _messages = [
-    ChatMessage(
-      text:
-          'Ask me about Thai destinations, opening hours, entrance fees, directions, food, or nearby recommendations.',
-      isUser: false,
-    ),
-  ];
+  final ScrollController _scrollController = ScrollController();
+  final List<ChatMessage> _messages = [];
+  int? _sessionId;
+  bool _isLoadingHistory = true;
   bool _isSending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeChat();
+  }
 
   @override
   void dispose() {
     _controller.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _initializeChat() async {
+    final sessionResult = await ApiService.getOrCreateChatSession();
+    if (!mounted) return;
+    if (sessionResult['success'] != true) {
+      setState(() => _isLoadingHistory = false);
+      return;
+    }
+    final session = Map<String, dynamic>.from(sessionResult['data']);
+    _sessionId = int.tryParse('${session['id']}');
+    if (_sessionId == null) {
+      setState(() => _isLoadingHistory = false);
+      return;
+    }
+
+    final historyResult = await ApiService.getChatMessages(_sessionId!);
+    if (!mounted) return;
+    final loaded = <ChatMessage>[];
+    if (historyResult['success'] == true && historyResult['data'] is List) {
+      for (final raw in historyResult['data'] as List) {
+        if (raw is! Map) continue;
+        final item = Map<String, dynamic>.from(raw);
+        loaded.add(
+          ChatMessage(
+            text: '${item['content'] ?? ''}',
+            isUser: item['role'] == 'user',
+          ),
+        );
+      }
+    }
+    if (loaded.isEmpty) {
+      loaded.add(
+        const ChatMessage(
+          text:
+              'Ask me about Thai destinations, opening hours, entrance fees, directions, food, or nearby recommendations.',
+          isUser: false,
+        ),
+      );
+    }
+    setState(() {
+      _messages
+        ..clear()
+        ..addAll(loaded);
+      _isLoadingHistory = false;
+    });
+    _scrollToBottom();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   Future<void> _sendMessage([String? overrideText]) async {
     final text = (overrideText ?? _controller.text).trim();
-    if (text.isEmpty || _isSending) return;
+    if (text.isEmpty || _isSending || _sessionId == null) return;
 
     setState(() {
       _messages.add(ChatMessage(text: text, isUser: true));
       _controller.clear();
       _isSending = true;
     });
+    _scrollToBottom();
 
     await _requestAssistantAnswer(text);
   }
@@ -57,16 +120,24 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       setState(() => _isSending = true);
     }
 
-    final result = await ApiService.askTravelAssistant(message: text);
+    final result = await ApiService.sendChatMessage(
+      sessionId: _sessionId!,
+      message: text,
+    );
 
     if (!mounted) return;
     setState(() {
       if (result['success'] == true) {
         final data = Map<String, dynamic>.from(result['data'] ?? {});
-        final rawSources = data['sources'] is List ? data['sources'] as List : [];
+        final rawSources = data['sources'] is List
+            ? data['sources'] as List
+            : [];
         _messages.add(
           ChatMessage(
-            text: (data['answer'] ?? 'I could not find confirmed travel data yet.').toString(),
+            text:
+                (data['answer'] ??
+                        'I could not find confirmed travel data yet.')
+                    .toString(),
             isUser: false,
             sources: rawSources
                 .whereType<Map>()
@@ -77,13 +148,16 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       } else {
         _messages.add(
           ChatMessage(
-            text: result['message'] ?? 'The travel assistant is unavailable right now.',
+            text:
+                result['message'] ??
+                'The travel assistant is unavailable right now.',
             isUser: false,
           ),
         );
       }
       _isSending = false;
     });
+    _scrollToBottom();
   }
 
   @override
@@ -100,7 +174,10 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         ),
         title: const Text(
           'Thai Go',
-          style: TextStyle(color: Color(0xFFE8A900), fontWeight: FontWeight.w500),
+          style: TextStyle(
+            color: Color(0xFFE8A900),
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
       body: SafeArea(
@@ -119,21 +196,23 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               ),
             ),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
-                itemCount: _messages.length + (_isSending ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (_isSending && index == _messages.length) {
-                    return const _TypingBubble();
-                  }
-                  return _ChatBubble(message: _messages[index]);
-                },
-              ),
+              child: _isLoadingHistory
+                  ? const Center(
+                      child: CircularProgressIndicator(color: brandGold),
+                    )
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
+                      itemCount: _messages.length + (_isSending ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (_isSending && index == _messages.length) {
+                          return const _TypingBubble();
+                        }
+                        return _ChatBubble(message: _messages[index]);
+                      },
+                    ),
             ),
-            _ChatInput(
-              controller: _controller,
-              onSend: _sendMessage,
-            ),
+            _ChatInput(controller: _controller, onSend: _sendMessage),
           ],
         ),
       ),
@@ -148,8 +227,12 @@ class _ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final alignment = message.isUser ? Alignment.centerRight : Alignment.centerLeft;
-    final bubbleColor = message.isUser ? _ChatbotScreenState.brandGold : Colors.white;
+    final alignment = message.isUser
+        ? Alignment.centerRight
+        : Alignment.centerLeft;
+    final bubbleColor = message.isUser
+        ? _ChatbotScreenState.brandGold
+        : Colors.white;
     final border = message.isUser
         ? null
         : Border.all(color: const Color(0xFFE8EBF0), width: 1);
@@ -157,12 +240,15 @@ class _ChatBubble extends StatelessWidget {
     return Align(
       alignment: alignment,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.78,
+        ),
         child: Padding(
           padding: const EdgeInsets.only(bottom: 14),
           child: Column(
-            crossAxisAlignment:
-                message.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            crossAxisAlignment: message.isUser
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.start,
             children: [
               if (!message.isUser)
                 const Padding(
@@ -173,7 +259,10 @@ class _ChatBubble extends StatelessWidget {
                   ),
                 ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 13,
+                ),
                 decoration: BoxDecoration(
                   color: bubbleColor,
                   borderRadius: BorderRadius.circular(18),
@@ -199,7 +288,9 @@ class _ChatBubble extends StatelessWidget {
               ),
               if (message.sources.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                ...message.sources.take(2).map((source) => _SourcePill(source: source)),
+                ...message.sources
+                    .take(2)
+                    .map((source) => _SourcePill(source: source)),
               ],
             ],
           ),
@@ -216,7 +307,9 @@ class _SourcePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = ApiService.getFullImageUrl(source['image_url']?.toString());
+    final imageUrl = ApiService.getFullImageUrl(
+      source['image_url']?.toString(),
+    );
 
     return Container(
       width: 285,
@@ -250,21 +343,32 @@ class _SourcePill extends StatelessWidget {
                   (source['name'] ?? 'TAT place').toString(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
                 ),
                 Text(
-                  [
-                    source['province'],
-                    source['category'],
-                  ].where((value) => value != null && value.toString().isNotEmpty).join(' - '),
+                  [source['province'], source['category']]
+                      .where(
+                        (value) => value != null && value.toString().isNotEmpty,
+                      )
+                      .join(' - '),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Color(0xFF737B8C), fontSize: 12),
+                  style: const TextStyle(
+                    color: Color(0xFF737B8C),
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.map_outlined, color: _ChatbotScreenState.brandGold, size: 20),
+          const Icon(
+            Icons.map_outlined,
+            color: _ChatbotScreenState.brandGold,
+            size: 20,
+          ),
         ],
       ),
     );
@@ -275,7 +379,11 @@ class _SourcePill extends StatelessWidget {
       width: 40,
       height: 40,
       color: const Color(0xFFF2F3F5),
-      child: const Icon(Icons.place_outlined, color: Color(0xFF9098A8), size: 20),
+      child: const Icon(
+        Icons.place_outlined,
+        color: Color(0xFF9098A8),
+        size: 20,
+      ),
     );
   }
 }
@@ -302,10 +410,7 @@ class _ChatInput extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
 
-  const _ChatInput({
-    required this.controller,
-    required this.onSend,
-  });
+  const _ChatInput({required this.controller, required this.onSend});
 
   @override
   Widget build(BuildContext context) {
@@ -332,7 +437,10 @@ class _ChatInput extends StatelessWidget {
                       controller: controller,
                       decoration: const InputDecoration(
                         hintText: 'Ask about Thailand...',
-                        hintStyle: TextStyle(color: Color(0xFF858C9B), fontSize: 14),
+                        hintStyle: TextStyle(
+                          color: Color(0xFF858C9B),
+                          fontSize: 14,
+                        ),
                         border: InputBorder.none,
                       ),
                       onSubmitted: (_) => onSend(),
@@ -340,7 +448,10 @@ class _ChatInput extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: onSend,
-                    icon: const Icon(Icons.send_rounded, color: Color(0xFF697184)),
+                    icon: const Icon(
+                      Icons.send_rounded,
+                      color: Color(0xFF697184),
+                    ),
                   ),
                 ],
               ),

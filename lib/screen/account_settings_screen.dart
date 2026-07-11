@@ -51,15 +51,13 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     if (mounted) {
       setState(() => _isLoading = false);
       if (result['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('บันทึกข้อมูลสำเร็จ!')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('บันทึกข้อมูลสำเร็จ!')));
         _loadUserData();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message'] ?? 'เกิดข้อผิดพลาด'),
-          ),
+          SnackBar(content: Text(result['message'] ?? 'เกิดข้อผิดพลาด')),
         );
       }
     }
@@ -90,9 +88,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           _loadUserData();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? 'อัปโหลดไม่สำเร็จ'),
-            ),
+            SnackBar(content: Text(result['message'] ?? 'อัปโหลดไม่สำเร็จ')),
           );
         }
       }
@@ -351,8 +347,8 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                             backgroundColor: Colors.grey.shade200,
                             backgroundImage: NetworkImage(
                               ApiService.getFullImageUrl(
-                                        _profileImageUrl,
-                                      ).isNotEmpty
+                                    _profileImageUrl,
+                                  ).isNotEmpty
                                   ? ApiService.getFullImageUrl(_profileImageUrl)
                                   : ApiService.defaultAvatarUrl,
                             ),

@@ -13,12 +13,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Future<List<Map<String, dynamic>>> _DestinationsFuture;
+  late Future<List<Map<String, dynamic>>> _destinationsFuture;
 
   @override
   void initState() {
     super.initState();
-    _DestinationsFuture = _loadDestinations();
+    _destinationsFuture = _loadDestinations();
   }
 
   Future<List<Map<String, dynamic>>> _loadDestinations() async {
@@ -26,8 +26,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (result['success'] == true && result['data'] is List) {
       return List<Map<String, dynamic>>.from(
         (result['data'] as List).whereType<Map>().map(
-              (item) => Map<String, dynamic>.from(item),
-            ),
+          (item) => Map<String, dynamic>.from(item),
+        ),
       );
     }
     throw Exception(result['message'] ?? 'Failed to load  destinations');
@@ -44,10 +44,10 @@ class _HomeScreenState extends State<HomeScreen> {
         color: brandGold,
         onRefresh: () async {
           setState(() {
-            _DestinationsFuture = _loadDestinations();
+            _destinationsFuture = _loadDestinations();
           });
           try {
-            await _DestinationsFuture;
+            await _destinationsFuture;
           } catch (_) {}
         },
         child: SingleChildScrollView(
@@ -95,8 +95,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Container(
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border:
-                                  Border.all(color: Colors.white, width: 2.5),
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2.5,
+                              ),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withOpacity(0.15),
@@ -110,8 +112,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               backgroundColor: Colors.white,
                               backgroundImage: NetworkImage(
                                 ApiService.getFullImageUrl(
-                                  ApiService.currentUser?['profile_image_url'],
-                                ).isNotEmpty
+                                      ApiService
+                                          .currentUser?['profile_image_url'],
+                                    ).isNotEmpty
                                     ? ApiService.getFullImageUrl(
                                         ApiService
                                             .currentUser?['profile_image_url'],
@@ -137,7 +140,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 24,
+                ),
                 child: Card(
                   elevation: 4,
                   shadowColor: Colors.black.withOpacity(0.08),
@@ -151,7 +157,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.auto_awesome, color: brandGold, size: 20),
+                            Icon(
+                              Icons.auto_awesome,
+                              color: brandGold,
+                              size: 20,
+                            ),
                             const SizedBox(width: 8),
                             const Text(
                               "AI Travel Suite",
@@ -225,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 8),
               FutureBuilder<List<Map<String, dynamic>>>(
-                future: _DestinationsFuture,
+                future: _destinationsFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return _buildDestinationLoadingList();
@@ -326,8 +336,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 top: 14,
                 right: 14,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.9),
                     borderRadius: BorderRadius.circular(12),
@@ -417,9 +429,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.grey.shade200,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Center(
-              child: CircularProgressIndicator(),
-            ),
+            child: const Center(child: CircularProgressIndicator()),
           ),
         ),
       ),
@@ -457,10 +467,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.black54,
-                fontSize: 13,
-              ),
+              style: const TextStyle(color: Colors.black54, fontSize: 13),
             ),
           ],
         ),
@@ -498,11 +505,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: color.withOpacity(0.15),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 26,
-              ),
+              child: Icon(icon, color: color, size: 26),
             ),
             const SizedBox(height: 8),
             Text(

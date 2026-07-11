@@ -38,7 +38,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           );
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+            MaterialPageRoute(
+              builder: (context) => const MainNavigationScreen(),
+            ),
           );
         }
       } else {

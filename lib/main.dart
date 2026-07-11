@@ -18,7 +18,9 @@ class MyApp extends StatelessWidget {
       title: 'My App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.amber, useMaterial3: false),
-      home: ApiService.token != null ? const MainNavigationScreen() : const HomeScreen(),
+      home: ApiService.token != null
+          ? const MainNavigationScreen()
+          : const HomeScreen(),
     );
   }
 }
