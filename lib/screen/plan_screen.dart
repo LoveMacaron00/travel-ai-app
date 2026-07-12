@@ -586,17 +586,9 @@ class _PlanScreenState extends State<PlanScreen> {
             ...plan.allStops.indexed.map(
               (e) => Marker(
                 point: LatLng(e.$2.latitude, e.$2.longitude),
-                width: 40,
-                height: 48,
-                child: Column(
-                  children: [
-                    const Icon(Icons.location_on, color: _gold, size: 34),
-                    Text(
-                      '${e.$1 + 1}',
-                      style: const TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ],
-                ),
+                width: 132,
+                height: 88,
+                child: _buildPlanStopMarker(e.$2, e.$1 + 1),
               ),
             ),
           ],
@@ -743,6 +735,71 @@ class _PlanScreenState extends State<PlanScreen> {
       ],
     ),
   );
+
+  Widget _buildPlanStopMarker(TravelStop stop, int number) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(color: _gold, width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              const Icon(Icons.attractions, color: _gold, size: 24),
+              Text(
+                '$number',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          constraints: const BoxConstraints(maxWidth: 128),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: _gold),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Text(
+            '$number. ${stop.place}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _costSummary(TravelPlan plan) => Container(
     margin: const EdgeInsets.all(16),
