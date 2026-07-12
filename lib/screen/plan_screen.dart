@@ -1067,11 +1067,14 @@ class _PlanScreenState extends State<PlanScreen> {
     ),
   );
 
+<<<<<<< HEAD
   String _plainText(String value) => value
       .replaceAll(RegExp(r'<[^>]*>'), '')
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
 
+=======
+>>>>>>> 6c397c693353695c53510fc68441ab3938283384
   Widget _buildPlanStopMarker(TravelStop stop, int number) {
     return Column(
       mainAxisSize: MainAxisSize.min,
