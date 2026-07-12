@@ -586,17 +586,9 @@ class _PlanScreenState extends State<PlanScreen> {
             ...plan.allStops.indexed.map(
               (e) => Marker(
                 point: LatLng(e.$2.latitude, e.$2.longitude),
-                width: 40,
-                height: 48,
-                child: Column(
-                  children: [
-                    const Icon(Icons.location_on, color: _gold, size: 34),
-                    Text(
-                      '${e.$1 + 1}',
-                      style: const TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ],
-                ),
+                width: 132,
+                height: 88,
+                child: _buildPlanStopMarker(e.$2, e.$1 + 1),
               ),
             ),
           ],
@@ -605,144 +597,545 @@ class _PlanScreenState extends State<PlanScreen> {
     ),
   );
 
-  Widget _stopTile(TravelStop stop, int number) => Container(
-    margin: const EdgeInsets.fromLTRB(16, 5, 16, 7),
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      color: Colors.white,
+  Widget _stopTile(TravelStop stop, int number) => Material(
+    color: Colors.transparent,
+    child: InkWell(
       borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: const Color(0xffeadcc2)),
-    ),
-    child: Column(
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      onTap: () => _showStopDetails(stop, number),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 5, 16, 7),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xffeadcc2)),
+        ),
+        child: Column(
           children: [
-            CircleAvatar(
-              radius: 15,
-              backgroundColor: _gold,
-              foregroundColor: Colors.white,
-              child: Text('$number'),
-            ),
-            const SizedBox(width: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: stop.imageUrl.isEmpty
-                  ? Container(
-                      width: 76,
-                      height: 76,
-                      color: const Color(0xffeee7da),
-                      child: const Icon(Icons.landscape),
-                    )
-                  : Image.network(
-                      ApiService.getFullImageUrl(stop.imageUrl),
-                      width: 76,
-                      height: 76,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        width: 76,
-                        height: 76,
-                        color: const Color(0xffeee7da),
-                        child: const Icon(Icons.landscape),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 15,
+                  backgroundColor: _gold,
+                  foregroundColor: Colors.white,
+                  child: Text('$number'),
+                ),
+                const SizedBox(width: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: stop.imageUrl.isEmpty
+                      ? Container(
+                          width: 76,
+                          height: 76,
+                          color: const Color(0xffeee7da),
+                          child: const Icon(Icons.landscape),
+                        )
+                      : Image.network(
+                          ApiService.getFullImageUrl(stop.imageUrl),
+                          width: 76,
+                          height: 76,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 76,
+                            height: 76,
+                            color: const Color(0xffeee7da),
+                            child: const Icon(Icons.landscape),
+                          ),
+                        ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        stop.place,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
+                      Text(
+                        '${stop.arrivalTime} · ${stop.durationMinutes} min',
+                        style: const TextStyle(
+                          color: Colors.black45,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        stop.activity,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.black54,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  onSelected: (v) {
+                    if (v == 'remove') _removeStop(stop);
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      value: 'remove',
+                      child: Text('Remove from plan'),
                     ),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    stop.place,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  Text(
-                    '${stop.arrivalTime} · ${stop.durationMinutes} min',
-                    style: const TextStyle(color: Colors.black45, fontSize: 12),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    stop.activity,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.black54, height: 1.3),
-                  ),
-                ],
+            const SizedBox(height: 12),
+            if (stop.segments.length > 1)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: stop.segments
+                      .map(
+                        (segment) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xfffff3cc),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${_modeLabel(segment.mode)} · ${segment.estimatedMinutes} min · ฿${_money(segment.estimatedCost)}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xff7a5800),
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
               ),
-            ),
-            PopupMenuButton<String>(
-              onSelected: (v) {
-                if (v == 'remove') _removeStop(stop);
-              },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'remove', child: Text('Remove from plan')),
+            Row(
+              children: [
+                _price(Icons.confirmation_number_outlined, stop.entryCost),
+                const SizedBox(width: 8),
+                _price(
+                  _modeOptions[stop.transportMode] ?? Icons.route,
+                  stop.transportCost,
+                ),
+                const Spacer(),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _gold,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                  ),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PlanNavigationScreen(destination: stop),
+                    ),
+                  ),
+                  icon: const Icon(Icons.navigation, size: 17),
+                  label: const Text('Navigate'),
+                ),
               ],
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        if (stop.segments.length > 1)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: stop.segments
-                  .map(
-                    (segment) => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 6,
-                      ),
+      ),
+    ),
+  );
+
+  void _showStopDetails(TravelStop stop, int number) {
+    final destinationId = int.tryParse(stop.destinationId);
+    final detailFuture = destinationId == null
+        ? null
+        : ApiService.getDestinationDetails(destinationId);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: .78,
+        maxChildSize: .94,
+        minChildSize: .5,
+        builder: (context, controller) => FutureBuilder<Map<String, dynamic>>(
+          future: detailFuture,
+          builder: (context, snapshot) {
+            final detail = snapshot.data?['success'] == true
+                ? Map<String, dynamic>.from(snapshot.data!['data'])
+                : <String, dynamic>{};
+            final gallery = _detailImages(detail, stop.imageUrl);
+            final description = _plainText(
+              '${detail['description'] ?? stop.tip}',
+            );
+            final admissionDetails = _admissionDetails(detail);
+            return Container(
+              decoration: const BoxDecoration(
+                color: _canvas,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              child: ListView(
+                controller: controller,
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
                       decoration: BoxDecoration(
-                        color: const Color(0xfffff3cc),
-                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.black26,
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                      child: Text(
-                        '${_modeLabel(segment.mode)} · ${segment.estimatedMinutes} min · ฿${_money(segment.estimatedCost)}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xff7a5800),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    height: 220,
+                    child: gallery.isEmpty
+                        ? Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xffeee7da),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Icon(Icons.landscape, size: 50),
+                          )
+                        : PageView.builder(
+                            itemCount: gallery.length,
+                            itemBuilder: (_, index) => ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Image.network(
+                                gallery[index],
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: const Color(0xffeee7da),
+                                  child: const Icon(
+                                    Icons.broken_image_outlined,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    '$number. ${stop.place}',
+                    style: const TextStyle(
+                      fontSize: 23,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${stop.arrivalTime} · ${stop.durationMinutes} min · ${_modeLabel(stop.transportMode)}',
+                    style: const TextStyle(color: Colors.black54),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    stop.activity,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (description.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        color: Colors.black54,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 22),
+                  const Text(
+                    'Estimated cost for this stop',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 10),
+                  _detailCostRow(
+                    Icons.confirmation_number_outlined,
+                    'Admission',
+                    stop.entryCost,
+                  ),
+                  if (admissionDetails.isNotEmpty)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xfffff4d2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Admission details from TAT',
+                            style: TextStyle(
+                              color: Color(0xff876100),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          ...admissionDetails.map(
+                            (detail) => Text(
+                              detail,
+                              style: const TextStyle(
+                                color: Color(0xff684d0a),
+                                fontSize: 12,
+                                height: 1.35,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  _detailCostRow(
+                    Icons.restaurant_outlined,
+                    'Food',
+                    stop.foodCost,
+                  ),
+                  _detailCostRow(
+                    _modeOptions[stop.transportMode] ?? Icons.route,
+                    'Transport',
+                    stop.transportCost,
+                  ),
+                  const Divider(height: 28),
+                  _detailCostRow(
+                    Icons.account_balance_wallet_outlined,
+                    'Stop total',
+                    stop.entryCost + stop.foodCost + stop.transportCost,
+                    emphasis: true,
+                  ),
+                  if (stop.segments.isNotEmpty) ...[
+                    const SizedBox(height: 22),
+                    const Text(
+                      'Journey details',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...stop.segments.map(
+                      (segment) => ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          backgroundColor: const Color(0xffffe9a6),
+                          foregroundColor: const Color(0xff856000),
+                          child: Icon(
+                            _modeOptions[segment.mode] ?? Icons.route,
+                          ),
+                        ),
+                        title: Text(
+                          '${_modeLabel(segment.mode)} · ${segment.estimatedMinutes} min',
+                        ),
+                        subtitle: Text(
+                          [
+                            segment.from,
+                            segment.to,
+                          ].where((v) => v.isNotEmpty).join(' → '),
+                        ),
+                        trailing: Text(
+                          '฿${_money(segment.estimatedCost)}',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                       ),
                     ),
-                  )
-                  .toList(),
-            ),
+                  ],
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(backgroundColor: _gold),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              PlanNavigationScreen(destination: stop),
+                        ),
+                      ),
+                      icon: const Icon(Icons.navigation),
+                      label: const Text('Navigate to this place'),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  List<String> _detailImages(Map<String, dynamic> detail, String fallback) {
+    final urls = <String>[
+      if (fallback.isNotEmpty) ApiService.getFullImageUrl(fallback),
+    ];
+    if (detail['image_url'] != null) {
+      urls.add(ApiService.getFullImageUrl('${detail['image_url']}'));
+    }
+    if (detail['images'] is List) {
+      for (final image in detail['images'] as List) {
+        if (image is Map && image['image_url'] != null) {
+          urls.add(ApiService.getFullImageUrl('${image['image_url']}'));
+        }
+      }
+    }
+    return urls.where((url) => url.isNotEmpty).toSet().toList();
+  }
+
+  List<String> _admissionDetails(Map<String, dynamic> detail) {
+    final savedFee = detail['admission_fee'];
+    if (savedFee is Map) {
+      return _formatAdmissionFee(savedFee);
+    }
+    final raw = detail['tat_raw'];
+    if (raw is! Map) return const [];
+    final information = raw['information'];
+    final fee = information is Map && information['fee'] is Map
+        ? information['fee'] as Map
+        : raw['fee'] is Map
+        ? raw['fee'] as Map
+        : null;
+    if (fee == null) return const [];
+    return _formatAdmissionFee(fee);
+  }
+
+  List<String> _formatAdmissionFee(Map fee) {
+    final lines = <String>[];
+    if (fee['thaiAdult'] != null) {
+      lines.add(
+        'Adult: ฿${_money(double.tryParse('${fee['thaiAdult']}') ?? 0)}',
+      );
+    }
+    if (fee['thaiChild'] != null) {
+      lines.add(
+        'Child: ฿${_money(double.tryParse('${fee['thaiChild']}') ?? 0)}',
+      );
+    }
+    if (fee['foreignerAdult'] != null) {
+      lines.add(
+        'Foreigner adult: ฿${_money(double.tryParse('${fee['foreignerAdult']}') ?? 0)}',
+      );
+    }
+    if (fee['foreignerChild'] != null) {
+      lines.add(
+        'Foreigner child: ฿${_money(double.tryParse('${fee['foreignerChild']}') ?? 0)}',
+      );
+    }
+    final detailText = _plainText('${fee['detail'] ?? ''}');
+    if (detailText.isNotEmpty) lines.add(detailText);
+    return lines;
+  }
+
+  Widget _detailCostRow(
+    IconData icon,
+    String label,
+    double cost, {
+    bool emphasis = false,
+  }) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 7),
+    child: Row(
+      children: [
+        Icon(icon, size: 18, color: emphasis ? _gold : Colors.black45),
+        const SizedBox(width: 10),
+        Text(
+          label,
+          style: TextStyle(
+            fontWeight: emphasis ? FontWeight.w800 : FontWeight.w500,
           ),
-        Row(
-          children: [
-            _price(Icons.confirmation_number_outlined, stop.entryCost),
-            const SizedBox(width: 8),
-            _price(
-              _modeOptions[stop.transportMode] ?? Icons.route,
-              stop.transportCost,
-            ),
-            const Spacer(),
-            FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: _gold,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(13),
-                ),
-              ),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => PlanNavigationScreen(destination: stop),
-                ),
-              ),
-              icon: const Icon(Icons.navigation, size: 17),
-              label: const Text('Navigate'),
-            ),
-          ],
+        ),
+        const Spacer(),
+        Text(
+          '฿${_money(cost)}',
+          style: TextStyle(
+            fontWeight: emphasis ? FontWeight.w900 : FontWeight.w700,
+            color: emphasis ? _gold : _ink,
+          ),
         ),
       ],
     ),
   );
+
+  String _plainText(String value) => value
+      .replaceAll(RegExp(r'<[^>]*>'), '')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+
+  Widget _buildPlanStopMarker(TravelStop stop, int number) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(color: _gold, width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              const Icon(Icons.attractions, color: _gold, size: 24),
+              Text(
+                '$number',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          constraints: const BoxConstraints(maxWidth: 128),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: _gold),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Text(
+            '$number. ${stop.place}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _costSummary(TravelPlan plan) => Container(
     margin: const EdgeInsets.all(16),

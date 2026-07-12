@@ -247,6 +247,23 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> getDestinationDetails(
+    int destinationId,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/mobile/destinations/$destinationId'),
+        headers: _getHeaders(),
+      );
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': jsonDecode(response.body)};
+      }
+      return {'success': false, 'message': 'Unable to load place details'};
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
   static Future<Map<String, dynamic>> createTravelPlan(
     Map<String, dynamic> input,
   ) async {

@@ -16,6 +16,7 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
   late final List<Widget?> _screens;
+  final GlobalKey<MapScreenState> _mapScreenKey = GlobalKey<MapScreenState>();
 
   @override
   void initState() {
@@ -32,9 +33,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget _createScreen(int index) {
     switch (index) {
       case 0:
-        return HomeScreen(onProfileTap: () => _selectTab(3));
+        return HomeScreen(
+          onProfileTap: () => _selectTab(3),
+          onExploreDestination: _showDestinationOnMap,
+        );
       case 1:
-        return const MapScreen();
+        return MapScreen(key: _mapScreenKey);
       case 2:
         return const PlanScreen();
       case 3:
@@ -53,6 +57,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   void _onItemTapped(int index) {
     _selectTab(index);
+  }
+
+  void _showDestinationOnMap(int destinationId) {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    _selectTab(1);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _mapScreenKey.currentState?.showDestination(destinationId);
+    });
   }
 
   @override

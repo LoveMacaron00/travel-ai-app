@@ -125,13 +125,9 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
                 markers: [
                   Marker(
                     point: destination,
-                    width: 48,
-                    height: 48,
-                    child: const Icon(
-                      Icons.location_on,
-                      size: 44,
-                      color: Color(0xffd99b00),
-                    ),
+                    width: 130,
+                    height: 88,
+                    child: _buildDestinationMarker(),
                   ),
                   if (_position != null)
                     Marker(
@@ -242,4 +238,60 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
     elevation: 3,
     child: IconButton(onPressed: onTap, icon: Icon(icon)),
   );
+
+  Widget _buildDestinationMarker() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(color: const Color(0xffe9ad0c), width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.attractions,
+            color: Color(0xffe9ad0c),
+            size: 24,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          constraints: const BoxConstraints(maxWidth: 126),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: const Color(0xffe9ad0c)),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Text(
+            widget.destination.place,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

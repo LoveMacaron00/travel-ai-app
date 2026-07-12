@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:myapp/model/place_marker.dart';
+import 'package:myapp/model/travel_plan.dart';
+import 'package:myapp/screen/destination_detail_screen.dart';
+import 'package:myapp/screen/plan_navigation_screen.dart';
 import 'package:myapp/services/api_service.dart';
 import 'package:myapp/services/location_service.dart';
 
@@ -9,10 +12,10 @@ class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
   @override
-  State<MapScreen> createState() => _MapScreenState();
+  State<MapScreen> createState() => MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+class MapScreenState extends State<MapScreen> {
   final LocationService _locationService = LocationService.instance;
   final MapController _mapController = MapController();
   final TextEditingController _searchController = TextEditingController();
@@ -26,6 +29,7 @@ class _MapScreenState extends State<MapScreen> {
   List<PlaceMarker> _filteredPlaces = [];
   List<PlaceMarker> _suggestions = [];
   bool _showSuggestions = false;
+  String? _pendingDestinationId;
 
   String _selectedCategory = 'all';
   final List<Map<String, String>> _categories = [
@@ -177,11 +181,73 @@ class _MapScreenState extends State<MapScreen> {
             _places = fetchedPlaces;
             _filteredPlaces = List.from(fetchedPlaces);
           });
+          if (_pendingDestinationId != null) {
+            showDestination(int.tryParse(_pendingDestinationId!) ?? -1);
+          }
         }
       }
     } catch (e) {
       debugPrint('Error loading destinations: $e');
     }
+  }
+
+  void showDestination(int destinationId) {
+    PlaceMarker? place;
+    for (final item in _places) {
+      if (item.id == destinationId.toString()) {
+        place = item;
+        break;
+      }
+    }
+    if (place == null) {
+      _pendingDestinationId = destinationId.toString();
+      return;
+    }
+    final selectedPlace = place;
+    _pendingDestinationId = null;
+    _searchController.clear();
+    _searchFocus.unfocus();
+    setState(() {
+      _selectedCategory = 'all';
+      _selectedMarker = selectedPlace;
+      _filteredPlaces = List.from(_places);
+      _suggestions = [];
+      _showSuggestions = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _mapController.move(
+          LatLng(selectedPlace.latitude, selectedPlace.longitude),
+          16.0,
+        );
+      }
+    });
+  }
+
+  void _navigateTo(PlaceMarker place) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PlanNavigationScreen(
+          destination: TravelStop(
+            destinationId: place.id,
+            place: place.title,
+            activity: place.description,
+            latitude: place.latitude,
+            longitude: place.longitude,
+            imageUrl: place.imageUrl,
+            arrivalTime: '',
+            durationMinutes: 0,
+            entryCost: 0,
+            foodCost: 0,
+            transportMode: 'car',
+            transportCost: 0,
+            tip: '',
+            segments: const [],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _getCurrentLocation() async {
@@ -668,99 +734,152 @@ class _MapScreenState extends State<MapScreen> {
               left: 16.0,
               right: 16.0,
               bottom: 16.0,
-              child: Card(
-                elevation: 8.0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.0),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12.0),
-                        child: Image.network(
-                          _selectedMarker!.imageUrl,
-                          width: 80.0,
-                          height: 80.0,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                                width: 80,
-                                height: 80,
-                                color: Colors.grey.shade300,
-                                child: const Icon(
-                                  Icons.image_not_supported,
-                                  color: Colors.white,
-                                ),
-                              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () {
+                    final place = _selectedMarker!;
+                    final id = int.tryParse(place.id);
+                    if (id == null) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => DestinationDetailScreen(
+                          destinationId: id,
+                          fallbackName: place.title,
+                          fallbackImageUrl: place.imageUrl,
                         ),
                       ),
-                      const SizedBox(width: 12.0),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    _selectedMarker!.title,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16.0,
+                    );
+                  },
+                  child: Card(
+                    elevation: 8.0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16.0),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12.0),
+                            child: Image.network(
+                              _selectedMarker!.imageUrl,
+                              width: 80.0,
+                              height: 80.0,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                    width: 80,
+                                    height: 80,
+                                    color: Colors.grey.shade300,
+                                    child: const Icon(
+                                      Icons.image_not_supported,
+                                      color: Colors.white,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                            ),
+                          ),
+                          const SizedBox(width: 12.0),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        _selectedMarker!.title,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16.0,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () => setState(
+                                        () => _selectedMarker = null,
+                                      ),
+                                      child: const Icon(
+                                        Icons.close,
+                                        size: 18,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    _getCategoryLabel(
+                                      _selectedMarker!.category,
+                                    ),
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.orange,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
-                                GestureDetector(
-                                  onTap: () =>
-                                      setState(() => _selectedMarker = null),
-                                  child: const Icon(
-                                    Icons.close,
-                                    size: 18,
-                                    color: Colors.grey,
+                                const SizedBox(height: 6.0),
+                                Text(
+                                  _selectedMarker!.description,
+                                  style: const TextStyle(
+                                    color: Colors.black54,
+                                    fontSize: 13.0,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 8),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: FilledButton.icon(
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: const Color(0xffe9ad0c),
+                                      minimumSize: const Size(0, 36),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                      ),
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    onPressed: () =>
+                                        _navigateTo(_selectedMarker!),
+                                    icon: const Icon(
+                                      Icons.navigation_rounded,
+                                      size: 16,
+                                    ),
+                                    label: const Text(
+                                      'Navigate',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                _getCategoryLabel(_selectedMarker!.category),
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.orange,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 6.0),
-                            Text(
-                              _selectedMarker!.description,
-                              style: const TextStyle(
-                                color: Colors.black54,
-                                fontSize: 13.0,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
