@@ -20,7 +20,6 @@ class PlanScreen extends StatefulWidget {
 
 class _PlanScreenState extends State<PlanScreen> {
   final LocationService _locationService = LocationService.instance;
-  final _destination = TextEditingController();
   final _map = MapController();
   DateTimeRange? _dates;
   double _budget = 30000;
@@ -62,7 +61,6 @@ class _PlanScreenState extends State<PlanScreen> {
   @override
   void dispose() {
     _locationService.removeListener(_onSharedLocationChanged);
-    _destination.dispose();
     super.dispose();
   }
 
@@ -106,9 +104,6 @@ class _PlanScreenState extends State<PlanScreen> {
   }
 
   Map<String, dynamic> _input() => {
-    'destination': _destination.text.trim().isEmpty
-        ? 'Near current location'
-        : _destination.text.trim(),
     'days': _days,
     'budget': _budget.round(),
     'currency': 'THB',
@@ -263,14 +258,6 @@ class _PlanScreenState extends State<PlanScreen> {
           child: Column(
             children: [
               _locationTile(),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _destination,
-                decoration: _inputDecoration(
-                  'Area or province (optional)',
-                  Icons.place_outlined,
-                ),
-              ),
               const SizedBox(height: 12),
               InkWell(
                 onTap: _pickDates,
