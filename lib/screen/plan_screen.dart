@@ -47,9 +47,6 @@ class _PlanScreenState extends State<PlanScreen> {
   ];
   static const _modeOptions = <String, IconData>{
     'car': Icons.directions_car,
-    'train': Icons.train,
-    'flight': Icons.flight,
-    'boat': Icons.directions_boat,
     'walking': Icons.directions_walk,
   };
 
@@ -1472,8 +1469,7 @@ class _PlanScreenState extends State<PlanScreen> {
     RegExp(r'\B(?=(\d{3})+(?!\d))'),
     (m) => ',',
   );
-  String _modeLabel(String v) =>
-      v == 'flight' ? 'Plane' : '${v[0].toUpperCase()}${v.substring(1)}';
+  String _modeLabel(String v) => '${v[0].toUpperCase()}${v.substring(1)}';
   String _title(String v) => v
       .split(RegExp(r'[_ ]'))
       .map((s) => s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}')
