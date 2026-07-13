@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:myapp/config/app_config.dart';
 import 'package:myapp/model/travel_plan.dart';
 import 'package:myapp/services/api_service.dart';
 
@@ -108,7 +109,7 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
             options: MapOptions(initialCenter: destination, initialZoom: 14),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: AppConfig.mapTileUrl,
                 userAgentPackageName: 'com.example.myapp',
               ),
               if (_route.isNotEmpty)

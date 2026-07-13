@@ -1,16 +1,19 @@
-# myapp
+# GoThai mobile app
 
-A new Flutter project.
+## Environment
 
-## Getting Started
+Copy `.env.example` to `.env`, then run Flutter with the compile-time environment file:
 
-This project is a starting point for a Flutter application.
+```powershell
+Copy-Item .env.example .env
+flutter run --dart-define-from-file=.env
+```
 
-A few resources to get you started if this is your first Flutter project:
+`API_BASE_URL` defaults to the Android emulator host (`10.0.2.2`). Set it to the
+LAN IP or deployed API URL when running on a physical device or in production.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Build commands must receive the same environment file:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```powershell
+flutter build apk --dart-define-from-file=.env
+```

@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:myapp/config/app_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://10.0.2.2:5000/api';
-  static const String defaultAvatarUrl =
-      'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
+  static const String baseUrl = AppConfig.apiBaseUrl;
+  static const String defaultAvatarUrl = AppConfig.defaultAvatarUrl;
 
   static String? token;
   static Map<String, dynamic>? currentUser;
@@ -341,7 +341,7 @@ class ApiService {
         : 'driving';
     try {
       final uri = Uri.parse(
-        'https://router.project-osrm.org/route/v1/$profile/$fromLng,$fromLat;$toLng,$toLat?overview=full&geometries=geojson',
+        '${AppConfig.osrmBaseUrl}/route/v1/$profile/$fromLng,$fromLat;$toLng,$toLat?overview=full&geometries=geojson',
       );
       final response = await http.get(uri);
       if (response.statusCode != 200) return const [];
@@ -353,36 +353,6 @@ class ApiService {
           .toList();
     } catch (_) {
       return const [];
-    }
-  }
-
-  static Future<Map<String, dynamic>> askTravelAssistant({
-    required String message,
-    String? province,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/mobile/chat'),
-        headers: _getHeaders(),
-        body: jsonEncode({
-          'message': message,
-          if (province != null && province.isNotEmpty) 'province': province,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        return {'success': true, 'data': jsonDecode(response.body)};
-      }
-
-      String errorMessage = 'Failed to ask travel assistant';
-      try {
-        final error = jsonDecode(response.body);
-        errorMessage = error['message'] ?? errorMessage;
-      } catch (_) {}
-
-      return {'success': false, 'message': errorMessage};
-    } catch (e) {
-      return {'success': false, 'message': 'Network error: $e'};
     }
   }
 

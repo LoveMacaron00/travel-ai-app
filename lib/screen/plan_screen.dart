@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:myapp/config/app_config.dart';
 import 'package:myapp/model/place_marker.dart';
 import 'package:myapp/model/travel_plan.dart';
 import 'package:myapp/screen/plan_navigation_screen.dart';
@@ -567,7 +568,7 @@ class _PlanScreenState extends State<PlanScreen> {
       ),
       children: [
         TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          urlTemplate: AppConfig.mapTileUrl,
           userAgentPackageName: 'com.example.myapp',
         ),
         if (_route.isNotEmpty)
