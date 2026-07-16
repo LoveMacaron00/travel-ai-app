@@ -1,0 +1,127 @@
+import 'dart:convert';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:myapp/services/api_client.dart';
+import 'package:myapp/services/auth_service.dart';
+import 'package:myapp/services/destination_service.dart';
+import 'package:myapp/services/session_store.dart';
+
+class _MemorySessionStore implements SessionStore {
+  StoredSession stored = const StoredSession();
+
+  @override
+  Future<StoredSession> load() async => stored;
+
+  @override
+  Future<void> save(String token, Map<String, dynamic> user) async {
+    stored = StoredSession(token: token, user: user);
+  }
+
+  @override
+  Future<void> saveUser(Map<String, dynamic> user) async {
+    stored = StoredSession(token: stored.token, user: user);
+  }
+
+  @override
+  Future<void> clear() async => stored = const StoredSession();
+}
+
+void main() {
+  group('ApiClient media policy', () {
+    late SessionState session;
+    late ApiClient client;
+
+    setUp(() {
+      session = SessionState()..token = 'user-token';
+      client = ApiClient(
+        baseUrl: 'https://api.example.com/api',
+        tokenProvider: () => session.token,
+      );
+    });
+
+    test('sends token only to private uploads on the API origin', () {
+      expect(
+        client.mediaHeaders('https://api.example.com/uploads/profile.jpg'),
+        {'Authorization': 'Bearer user-token'},
+      );
+      expect(
+        client.mediaHeaders('https://images.tat.or.th/place.jpg'),
+        isEmpty,
+      );
+      expect(client.mediaHeaders('/uploads/profile.jpg'), {
+        'Authorization': 'Bearer user-token',
+      });
+    });
+  });
+
+  test(
+    'DestinationService caches the full list and serves limited views',
+    () async {
+      var requests = 0;
+      final client = ApiClient(
+        baseUrl: 'https://api.example.com/api',
+        tokenProvider: () => null,
+        httpClient: MockClient((request) async {
+          requests++;
+          return http.Response(
+            jsonEncode({
+              'data': [
+                {'id': 1},
+                {'id': 2},
+                {'id': 3},
+              ],
+            }),
+            200,
+          );
+        }),
+      );
+      final service = DestinationService(client: client);
+
+      final full = await service.getDestinations();
+      final limited = await service.getDestinations(limit: 2);
+
+      expect(full['success'], isTrue);
+      expect((limited['data'] as List), hasLength(2));
+      expect(limited['cached'], isTrue);
+      expect(requests, 1);
+    },
+  );
+
+  test(
+    'AuthService persists a successful login through its store boundary',
+    () async {
+      final session = SessionState();
+      final store = _MemorySessionStore();
+      final client = ApiClient(
+        baseUrl: 'https://api.example.com/api',
+        tokenProvider: () => session.token,
+        httpClient: MockClient((request) async {
+          expect(request.url.path, '/api/users/login');
+          return http.Response(
+            jsonEncode({
+              'token': 'signed-token',
+              'user': {'id': 7, 'email': 'traveler@example.com'},
+            }),
+            200,
+          );
+        }),
+      );
+      final service = AuthService(
+        client: client,
+        session: session,
+        store: store,
+      );
+
+      final result = await service.login(
+        email: 'traveler@example.com',
+        password: 'secret',
+      );
+
+      expect(result['success'], isTrue);
+      expect(session.token, 'signed-token');
+      expect(store.stored.user?['id'], 7);
+    },
+  );
+}

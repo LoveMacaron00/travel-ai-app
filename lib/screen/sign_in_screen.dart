@@ -3,7 +3,7 @@ import 'package:form_field_validator/form_field_validator.dart';
 import 'package:myapp/model/profile.dart';
 import 'package:myapp/screen/sign_up_screen.dart';
 import 'package:myapp/screen/main_navigation_screen.dart';
-import 'package:myapp/services/api_service.dart';
+import 'package:myapp/services/app_services.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -31,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final loginResult = await ApiService.loginUser(
+      final loginResult = await AppServices.auth.login(
         email: profile.email!,
         password: profile.password!,
       );

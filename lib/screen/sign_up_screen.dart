@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:form_field_validator/form_field_validator.dart';
 import 'package:myapp/model/profile.dart';
 import 'package:myapp/screen/main_navigation_screen.dart';
-import 'package:myapp/services/api_service.dart';
+import 'package:myapp/services/app_services.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -26,7 +26,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final registerResult = await ApiService.registerUser(
+      final registerResult = await AppServices.auth.register(
         email: profile.email!,
         password: profile.password!,
       );

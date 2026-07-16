@@ -1,4 +1,4 @@
-import 'package:myapp/services/api_service.dart';
+import 'package:myapp/services/app_services.dart';
 
 /// รวมกติกาแปลงข้อมูลสถานที่จาก API ให้พร้อมแสดงผลใน UI
 ///
@@ -14,15 +14,15 @@ List<String> collectDestinationImages(
   String fallback = '',
 }) {
   final urls = <String>[
-    if (fallback.isNotEmpty) ApiService.getFullImageUrl(fallback),
+    if (fallback.isNotEmpty) AppServices.media.fullUrl(fallback),
   ];
   if (detail['image_url'] != null) {
-    urls.add(ApiService.getFullImageUrl('${detail['image_url']}'));
+    urls.add(AppServices.media.fullUrl('${detail['image_url']}'));
   }
   if (detail['images'] is List) {
     for (final image in detail['images'] as List) {
       if (image is Map && image['image_url'] != null) {
-        urls.add(ApiService.getFullImageUrl('${image['image_url']}'));
+        urls.add(AppServices.media.fullUrl('${image['image_url']}'));
       }
     }
   }

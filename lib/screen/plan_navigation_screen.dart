@@ -5,7 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:myapp/config/app_config.dart';
 import 'package:myapp/model/travel_plan.dart';
-import 'package:myapp/services/api_service.dart';
+import 'package:myapp/services/app_services.dart';
 
 class PlanNavigationScreen extends StatefulWidget {
   final TravelStop destination;
@@ -70,7 +70,7 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
     });
     _map.move(next, 16);
     if (refreshRoute || _route.isEmpty) {
-      final raw = await ApiService.getRoadRoute(
+      final raw = await AppServices.trips.getRoadRoute(
         fromLat: p.latitude,
         fromLng: p.longitude,
         toLat: widget.destination.latitude,

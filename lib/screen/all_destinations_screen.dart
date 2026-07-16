@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/screen/destination_detail_screen.dart';
-import 'package:myapp/services/api_service.dart';
+import 'package:myapp/services/app_services.dart';
 
 class AllDestinationsScreen extends StatefulWidget {
   final ValueChanged<int> onExploreDestination;
@@ -23,7 +23,9 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
   }
 
   Future<List<Map<String, dynamic>>> _loadDestinations() async {
-    final result = await ApiService.getDestinations(forceRefresh: true);
+    final result = await AppServices.destinations.getDestinations(
+      forceRefresh: true,
+    );
     if (result['success'] == true && result['data'] is List) {
       return (result['data'] as List)
           .whereType<Map>()
@@ -205,6 +207,7 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
                   height: 92,
                   child: Image.network(
                     image,
+                    headers: AppServices.media.headersFor(image),
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(
                       color: const Color(0xffeee8df),

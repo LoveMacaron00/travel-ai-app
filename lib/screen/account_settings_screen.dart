@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/services/api_service.dart';
+import 'package:myapp/services/app_services.dart';
+import 'package:myapp/widgets/media_image.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AccountSettingsScreen extends StatefulWidget {
@@ -23,7 +24,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   }
 
   void _loadUserData() {
-    final user = ApiService.currentUser;
+    final user = AppServices.auth.currentUser;
     if (user != null) {
       setState(() {
         _username = user['username'] ?? '';
@@ -41,9 +42,11 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     final finalUsername = username ?? _username;
     final finalProfileImageUrl = profileImageUrl ?? _profileImageUrl;
 
-    final result = await ApiService.updateUserProfile(
+    final result = await AppServices.auth.updateProfile(
       username: finalUsername,
-      interests: List<String>.from(ApiService.currentUser?['interests'] ?? []),
+      interests: List<String>.from(
+        AppServices.auth.currentUser?['interests'] ?? [],
+      ),
       profileImageUrl: finalProfileImageUrl,
     );
 
@@ -76,7 +79,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
 
       setState(() => _isLoading = true);
 
-      final result = await ApiService.uploadProfileImageFile(image.path);
+      final result = await AppServices.auth.uploadProfileImage(image.path);
 
       if (mounted) {
         setState(() => _isLoading = false);
@@ -280,7 +283,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final String userEmail = ApiService.currentUser?['email'] ?? '';
+    final String userEmail = AppServices.auth.currentUser?['email'] ?? '';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -344,12 +347,12 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                           child: CircleAvatar(
                             radius: 56,
                             backgroundColor: Colors.grey.shade200,
-                            backgroundImage: NetworkImage(
-                              ApiService.getFullImageUrl(
-                                    _profileImageUrl,
-                                  ).isNotEmpty
-                                  ? ApiService.getFullImageUrl(_profileImageUrl)
-                                  : ApiService.defaultAvatarUrl,
+                            backgroundImage: mediaImageProvider(
+                              AppServices.media
+                                      .fullUrl(_profileImageUrl)
+                                      .isNotEmpty
+                                  ? AppServices.media.fullUrl(_profileImageUrl)
+                                  : AppServices.media.defaultAvatarUrl,
                             ),
                           ),
                         ),

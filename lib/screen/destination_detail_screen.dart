@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/services/api_service.dart';
+import 'package:myapp/services/app_services.dart';
 import 'package:myapp/utils/destination_display.dart';
 
 /// แสดงรายละเอียดจาก schema กลางของ mobile API และยังรองรับข้อมูล TAT รุ่นเก่า
@@ -31,7 +31,9 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _detailFuture = ApiService.getDestinationDetails(widget.destinationId);
+    _detailFuture = AppServices.destinations.getDestinationDetails(
+      widget.destinationId,
+    );
   }
 
   @override
@@ -101,6 +103,9 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                                       setState(() => _imageIndex = index),
                                   itemBuilder: (_, index) => Image.network(
                                     images[index],
+                                    headers: AppServices.media.headersFor(
+                                      images[index],
+                                    ),
                                     fit: BoxFit.cover,
                                     errorBuilder: (_, __, ___) => Container(
                                       color: const Color(0xffe9e2d7),

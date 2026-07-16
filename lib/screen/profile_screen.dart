@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:myapp/services/api_service.dart';
+import 'package:myapp/services/app_services.dart';
+import 'package:myapp/widgets/media_image.dart';
 import 'package:myapp/screen/welcome_screen.dart';
 import 'package:myapp/screen/account_settings_screen.dart';
 
@@ -28,7 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _loadUserData() {
-    final user = ApiService.currentUser;
+    final user = AppServices.auth.currentUser;
     if (user != null) {
       _username = user['username'] ?? '';
       _profileImageUrl = user['profile_image_url'] ?? '';
@@ -55,7 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final finalInterests = interests ?? _interests;
 
-    final result = await ApiService.updateUserProfile(
+    final result = await AppServices.auth.updateProfile(
       username: _username,
       interests: finalInterests,
       profileImageUrl: _profileImageUrl,
@@ -170,7 +171,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     if (confirm == true) {
-      await ApiService.clearSession();
+      await AppServices.auth.clearSession();
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
@@ -184,7 +185,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     const Color brandGold = Color(0xFFF4C025);
-    final String userEmail = ApiService.currentUser?['email'] ?? '';
+    final String userEmail = AppServices.auth.currentUser?['email'] ?? '';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -242,10 +243,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: CircleAvatar(
                   radius: 54,
                   backgroundColor: Colors.grey,
-                  backgroundImage: NetworkImage(
-                    ApiService.getFullImageUrl(_profileImageUrl).isNotEmpty
-                        ? ApiService.getFullImageUrl(_profileImageUrl)
-                        : ApiService.defaultAvatarUrl,
+                  backgroundImage: mediaImageProvider(
+                    AppServices.media.fullUrl(_profileImageUrl).isNotEmpty
+                        ? AppServices.media.fullUrl(_profileImageUrl)
+                        : AppServices.media.defaultAvatarUrl,
                   ),
                 ),
               ),

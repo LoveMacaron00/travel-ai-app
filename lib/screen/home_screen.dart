@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:myapp/screen/all_destinations_screen.dart';
 import 'package:myapp/screen/chatbot_screen.dart';
 import 'package:myapp/screen/destination_detail_screen.dart';
-import 'package:myapp/services/api_service.dart';
+import 'package:myapp/services/app_services.dart';
+import 'package:myapp/widgets/media_image.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback onProfileTap;
@@ -28,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<List<Map<String, dynamic>>> _loadDestinations() async {
-    final result = await ApiService.getDestinations(limit: 3);
+    final result = await AppServices.destinations.getDestinations(limit: 3);
     if (result['success'] == true && result['data'] is List) {
       return List<Map<String, dynamic>>.from(
         (result['data'] as List).whereType<Map>().map(
@@ -114,16 +115,20 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: CircleAvatar(
                               radius: 26,
                               backgroundColor: Colors.white,
-                              backgroundImage: NetworkImage(
-                                ApiService.getFullImageUrl(
-                                      ApiService
-                                          .currentUser?['profile_image_url'],
-                                    ).isNotEmpty
-                                    ? ApiService.getFullImageUrl(
-                                        ApiService
+                              backgroundImage: mediaImageProvider(
+                                AppServices.media
+                                        .fullUrl(
+                                          AppServices
+                                              .auth
+                                              .currentUser?['profile_image_url'],
+                                        )
+                                        .isNotEmpty
+                                    ? AppServices.media.fullUrl(
+                                        AppServices
+                                            .auth
                                             .currentUser?['profile_image_url'],
                                       )
-                                    : ApiService.defaultAvatarUrl,
+                                    : AppServices.media.defaultAvatarUrl,
                               ),
                             ),
                           ),
@@ -347,6 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Positioned.fill(
                     child: Image.network(
                       image,
+                      headers: AppServices.media.headersFor(image),
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         color: Colors.grey.shade300,
