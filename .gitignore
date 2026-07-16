@@ -36,6 +36,14 @@ migrate_working_dir/
 .env.*
 !.env.example
 
+# Private keys and service-account credentials
+*.pem
+*.key
+*.p12
+*.pfx
+*service-account*.json
+*credentials*.json
+
 # Symbolication related
 app.*.symbols
 

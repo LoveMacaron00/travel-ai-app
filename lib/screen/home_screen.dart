@@ -203,9 +203,19 @@ class _HomeScreenState extends State<HomeScreen> {
                               },
                             ),
                             _buildFeatureItem(
-                              Icons.menu_book,
-                              "My Diary",
+                              Icons.document_scanner_outlined,
+                              "Scan with AI",
                               brandGold,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const ChatbotScreen(
+                                      openScannerOnStart: true,
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),

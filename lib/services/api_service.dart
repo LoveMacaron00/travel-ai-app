@@ -436,4 +436,51 @@ class ApiService {
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
+
+  static Future<Map<String, dynamic>> sendChatImage({
+    required int sessionId,
+    required String filePath,
+    required String mode,
+    double? latitude,
+    double? longitude,
+  }) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/chat/sessions/$sessionId/images'),
+      );
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      request.fields['mode'] = mode;
+      if (latitude != null) {
+        request.fields['latitude'] = latitude.toString();
+      }
+      if (longitude != null) {
+        request.fields['longitude'] = longitude.toString();
+      }
+      request.files.add(await http.MultipartFile.fromPath('image', filePath));
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      Map<String, dynamic>? payload;
+      try {
+        payload = Map<String, dynamic>.from(jsonDecode(response.body));
+      } catch (_) {}
+
+      if (response.statusCode == 200 && payload != null) {
+        return {'success': true, 'data': payload};
+      }
+      return {
+        'success': false,
+        'message':
+            payload?['message'] ??
+            (response.statusCode == 413
+                ? 'The image is too large. Please use a photo under 2 MB.'
+                : 'The photo could not be analyzed.'),
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
 }

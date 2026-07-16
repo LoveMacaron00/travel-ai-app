@@ -49,5 +49,9 @@
 	<string>This app needs access to location to show your current location on the map.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>This app needs access to location to show your current location on the map.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Thai Go uses the camera to identify places, translate Thai signs, and explain Thai food.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Thai Go uses selected photos to identify places, translate Thai signs, and explain Thai food.</string>
 </dict>
 </plist>
