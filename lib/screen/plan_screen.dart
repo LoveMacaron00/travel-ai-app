@@ -7,11 +7,13 @@ import 'package:myapp/model/travel_plan.dart';
 import 'package:myapp/screen/plan_navigation_screen.dart';
 import 'package:myapp/services/api_service.dart';
 import 'package:myapp/services/location_service.dart';
+import 'package:myapp/utils/destination_display.dart';
 
 const _gold = Color(0xffe9ad0c);
 const _ink = Color(0xff292620);
 const _canvas = Color(0xfff7f2e8);
 
+/// สร้างและแสดงแผนเที่ยวจาก AI ก่อนส่งจุดแวะไปยังหน้าจอนำทาง
 class PlanScreen extends StatefulWidget {
   const PlanScreen({super.key});
   @override
@@ -757,7 +759,7 @@ class _PlanScreenState extends State<PlanScreen> {
                 ? Map<String, dynamic>.from(snapshot.data!['data'])
                 : <String, dynamic>{};
             final gallery = _detailImages(detail, stop.imageUrl);
-            final description = _plainText(
+            final description = stripHtmlText(
               '${detail['description'] ?? stop.tip}',
             );
             final admissionDetails = _admissionDetails(detail);
@@ -963,35 +965,11 @@ class _PlanScreenState extends State<PlanScreen> {
   }
 
   List<String> _detailImages(Map<String, dynamic> detail, String fallback) {
-    final urls = <String>[
-      if (fallback.isNotEmpty) ApiService.getFullImageUrl(fallback),
-    ];
-    if (detail['image_url'] != null) {
-      urls.add(ApiService.getFullImageUrl('${detail['image_url']}'));
-    }
-    if (detail['images'] is List) {
-      for (final image in detail['images'] as List) {
-        if (image is Map && image['image_url'] != null) {
-          urls.add(ApiService.getFullImageUrl('${image['image_url']}'));
-        }
-      }
-    }
-    return urls.where((url) => url.isNotEmpty).toSet().toList();
+    return collectDestinationImages(detail, fallback: fallback);
   }
 
   List<String> _admissionDetails(Map<String, dynamic> detail) {
-    final savedFee = detail['admission_fee'];
-    if (savedFee is Map) {
-      return _formatAdmissionFee(savedFee);
-    }
-    final raw = detail['tat_raw'];
-    if (raw is! Map) return const [];
-    final information = raw['information'];
-    final fee = information is Map && information['fee'] is Map
-        ? information['fee'] as Map
-        : raw['fee'] is Map
-        ? raw['fee'] as Map
-        : null;
+    final fee = resolveAdmissionFee(detail);
     if (fee == null) return const [];
     return _formatAdmissionFee(fee);
   }
@@ -1018,7 +996,7 @@ class _PlanScreenState extends State<PlanScreen> {
         'Foreigner child: ฿${_money(double.tryParse('${fee['foreignerChild']}') ?? 0)}',
       );
     }
-    final detailText = _plainText('${fee['detail'] ?? ''}');
+    final detailText = stripHtmlText('${fee['detail'] ?? ''}');
     if (detailText.isNotEmpty) lines.add(detailText);
     return lines;
   }
@@ -1051,11 +1029,6 @@ class _PlanScreenState extends State<PlanScreen> {
       ],
     ),
   );
-
-  String _plainText(String value) => value
-      .replaceAll(RegExp(r'<[^>]*>'), '')
-      .replaceAll(RegExp(r'\s+'), ' ')
-      .trim();
 
   Widget _buildPlanStopMarker(TravelStop stop, int number) {
     return Column(

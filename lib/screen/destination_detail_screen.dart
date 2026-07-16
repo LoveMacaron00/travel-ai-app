@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/services/api_service.dart';
+import 'package:myapp/utils/destination_display.dart';
 
+/// แสดงรายละเอียดจาก schema กลางของ mobile API และยังรองรับข้อมูล TAT รุ่นเก่า
 class DestinationDetailScreen extends StatefulWidget {
   final int destinationId;
   final String fallbackName;
@@ -50,9 +52,12 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
               : <String, dynamic>{};
           final name = '${detail['name'] ?? widget.fallbackName}';
           final province = '${detail['province'] ?? 'Thailand'}';
-          final images = _images(detail);
-          final description = _plainText('${detail['description'] ?? ''}');
-          final hours = _openingHours(detail);
+          final images = collectDestinationImages(
+            detail,
+            fallback: widget.fallbackImageUrl,
+          );
+          final description = stripHtmlText('${detail['description'] ?? ''}');
+          final hours = formatDestinationOpeningHours(detail);
           final fee = _fee(detail);
 
           return CustomScrollView(
@@ -90,8 +95,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                               child: IgnorePointer(
                                 child: PageView.builder(
                                   controller: _galleryController,
-                                  physics:
-                                      const NeverScrollableScrollPhysics(),
+                                  physics: const NeverScrollableScrollPhysics(),
                                   itemCount: images.length,
                                   onPageChanged: (index) =>
                                       setState(() => _imageIndex = index),
@@ -459,65 +463,9 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
     ),
   );
 
-  List<String> _images(Map<String, dynamic> detail) {
-    final images = <String>[
-      if (widget.fallbackImageUrl.isNotEmpty)
-        ApiService.getFullImageUrl(widget.fallbackImageUrl),
-    ];
-    if (detail['image_url'] != null) {
-      images.add(ApiService.getFullImageUrl('${detail['image_url']}'));
-    }
-    if (detail['images'] is List) {
-      for (final image in detail['images'] as List) {
-        if (image is Map && image['image_url'] != null) {
-          images.add(ApiService.getFullImageUrl('${image['image_url']}'));
-        }
-      }
-    }
-    return images.where((image) => image.isNotEmpty).toSet().toList();
-  }
-
-  String _openingHours(Map<String, dynamic> detail) {
-    final raw = detail['opening_hours'];
-    if (raw is List && raw.isNotEmpty) {
-      final entries = raw
-          .whereType<Map>()
-          .map((item) {
-            final day = '${item['day'] ?? ''}';
-            final open = '${item['open'] ?? item['openTime'] ?? ''}';
-            final close = '${item['close'] ?? item['closeTime'] ?? ''}';
-            return [
-              day,
-              if (open.isNotEmpty) open,
-              if (close.isNotEmpty) close,
-            ].join(' ').trim();
-          })
-          .where((line) => line.isNotEmpty)
-          .toList();
-      if (entries.isNotEmpty) return entries.join('\n');
-    }
-    final open = '${detail['opening_time'] ?? ''}';
-    final close = '${detail['closing_time'] ?? ''}';
-    return [
-      open,
-      close,
-    ].where((time) => time.isNotEmpty && time != '00:00').join(' – ');
-  }
-
   Map<String, String> _fee(Map<String, dynamic> detail) {
-    final directFee = detail['admission_fee'];
-    final raw = detail['tat_raw'];
-    final nested = raw is Map && raw['information'] is Map
-        ? raw['information']['fee']
-        : null;
-    final fee = directFee is Map && directFee.isNotEmpty
-        ? directFee
-        : nested is Map
-        ? nested
-        : raw is Map && raw['fee'] is Map
-        ? raw['fee']
-        : null;
-    if (fee is! Map) return const {};
+    final fee = resolveAdmissionFee(detail);
+    if (fee == null) return const {};
     final values = <String, String>{};
     const labels = {
       'thaiAdult': 'Thai adult',
@@ -529,13 +477,8 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
       final value = fee[entry.key];
       if (value != null && '$value'.isNotEmpty) values[entry.value] = '฿$value';
     }
-    final detailText = _plainText('${fee['detail'] ?? ''}');
+    final detailText = stripHtmlText('${fee['detail'] ?? ''}');
     if (detailText.isNotEmpty) values['Conditions'] = detailText;
     return values;
   }
-
-  String _plainText(String value) => value
-      .replaceAll(RegExp(r'<[^>]*>'), '')
-      .replaceAll(RegExp(r'\s+'), ' ')
-      .trim();
 }

@@ -3,6 +3,10 @@ import 'package:http/http.dart' as http;
 import 'package:myapp/config/app_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Facade สำหรับ HTTP และ session ของ mobile app
+///
+/// UI ควรเรียกผ่านคลาสนี้แทนการประกอบ URL/header เอง เพื่อให้ token, error body,
+/// cache และ SSE ใช้กติกาเดียวกันทั้งแอป
 class ApiService {
   static const String baseUrl = AppConfig.apiBaseUrl;
   static const String defaultAvatarUrl = AppConfig.defaultAvatarUrl;
@@ -12,6 +16,21 @@ class ApiService {
   static List<dynamic>? _destinationCache;
   static DateTime? _destinationCacheTime;
 
+  /// แปลง response ที่คาดว่าเป็น JSON object โดยไม่ให้ error body ที่ไม่ใช่ JSON
+  /// ทำให้ flow หลักล้ม เช่น proxy ส่ง HTML กลับมาแทนข้อความผิดพลาด
+  static Map<String, dynamic>? _decodeMap(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      return decoded is Map ? Map<String, dynamic>.from(decoded) : null;
+    } on FormatException {
+      return null;
+    }
+  }
+
+  static String _responseMessage(http.Response response, String fallback) {
+    return _decodeMap(response.body)?['message']?.toString() ?? fallback;
+  }
+
   static Map<String, String> _getHeaders() {
     final headers = {'Content-Type': 'application/json'};
     if (token != null) {
@@ -20,14 +39,16 @@ class ApiService {
     return headers;
   }
 
+  // ── Session และบัญชีผู้ใช้ ──────────────────────────────────────────────
+
   static Future<void> initSession() async {
     final prefs = await SharedPreferences.getInstance();
     token = prefs.getString('user_token');
     final userJson = prefs.getString('current_user');
     if (userJson != null) {
-      try {
-        currentUser = jsonDecode(userJson);
-      } catch (_) {}
+      currentUser = _decodeMap(userJson);
+      // session เก่าที่เสียหายไม่ควรถูกโหลดซ้ำทุกครั้งที่เปิดแอป
+      if (currentUser == null) await prefs.remove('current_user');
     }
   }
 
@@ -68,10 +89,9 @@ class ApiService {
         }
         return {'success': true, 'data': data};
       } else {
-        final error = jsonDecode(response.body);
         return {
           'success': false,
-          'message': error['message'] ?? 'Registration failed',
+          'message': _responseMessage(response, 'Registration failed'),
         };
       }
     } catch (e) {
@@ -97,10 +117,9 @@ class ApiService {
         }
         return {'success': true, 'data': data};
       } else {
-        final error = jsonDecode(response.body);
         return {
           'success': false,
-          'message': error['message'] ?? 'Login failed',
+          'message': _responseMessage(response, 'Login failed'),
         };
       }
     } catch (e) {
@@ -137,10 +156,9 @@ class ApiService {
         }
         return {'success': true, 'data': data};
       } else {
-        final error = jsonDecode(response.body);
         return {
           'success': false,
-          'message': error['message'] ?? 'Failed to update profile',
+          'message': _responseMessage(response, 'Failed to update profile'),
         };
       }
     } catch (e) {
@@ -153,8 +171,10 @@ class ApiService {
     if (path.startsWith('http://') || path.startsWith('https://')) {
       return path;
     }
-    final origin = baseUrl.replaceAll('/api', '');
-    return '$origin$path';
+    final apiUri = Uri.parse(baseUrl);
+    final origin = apiUri.replace(path: '', query: null, fragment: null);
+    final normalizedPath = path.startsWith('/') ? path : '/$path';
+    return '${origin.toString().replaceFirst(RegExp(r'/$'), '')}$normalizedPath';
   }
 
   static Future<Map<String, dynamic>> uploadProfileImageFile(
@@ -182,18 +202,13 @@ class ApiService {
         }
         return {'success': true, 'data': data};
       } else {
-        try {
-          final error = jsonDecode(response.body);
-          return {
-            'success': false,
-            'message': error['message'] ?? 'Failed to upload image',
-          };
-        } catch (_) {
-          return {
-            'success': false,
-            'message': 'Failed to upload image: status ${response.statusCode}',
-          };
-        }
+        return {
+          'success': false,
+          'message': _responseMessage(
+            response,
+            'Failed to upload image: status ${response.statusCode}',
+          ),
+        };
       }
     } catch (e) {
       return {
@@ -207,6 +222,8 @@ class ApiService {
     int? limit,
     bool forceRefresh = false,
   }) async {
+    // ── สถานที่ ───────────────────────────────────────────────────────────
+    // cache เฉพาะรายการเต็ม เพราะการ cache ผล limit จะทำให้หน้ารวมได้ข้อมูลไม่ครบ
     final cacheFresh =
         _destinationCache != null &&
         _destinationCacheTime != null &&
@@ -235,13 +252,10 @@ class ApiService {
         return {'success': true, 'data': destinations};
       }
 
-      String message = 'Failed to load  destinations';
-      try {
-        final error = jsonDecode(response.body);
-        message = error['message'] ?? message;
-      } catch (_) {}
-
-      return {'success': false, 'message': message};
+      return {
+        'success': false,
+        'message': _responseMessage(response, 'Failed to load destinations'),
+      };
     } catch (e) {
       return {'success': false, 'message': 'Network error: $e'};
     }
@@ -258,7 +272,10 @@ class ApiService {
       if (response.statusCode == 200) {
         return {'success': true, 'data': jsonDecode(response.body)};
       }
-      return {'success': false, 'message': 'Unable to load place details'};
+      return {
+        'success': false,
+        'message': _responseMessage(response, 'Unable to load place details'),
+      };
     } catch (e) {
       return {'success': false, 'message': 'Network error: $e'};
     }
@@ -267,6 +284,7 @@ class ApiService {
   static Future<Map<String, dynamic>> createTravelPlan(
     Map<String, dynamic> input,
   ) async {
+    // ── แผนเที่ยวและเส้นทาง ──────────────────────────────────────────────
     try {
       final request = http.Request('POST', Uri.parse('$baseUrl/trips'))
         ..headers.addAll(_getHeaders())
@@ -276,12 +294,7 @@ class ApiService {
         final body = await response.stream.bytesToString();
         String message =
             'The AI travel planner is temporarily unavailable. Please try again.';
-        try {
-          final data = jsonDecode(body);
-          if (data is Map && data['message'] != null) {
-            message = '${data['message']}';
-          }
-        } catch (_) {}
+        message = _decodeMap(body)?['message']?.toString() ?? message;
         return {'success': false, 'message': message};
       }
       int? tripId;
@@ -301,7 +314,9 @@ class ApiService {
           if (event['type'] == 'error') {
             error = '${event['message']}';
           }
-        } catch (_) {}
+        } on FormatException {
+          // SSE อาจถูกตัดกลางบรรทัดเมื่อเครือข่ายสะดุด จึงข้ามเฉพาะ event นั้น
+        }
       }
       if (tripId == null) {
         return {'success': false, 'message': error ?? 'Plan generation failed'};
@@ -352,11 +367,13 @@ class ApiService {
           .map((p) => [(p[1] as num).toDouble(), (p[0] as num).toDouble()])
           .toList();
     } catch (_) {
+      // เส้นทาง OSRM เป็นข้อมูลเสริม หน้าจอยังแสดงหมุดปลายทางได้แม้ route ล้มเหลว
       return const [];
     }
   }
 
   static Future<Map<String, dynamic>> getOrCreateChatSession() async {
+    // ── Chat และ Image Scan ───────────────────────────────────────────────
     try {
       var response = await http.get(
         Uri.parse('$baseUrl/chat/sessions/latest'),
@@ -425,7 +442,9 @@ class ApiService {
             sources = event['sources'];
           }
           if (event['type'] == 'error') error = '${event['message']}';
-        } catch (_) {}
+        } on FormatException {
+          // ข้ามเฉพาะ SSE event ที่ไม่สมบูรณ์และอ่าน event ถัดไปต่อ
+        }
       }
       if (error != null) return {'success': false, 'message': error};
       return {
@@ -463,10 +482,7 @@ class ApiService {
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
-      Map<String, dynamic>? payload;
-      try {
-        payload = Map<String, dynamic>.from(jsonDecode(response.body));
-      } catch (_) {}
+      final payload = _decodeMap(response.body);
 
       if (response.statusCode == 200 && payload != null) {
         return {'success': true, 'data': payload};

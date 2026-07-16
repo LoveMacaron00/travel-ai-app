@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:myapp/screen/home_screen.dart';
 import 'package:myapp/screen/profile_screen.dart';
@@ -6,6 +5,8 @@ import 'package:myapp/screen/map_screen.dart';
 import 'package:myapp/screen/plan_screen.dart';
 import 'package:myapp/services/location_service.dart';
 
+/// Shell หลังเข้าสู่ระบบ เก็บแต่ละ tab ไว้ใน IndexedStack เพื่อรักษา state
+/// เช่น ตำแหน่งแผนที่และรายการแผน เมื่อผู้ใช้สลับแท็บไปมา
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
 
@@ -31,6 +32,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   Widget _createScreen(int index) {
+    // สร้างหน้าจอเมื่อเปิดแท็บครั้งแรก เพื่อลดงานตอนเริ่มแอป
     switch (index) {
       case 0:
         return HomeScreen(

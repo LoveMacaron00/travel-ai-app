@@ -1,3 +1,7 @@
+/// ค่าที่ Flutter รับตอน compile ด้วย `--dart-define-from-file` เท่านั้น
+///
+/// ไฟล์นี้เก็บ URL และค่าที่เปิดเผยใน client ได้ ไม่เก็บ API key หรือ JWT secret
+/// เพราะค่าที่ฝังในแอปสามารถถูกดึงออกจากไฟล์ APK/IPA ได้เสมอ
 class AppConfig {
   const AppConfig._();
 

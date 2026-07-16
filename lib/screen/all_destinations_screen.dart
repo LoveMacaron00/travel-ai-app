@@ -5,10 +5,7 @@ import 'package:myapp/services/api_service.dart';
 class AllDestinationsScreen extends StatefulWidget {
   final ValueChanged<int> onExploreDestination;
 
-  const AllDestinationsScreen({
-    super.key,
-    required this.onExploreDestination,
-  });
+  const AllDestinationsScreen({super.key, required this.onExploreDestination});
 
   @override
   State<AllDestinationsScreen> createState() => _AllDestinationsScreenState();
@@ -175,7 +172,8 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
   Widget _destinationItem(Map<String, dynamic> destination) {
     final id = int.tryParse('${destination['id'] ?? ''}');
     final name = '${destination['name'] ?? 'Destination'}';
-    final location = '${destination['location'] ?? destination['city'] ?? 'Thailand'}';
+    final location =
+        '${destination['location'] ?? destination['city'] ?? 'Thailand'}';
     final image = '${destination['image'] ?? destination['image_url'] ?? ''}';
 
     return Material(

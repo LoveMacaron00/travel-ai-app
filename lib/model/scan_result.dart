@@ -1,3 +1,4 @@
+/// โหมดต้องตรงกับค่าที่ endpoint `/chat/sessions/:id/images` รองรับ
 enum ScanMode { place, sign, food }
 
 extension ScanModeDetails on ScanMode {
@@ -50,6 +51,8 @@ class ScanCandidate {
   }
 }
 
+/// View model กลางของผลวิเคราะห์ภาพทั้งสามโหมด
+/// UI จึง render โครงเดียวกันได้ แม้ provider แต่ละรายคืนข้อมูลต่างรูปแบบ
 class ScanResult {
   final ScanMode mode;
   final String title;

@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:myapp/services/api_service.dart';
 import 'package:image_picker/image_picker.dart';
@@ -218,7 +217,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: _brandGold.withOpacity(0.12),
+          color: _brandGold.withValues(alpha: 0.12),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: _brandGold),
@@ -336,7 +335,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.10),
+                                color: Colors.black.withValues(alpha: 0.10),
                                 blurRadius: 14,
                                 offset: const Offset(0, 6),
                               ),
@@ -442,7 +441,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: _brandGold.withOpacity(0.10),
+          color: _brandGold.withValues(alpha: 0.10),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: _brandGold, size: 20),

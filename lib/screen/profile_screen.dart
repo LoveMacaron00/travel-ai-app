@@ -1,4 +1,5 @@
-// ignore_for_file: deprecated_member_use
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:myapp/services/api_service.dart';
 import 'package:myapp/screen/welcome_screen.dart';
@@ -37,10 +38,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (user['interests'] is List) {
           _interests = List<String>.from(user['interests']);
         } else if (user['interests'] is String) {
-          // If interests is double-encoded
+          // รองรับข้อมูลเก่าที่ backend เคยเก็บ array เป็น JSON string
           try {
-            _interests = List<String>.from(user['interests']);
-          } catch (_) {}
+            final decoded = jsonDecode(user['interests']);
+            if (decoded is List) _interests = List<String>.from(decoded);
+          } on FormatException {
+            _interests = const [];
+          }
         }
       }
     }
@@ -106,7 +110,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     return FilterChip(
                       label: Text(interest),
                       selected: isSelected,
-                      selectedColor: const Color(0xFFF4C025).withOpacity(0.25),
+                      selectedColor: const Color(
+                        0xFFF4C025,
+                      ).withValues(alpha: 0.25),
                       checkmarkColor: const Color(0xFFF4C025),
                       onSelected: (selected) {
                         setStateDialog(() {
@@ -168,7 +174,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => const WelcomeScreen()),
           (route) => false,
         );
       }
@@ -227,7 +233,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 12,
                       offset: const Offset(0, 6),
                     ),
@@ -307,7 +313,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: brandGold.withOpacity(0.12),
+                              color: brandGold.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(

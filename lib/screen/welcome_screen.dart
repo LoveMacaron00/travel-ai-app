@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:myapp/screen/sign_in_screen.dart';
 import 'package:myapp/screen/sign_up_screen.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+/// หน้าเริ่มต้นสำหรับผู้ใช้ที่ยังไม่มี session ก่อนเข้าสู่ flow Login/Register
+class WelcomeScreen extends StatelessWidget {
+  const WelcomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

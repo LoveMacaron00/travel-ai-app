@@ -1,3 +1,4 @@
+/// จุดแวะหนึ่งจุดในแผน ซึ่งเก็บทั้งข้อมูลสำหรับการ์ดและข้อมูลนำทาง
 class TravelStop {
   final String destinationId;
   final String place;
@@ -126,6 +127,8 @@ class TravelPlan {
       tips: ((j['tips'] as List?) ?? const []).map((e) => '$e').toList(),
     );
   }
+
+  /// มุมมองแบบแบนสำหรับ Map/Navigation ที่ไม่ต้องสนใจการแบ่งวัน
   List<TravelStop> get allStops => days.expand((d) => d.stops).toList();
 }
 

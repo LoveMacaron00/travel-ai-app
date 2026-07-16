@@ -9,6 +9,7 @@ import 'package:myapp/screen/plan_navigation_screen.dart';
 import 'package:myapp/services/api_service.dart';
 import 'package:myapp/services/location_service.dart';
 
+/// แผนที่รวมสถานที่จาก backend, ตำแหน่งผู้ใช้ และเส้นทาง OSRM
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 

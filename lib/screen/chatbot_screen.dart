@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -25,6 +24,8 @@ class ChatMessage {
   });
 }
 
+/// Chat เดียวรองรับทั้งข้อความและภาพ โดยภาพจะถูกส่งแบบ in-memory ไปยัง server
+/// และไม่ถูกบันทึกเป็นไฟล์ต้นฉบับบน server
 class ChatbotScreen extends StatefulWidget {
   final bool openScannerOnStart;
 
@@ -413,7 +414,7 @@ class _ChatBubble extends StatelessWidget {
                       ? []
                       : [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
+                            color: Colors.black.withValues(alpha: 0.04),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
