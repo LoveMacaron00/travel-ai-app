@@ -37,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
-    throw Exception(result['message'] ?? 'Failed to load  destinations');
+    throw Exception(result['message'] ?? 'Failed to load destinations');
   }
 
   @override
@@ -279,7 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (destinations.isEmpty) {
                     return _buildDestinationMessage(
                       icon: Icons.travel_explore,
-                      title: 'No  destinations yet',
+                      title: 'No destinations yet',
                       subtitle: 'TAT API did not return places with images.',
                     );
                   }

@@ -80,7 +80,7 @@ extension _PlanMainView on _PlanScreenState {
                   child: Text(
                     _dates == null
                         ? 'Choose dates'
-                        : '${_date(_dates!.start)} – ${_date(_dates!.end)}  ·  $_days days',
+                        : '${_date(_dates!.start)} – ${_date(_dates!.end)} · $_days days',
                   ),
                 ),
               ),
@@ -314,7 +314,7 @@ extension _PlanMainView on _PlanScreenState {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
               child: Text(
-                'DAY ${day.day}  ·  ${day.theme.toUpperCase()}',
+                'DAY ${day.day} · ${day.theme.toUpperCase()}',
                 style: const TextStyle(
                   color: Color(0xff9a6b00),
                   fontWeight: FontWeight.w800,
