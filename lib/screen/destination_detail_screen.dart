@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:myapp/services/app_services.dart';
 import 'package:myapp/utils/destination_display.dart';
@@ -31,9 +33,20 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _detailFuture = AppServices.destinations.getDestinationDetails(
+    _detailFuture = _loadDetails();
+  }
+
+  Future<Map<String, dynamic>> _loadDetails() async {
+    final result = await AppServices.destinations.getDestinationDetails(
       widget.destinationId,
     );
+    if (result['success'] == true) {
+      // ไม่รอ analytics เพื่อให้หน้า detail แสดงได้ทันทีแม้ network ช้า
+      unawaited(
+        AppServices.activity.recordDestinationView(widget.destinationId),
+      );
+    }
+    return result;
   }
 
   @override

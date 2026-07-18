@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:form_field_validator/form_field_validator.dart';
 import 'package:myapp/model/profile.dart';
@@ -33,6 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (registerResult['success']) {
         if (mounted) {
+          unawaited(AppServices.activity.resume());
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Registration successful!')),
           );

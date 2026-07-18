@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:form_field_validator/form_field_validator.dart';
 import 'package:myapp/model/profile.dart';
@@ -48,6 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (mounted) {
+        unawaited(AppServices.activity.resume());
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const MainNavigationScreen()),

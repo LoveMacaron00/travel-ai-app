@@ -1,4 +1,5 @@
 import 'package:myapp/services/api_client.dart';
+import 'package:myapp/services/activity_service.dart';
 import 'package:myapp/services/auth_service.dart';
 import 'package:myapp/services/chat_service.dart';
 import 'package:myapp/services/destination_service.dart';
@@ -17,6 +18,10 @@ class AppServices {
     client: client,
     session: session,
     store: SharedPreferencesSessionStore(),
+  );
+  static final ActivityService activity = ActivityService(
+    client: client,
+    isAuthenticated: () => session.token?.isNotEmpty == true,
   );
   static final DestinationService destinations = DestinationService(
     client: client,

@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:myapp/services/api_client.dart';
+import 'package:myapp/services/activity_service.dart';
 import 'package:myapp/services/auth_service.dart';
 import 'package:myapp/services/destination_service.dart';
 import 'package:myapp/services/session_store.dart';
@@ -124,4 +125,48 @@ void main() {
       expect(store.stored.user?['id'], 7);
     },
   );
+
+  test('ActivityService reuses the heartbeat session and closes it', () async {
+    final requests = <Map<String, dynamic>>[];
+    final client = ApiClient(
+      baseUrl: 'https://api.example.com/api',
+      tokenProvider: () => 'user-token',
+      httpClient: MockClient((request) async {
+        final body = request.body.isEmpty
+            ? <String, dynamic>{}
+            : Map<String, dynamic>.from(jsonDecode(request.body));
+        requests.add({'path': request.url.path, 'body': body});
+
+        if (request.url.path.endsWith('/heartbeat')) {
+          return http.Response(jsonEncode({'sessionId': 42}), 200);
+        }
+        if (request.url.path.endsWith('/view')) {
+          return http.Response(jsonEncode({'recorded': true}), 201);
+        }
+        return http.Response('', 204);
+      }),
+    );
+    final service = ActivityService(
+      client: client,
+      isAuthenticated: () => true,
+      heartbeatInterval: const Duration(hours: 1),
+    );
+
+    await service.resume();
+    final recorded = await service.recordDestinationView(7);
+    await service.pause();
+
+    expect(recorded, isTrue);
+    expect(requests, [
+      {'path': '/api/activity/heartbeat', 'body': <String, dynamic>{}},
+      {
+        'path': '/api/mobile/destinations/7/view',
+        'body': {'sessionId': 42},
+      },
+      {
+        'path': '/api/activity/end',
+        'body': {'sessionId': 42},
+      },
+    ]);
+  });
 }

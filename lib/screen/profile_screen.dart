@@ -171,6 +171,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     if (confirm == true) {
+      await AppServices.activity.pause();
       await AppServices.auth.clearSession();
       if (mounted) {
         Navigator.pushAndRemoveUntil(

@@ -6,7 +6,7 @@ extension _PlanDetailsView on _PlanScreenState {
     final destinationId = int.tryParse(stop.destinationId);
     final detailFuture = destinationId == null
         ? null
-        : AppServices.destinations.getDestinationDetails(destinationId);
+        : _loadStopDetails(destinationId);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -230,6 +230,16 @@ extension _PlanDetailsView on _PlanScreenState {
         ),
       ),
     );
+  }
+
+  Future<Map<String, dynamic>> _loadStopDetails(int destinationId) async {
+    final result = await AppServices.destinations.getDestinationDetails(
+      destinationId,
+    );
+    if (result['success'] == true) {
+      unawaited(AppServices.activity.recordDestinationView(destinationId));
+    }
+    return result;
   }
 
   List<String> _detailImages(Map<String, dynamic> detail, String fallback) {
