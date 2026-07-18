@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/model/scan_result.dart';
 import 'package:myapp/services/app_services.dart';
 import 'package:myapp/services/location_service.dart';
@@ -9,6 +10,25 @@ import 'package:myapp/services/location_service.dart';
 part 'chatbot/chat_message_widgets.dart';
 part 'chatbot/scan_result_widgets.dart';
 part 'chatbot/scan_sheets.dart';
+
+String _scanModeTitle(BuildContext context, ScanMode mode) => switch (mode) {
+  ScanMode.place => context.l10n.scanPlaceTitle,
+  ScanMode.sign => context.l10n.scanSignTitle,
+  ScanMode.food => context.l10n.scanFoodTitle,
+};
+
+String _scanModeDescription(BuildContext context, ScanMode mode) =>
+    switch (mode) {
+      ScanMode.place => context.l10n.scanPlaceDescription,
+      ScanMode.sign => context.l10n.scanSignDescription,
+      ScanMode.food => context.l10n.scanFoodDescription,
+    };
+
+String _scanModeCaption(BuildContext context, ScanMode mode) => switch (mode) {
+  ScanMode.place => context.l10n.scanPlaceCaption,
+  ScanMode.sign => context.l10n.scanSignCaption,
+  ScanMode.food => context.l10n.scanFoodCaption,
+};
 
 class ChatMessage {
   final String text;
@@ -101,13 +121,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       }
     }
     if (loaded.isEmpty) {
-      loaded.add(
-        const ChatMessage(
-          text:
-              'Ask me about Thai destinations, opening hours, entrance fees, directions, food, or nearby recommendations.',
-          isUser: false,
-        ),
-      );
+      loaded.add(ChatMessage(text: context.l10n.chatIntro, isUser: false));
     }
     setState(() {
       _messages
@@ -147,7 +161,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   Future<void> _showScanFlow() async {
     if (_isSending) return;
     if (_sessionId == null) {
-      _showNotice('AI Guide is still preparing your conversation.');
+      _showNotice(context.l10n.aiPreparingConversation);
       return;
     }
 
@@ -178,8 +192,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     if (!mounted || image == null) return;
 
     final length = await image.length();
+    if (!mounted) return;
     if (length > 2 * 1024 * 1024) {
-      _showNotice('Please choose a photo under 2 MB.');
+      _showNotice(context.l10n.photoUnderTwoMb);
       return;
     }
     final imageBytes = await image.readAsBytes();
@@ -198,7 +213,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           text: '',
           isUser: true,
           imageBytes: imageBytes,
-          imageCaption: mode.userCaption,
+          imageCaption: _scanModeCaption(context, mode),
         ),
       );
       _isSending = true;
@@ -233,9 +248,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       } else {
         _messages.add(
           ChatMessage(
-            text:
-                result['message'] ??
-                'AI Guide could not analyze this photo. Please try again.',
+            text: result['message'] ?? context.l10n.photoAnalysisFailed,
             isUser: false,
           ),
         );
@@ -272,10 +285,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             : [];
         _messages.add(
           ChatMessage(
-            text:
-                (data['answer'] ??
-                        'I could not find confirmed travel data yet.')
-                    .toString(),
+            text: (data['answer'] ?? context.l10n.noConfirmedTravelData)
+                .toString(),
             isUser: false,
             sources: rawSources
                 .whereType<Map>()
@@ -286,9 +297,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       } else {
         _messages.add(
           ChatMessage(
-            text:
-                result['message'] ??
-                'The travel assistant is unavailable right now.',
+            text: result['message'] ?? context.l10n.travelAssistantUnavailable,
             isUser: false,
           ),
         );
@@ -310,9 +319,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Thai Go',
-          style: TextStyle(
+        title: Text(
+          context.l10n.appTitle,
+          style: const TextStyle(
             color: Color(0xFFE8A900),
             fontWeight: FontWeight.w500,
           ),
@@ -328,9 +337,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 color: const Color(0xFFF4F5F7),
                 borderRadius: BorderRadius.circular(18),
               ),
-              child: const Text(
-                'Today',
-                style: TextStyle(color: Color(0xFF8D95A3), fontSize: 12),
+              child: Text(
+                context.l10n.today,
+                style: const TextStyle(color: Color(0xFF8D95A3), fontSize: 12),
               ),
             ),
             Expanded(

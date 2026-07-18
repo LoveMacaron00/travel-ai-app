@@ -45,9 +45,9 @@ extension _PlanMainView on _PlanScreenState {
         ),
         TextButton(
           onPressed: _reset,
-          child: const Text(
-            'Reset',
-            style: TextStyle(color: _gold, fontWeight: FontWeight.w700),
+          child: Text(
+            context.l10n.reset,
+            style: const TextStyle(color: _gold, fontWeight: FontWeight.w700),
           ),
         ),
       ],
@@ -59,12 +59,12 @@ extension _PlanMainView on _PlanScreenState {
     padding: const EdgeInsets.only(bottom: 28),
     child: Column(
       children: [
-        _header('AI PLAN TRAVEL', 'Build your trip'),
+        _header(context.l10n.aiPlanTravel, context.l10n.buildYourTrip),
         _hero(),
         _section(
           number: 1,
-          title: 'Set the basics',
-          subtitle: 'Your location is the starting point.',
+          title: context.l10n.setTheBasics,
+          subtitle: context.l10n.locationStartingPoint,
           child: Column(
             children: [
               _locationTile(),
@@ -74,13 +74,13 @@ extension _PlanMainView on _PlanScreenState {
                 borderRadius: BorderRadius.circular(16),
                 child: InputDecorator(
                   decoration: _inputDecoration(
-                    'Travel dates',
+                    context.l10n.travelDates,
                     Icons.calendar_today_outlined,
                   ),
                   child: Text(
                     _dates == null
-                        ? 'Choose dates'
-                        : '${_date(_dates!.start)} – ${_date(_dates!.end)} · $_days days',
+                        ? context.l10n.chooseDates
+                        : '${_date(_dates!.start)} – ${_date(_dates!.end)} · $_days ${context.l10n.days}',
                   ),
                 ),
               ),
@@ -88,9 +88,9 @@ extension _PlanMainView on _PlanScreenState {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Estimated budget',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+                  Text(
+                    context.l10n.estimatedBudget,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   Text(
                     '฿${_money(_budget)}',
@@ -115,14 +115,14 @@ extension _PlanMainView on _PlanScreenState {
         ),
         _section(
           number: 2,
-          title: 'What do you enjoy?',
-          subtitle: 'AI will choose places that fit your budget.',
+          title: context.l10n.whatDoYouEnjoy,
+          subtitle: context.l10n.aiFitsBudget,
           child: _chips(_PlanScreenState._interestOptions, _interests),
         ),
         _section(
           number: 3,
-          title: 'How can you travel?',
-          subtitle: 'Long trips are split into road and transport segments.',
+          title: context.l10n.howCanYouTravel,
+          subtitle: context.l10n.longTripsSegments,
           child: Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -146,8 +146,8 @@ extension _PlanMainView on _PlanScreenState {
         ),
         _section(
           number: 4,
-          title: 'Must-visit places',
-          subtitle: 'Optional — AI will include your selections.',
+          title: context.l10n.mustVisitPlaces,
+          subtitle: context.l10n.mustVisitOptional,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -168,7 +168,7 @@ extension _PlanMainView on _PlanScreenState {
               OutlinedButton.icon(
                 onPressed: _showPlacePicker,
                 icon: const Icon(Icons.add_location_alt_outlined),
-                label: const Text('Add a place'),
+                label: Text(context.l10n.addAPlace),
               ),
             ],
           ),
@@ -206,7 +206,9 @@ extension _PlanMainView on _PlanScreenState {
                     )
                   : const Icon(Icons.auto_awesome),
               label: Text(
-                _generating ? 'Designing your trip…' : 'Create my travel plan',
+                _generating
+                    ? context.l10n.designingTrip
+                    : context.l10n.createTravelPlan,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -243,22 +245,22 @@ extension _PlanMainView on _PlanScreenState {
       ),
       padding: const EdgeInsets.all(22),
       alignment: Alignment.bottomLeft,
-      child: const Column(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'THAILAND · NEAR YOU',
-            style: TextStyle(
+            context.l10n.thailandNearYou,
+            style: const TextStyle(
               color: Color(0xffffd65a),
               fontWeight: FontWeight.w700,
               letterSpacing: 1,
             ),
           ),
-          SizedBox(height: 6),
+          const SizedBox(height: 6),
           Text(
-            'Let AI find the right\nplaces for your budget.',
-            style: TextStyle(
+            context.l10n.aiFindBudgetPlaces,
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 27,
               height: 1.05,
@@ -274,7 +276,11 @@ extension _PlanMainView on _PlanScreenState {
     key: const ValueKey('result'),
     slivers: [
       SliverToBoxAdapter(
-        child: _header('AI GENERATED PLAN', 'Your route', back: _reset),
+        child: _header(
+          context.l10n.aiGeneratedPlan,
+          context.l10n.yourRoute,
+          back: _reset,
+        ),
       ),
       SliverToBoxAdapter(child: _planMap(plan)),
       SliverToBoxAdapter(
@@ -282,9 +288,12 @@ extension _PlanMainView on _PlanScreenState {
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
           child: Row(
             children: [
-              _stat('${plan.allStops.length}', 'places'),
-              _stat('${plan.days.length}', 'days'),
-              _stat('฿${_money(plan.totalEstimatedCost)}', 'estimated'),
+              _stat('${plan.allStops.length}', context.l10n.places),
+              _stat('${plan.days.length}', context.l10n.days),
+              _stat(
+                '฿${_money(plan.totalEstimatedCost)}',
+                context.l10n.estimated,
+              ),
             ],
           ),
         ),
@@ -295,9 +304,12 @@ extension _PlanMainView on _PlanScreenState {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Recommended itinerary',
-                style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
+              Text(
+                context.l10n.recommendedItinerary,
+                style: const TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -314,7 +326,7 @@ extension _PlanMainView on _PlanScreenState {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
               child: Text(
-                'DAY ${day.day} · ${day.theme.toUpperCase()}',
+                '${context.l10n.day} ${day.day} · ${day.theme.toUpperCase()}',
                 style: const TextStyle(
                   color: Color(0xff9a6b00),
                   fontWeight: FontWeight.w800,
@@ -336,7 +348,7 @@ extension _PlanMainView on _PlanScreenState {
           child: OutlinedButton.icon(
             onPressed: _showPlacePicker,
             icon: const Icon(Icons.add),
-            label: const Text('Add another place'),
+            label: Text(context.l10n.addAnotherPlace),
           ),
         ),
       ),
@@ -456,7 +468,7 @@ extension _PlanMainView on _PlanScreenState {
                         ),
                       ),
                       Text(
-                        '${stop.arrivalTime} · ${stop.durationMinutes} min',
+                        '${stop.arrivalTime} · ${stop.durationMinutes} ${context.l10n.minutesShort}',
                         style: const TextStyle(
                           color: Colors.black45,
                           fontSize: 12,
@@ -479,10 +491,10 @@ extension _PlanMainView on _PlanScreenState {
                   onSelected: (v) {
                     if (v == 'remove') _removeStop(stop);
                   },
-                  itemBuilder: (_) => const [
+                  itemBuilder: (_) => [
                     PopupMenuItem(
                       value: 'remove',
-                      child: Text('Remove from plan'),
+                      child: Text(context.l10n.removeFromPlan),
                     ),
                   ],
                 ),
@@ -507,7 +519,7 @@ extension _PlanMainView on _PlanScreenState {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
-                            '${_modeLabel(segment.mode)} · ${segment.estimatedMinutes} min · ฿${_money(segment.estimatedCost)}',
+                            '${_modeLabel(segment.mode)} · ${segment.estimatedMinutes} ${context.l10n.minutesShort} · ฿${_money(segment.estimatedCost)}',
                             style: const TextStyle(
                               fontSize: 11,
                               color: Color(0xff7a5800),
@@ -542,7 +554,7 @@ extension _PlanMainView on _PlanScreenState {
                     ),
                   ),
                   icon: const Icon(Icons.navigation, size: 17),
-                  label: const Text('Navigate'),
+                  label: Text(context.l10n.navigate),
                 ),
               ],
             ),

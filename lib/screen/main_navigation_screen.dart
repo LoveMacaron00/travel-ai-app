@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/screen/home_screen.dart';
 import 'package:myapp/screen/profile_screen.dart';
 import 'package:myapp/screen/map_screen.dart';
@@ -72,6 +73,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     const Color brandGold = Color(0xFFF4C025);
+    final l10n = context.l10n;
 
     return Scaffold(
       body: IndexedStack(
@@ -89,26 +91,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         showUnselectedLabels: true,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            activeIcon: const Icon(Icons.home),
+            label: l10n.home,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.map_outlined),
-            activeIcon: Icon(Icons.map),
-            label: 'Map',
+            icon: const Icon(Icons.map_outlined),
+            activeIcon: const Icon(Icons.map),
+            label: l10n.map,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today_outlined),
-            activeIcon: Icon(Icons.calendar_today),
-            label: 'Plan',
+            icon: const Icon(Icons.calendar_today_outlined),
+            activeIcon: const Icon(Icons.calendar_today),
+            label: l10n.plan,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
+            icon: const Icon(Icons.person_outline),
+            activeIcon: const Icon(Icons.person),
+            label: l10n.profile,
           ),
         ],
       ),

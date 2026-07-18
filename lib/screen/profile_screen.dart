@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/services/app_services.dart';
 import 'package:myapp/widgets/media_image.dart';
 import 'package:myapp/screen/welcome_screen.dart';
@@ -19,7 +20,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
   String _username = '';
   List<String> _interests = [];
-  String _language = 'TH';
   String _profileImageUrl = '';
 
   @override
@@ -65,16 +65,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) {
       setState(() => _isLoading = false);
       if (result['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully!')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.profileUpdated)));
         setState(() {
           _loadUserData();
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message'] ?? 'Failed to update profile'),
+            content: Text(
+              result['message'] ?? context.l10n.profileUpdateFailed,
+            ),
           ),
         );
       }
@@ -82,7 +84,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showEditInterestsDialog() {
-    final List<String> availableInterests = [
+    const availableInterests = <String>[
       'Food',
       'Cafe',
       'Nature',
@@ -101,7 +103,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              title: const Text('Edit Interests'),
+              title: Text(context.l10n.editInterests),
               content: SingleChildScrollView(
                 child: Wrap(
                   spacing: 8,
@@ -109,7 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: availableInterests.map((interest) {
                     final isSelected = tempSelected.contains(interest);
                     return FilterChip(
-                      label: Text(interest),
+                      label: Text(_interestLabel(context, interest)),
                       selected: isSelected,
                       selectedColor: const Color(
                         0xFFF4C025,
@@ -131,14 +133,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: Text(context.l10n.cancel),
                 ),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
                     _updateProfile(interests: tempSelected);
                   },
-                  child: const Text('Save'),
+                  child: Text(context.l10n.save),
                 ),
               ],
             );
@@ -153,17 +155,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Log Out'),
-          content: const Text('Are you sure you want to log out of Go Thai?'),
+          title: Text(context.l10n.logOut),
+          content: Text(context.l10n.logOutConfirmation),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('Log Out'),
+              child: Text(context.l10n.logOut),
             ),
           ],
         );
@@ -183,10 +185,78 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  String _interestLabel(BuildContext context, String interest) {
+    final l10n = context.l10n;
+    return switch (interest) {
+      'Food' => l10n.interestFood,
+      'Cafe' => l10n.interestCafe,
+      'Nature' => l10n.interestNature,
+      'Beach' => l10n.interestBeach,
+      'Temple' => l10n.interestTemple,
+      'Adventure' => l10n.interestAdventure,
+      'Shopping' => l10n.interestShopping,
+      'Nightlife' => l10n.interestNightlife,
+      'Culture' => l10n.interestCulture,
+      _ => interest,
+    };
+  }
+
+  Future<void> _showLanguagePicker() async {
+    final selectedLanguage = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final l10n = sheetContext.l10n;
+        final currentLanguage = AppServices.locale.languageCode;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
+                  child: Text(
+                    l10n.selectLanguage,
+                    style: Theme.of(sheetContext).textTheme.titleLarge,
+                  ),
+                ),
+                RadioGroup<String>(
+                  groupValue: currentLanguage,
+                  onChanged: (value) {
+                    if (value != null) Navigator.pop(sheetContext, value);
+                  },
+                  child: Column(
+                    children: [
+                      RadioListTile<String>(
+                        value: 'th',
+                        title: Text(l10n.languageThai),
+                      ),
+                      RadioListTile<String>(
+                        value: 'en',
+                        title: Text(l10n.languageEnglish),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedLanguage != null) {
+      await AppServices.locale.setLanguage(selectedLanguage);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const Color brandGold = Color(0xFFF4C025);
     final String userEmail = AppServices.auth.currentUser?['email'] ?? '';
+    final l10n = context.l10n;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -197,9 +267,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: widget.onBackTap,
         ),
-        title: const Text(
-          'Profile',
-          style: TextStyle(
+        title: Text(
+          l10n.profile,
+          style: const TextStyle(
             color: Colors.black87,
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -256,7 +326,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // Username & Email
             Text(
-              _username.isNotEmpty ? _username : 'กรุณาตั้งชื่อ',
+              _username.isNotEmpty ? _username : l10n.setYourName,
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -276,9 +346,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'My Interests',
-                      style: TextStyle(
+                    Text(
+                      l10n.myInterests,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.black54,
@@ -286,9 +356,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     TextButton(
                       onPressed: _showEditInterestsDialog,
-                      child: const Text(
-                        'Edit',
-                        style: TextStyle(
+                      child: Text(
+                        l10n.edit,
+                        style: const TextStyle(
                           color: brandGold,
                           fontWeight: FontWeight.bold,
                         ),
@@ -298,11 +368,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 8),
                 _interests.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8.0),
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: Text(
-                          'No interests added yet. Click edit to customize!',
-                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                          l10n.noInterests,
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 13,
+                          ),
                         ),
                       )
                     : Wrap(
@@ -319,7 +392,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              interest,
+                              _interestLabel(context, interest),
                               style: const TextStyle(
                                 color: brandGold,
                                 fontWeight: FontWeight.bold,
@@ -337,9 +410,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Settings',
-                  style: TextStyle(
+                Text(
+                  l10n.settings,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.black54,
@@ -354,7 +427,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Icons.manage_accounts_outlined,
                     color: Colors.black54,
                   ),
-                  title: const Text('Account Settings'),
+                  title: Text(l10n.accountSettings),
                   trailing: const Icon(Icons.chevron_right, size: 20),
                   onTap: () async {
                     await Navigator.push(
@@ -375,19 +448,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Icons.translate_outlined,
                     color: Colors.black54,
                   ),
-                  title: const Text('Language'),
+                  title: Text(l10n.language),
                   trailing: Text(
-                    _language,
+                    AppServices.locale.languageCode == 'th'
+                        ? l10n.languageThai
+                        : l10n.languageEnglish,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       color: Colors.grey,
                     ),
                   ),
-                  onTap: () {
-                    setState(() {
-                      _language = _language == 'TH' ? 'EN' : 'TH';
-                    });
-                  },
+                  onTap: _showLanguagePicker,
                 ),
               ],
             ),
@@ -411,7 +482,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 onPressed: _handleLogout,
-                child: const Text('Log Out'),
+                child: Text(l10n.logOut),
               ),
             ),
             const SizedBox(height: 24),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:myapp/config/app_config.dart';
+import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/model/place_marker.dart';
 import 'package:myapp/model/travel_plan.dart';
 import 'package:myapp/screen/plan_navigation_screen.dart';
@@ -44,6 +45,7 @@ class _PlanScreenState extends State<PlanScreen> {
   final List<PlaceMarker> _mustVisit = [];
   final Set<String> _excluded = {};
   List<LatLng> _route = [];
+  late String _loadedLanguage;
 
   // extension view เรียกผ่าน wrapper นี้แทน protected State.setState โดยตรง
   void _updateState(VoidCallback update) => setState(update);
@@ -64,10 +66,21 @@ class _PlanScreenState extends State<PlanScreen> {
   @override
   void initState() {
     super.initState();
+    _loadedLanguage = AppServices.locale.languageCode;
     _position = _locationService.currentPosition;
     _locationService.addListener(_onSharedLocationChanged);
     _loadPlaces();
     if (_position == null) _getLocation();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final language = Localizations.localeOf(context).languageCode;
+    if (language != _loadedLanguage) {
+      _loadedLanguage = language;
+      _loadPlaces();
+    }
   }
 
   @override
@@ -86,8 +99,13 @@ class _PlanScreenState extends State<PlanScreen> {
   }
 
   Future<void> _loadPlaces() async {
+    final requestedLanguage = AppServices.locale.languageCode;
     final result = await AppServices.destinations.getDestinations();
-    if (result['success'] != true || !mounted) return;
+    if (result['success'] != true ||
+        !mounted ||
+        requestedLanguage != AppServices.locale.languageCode) {
+      return;
+    }
     setState(
       () => _places = (result['data'] as List).map((item) {
         final j = Map<String, dynamic>.from(item as Map);
@@ -163,7 +181,7 @@ class _PlanScreenState extends State<PlanScreen> {
     } else {
       setState(() {
         _generating = false;
-        _error = '${result['message'] ?? 'Could not create a plan.'}';
+        _error = '${result['message'] ?? context.l10n.couldNotCreatePlan}';
       });
     }
   }

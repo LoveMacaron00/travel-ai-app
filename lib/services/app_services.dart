@@ -4,6 +4,7 @@ import 'package:myapp/services/auth_service.dart';
 import 'package:myapp/services/chat_service.dart';
 import 'package:myapp/services/destination_service.dart';
 import 'package:myapp/services/media_service.dart';
+import 'package:myapp/services/locale_controller.dart';
 import 'package:myapp/services/session_store.dart';
 import 'package:myapp/services/trip_service.dart';
 
@@ -13,7 +14,11 @@ class AppServices {
   AppServices._();
 
   static final SessionState session = SessionState();
-  static final ApiClient client = ApiClient(tokenProvider: () => session.token);
+  static final LocaleController locale = LocaleController();
+  static final ApiClient client = ApiClient(
+    tokenProvider: () => session.token,
+    languageProvider: () => locale.languageCode,
+  );
   static final AuthService auth = AuthService(
     client: client,
     session: session,

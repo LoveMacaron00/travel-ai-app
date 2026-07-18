@@ -90,7 +90,7 @@ extension _MapView on MapScreenState {
                     controller: _searchController,
                     focusNode: _searchFocus,
                     decoration: InputDecoration(
-                      hintText: 'Search for tourist attractions.',
+                      hintText: context.l10n.searchAttractionsHint,
                       border: InputBorder.none,
                       icon: const Icon(
                         Icons.search,
@@ -121,9 +121,8 @@ extension _MapView on MapScreenState {
                     scrollDirection: Axis.horizontal,
                     itemCount: _categories.length,
                     itemBuilder: (context, index) {
-                      final cat = _categories[index];
-                      final isSelected = _selectedCategory == cat['id'];
-                      final catId = cat['id']!;
+                      final catId = _categories[index];
+                      final isSelected = _selectedCategory == catId;
                       return Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: ChoiceChip(
@@ -138,7 +137,7 @@ extension _MapView on MapScreenState {
                                     : _getCategoryColor(catId),
                               ),
                               const SizedBox(width: 6),
-                              Text(cat['label']!),
+                              Text(_getCategoryLabel(catId)),
                             ],
                           ),
                           selected: isSelected,
@@ -463,9 +462,9 @@ extension _MapView on MapScreenState {
                                       Icons.navigation_rounded,
                                       size: 16,
                                     ),
-                                    label: const Text(
-                                      'Navigate',
-                                      style: TextStyle(
+                                    label: Text(
+                                      context.l10n.navigate,
+                                      style: const TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w800,
                                       ),

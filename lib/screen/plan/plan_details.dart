@@ -86,7 +86,7 @@ extension _PlanDetailsView on _PlanScreenState {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${stop.arrivalTime} · ${stop.durationMinutes} min · ${_modeLabel(stop.transportMode)}',
+                    '${stop.arrivalTime} · ${stop.durationMinutes} ${context.l10n.minutesShort} · ${_modeLabel(stop.transportMode)}',
                     style: const TextStyle(color: Colors.black54),
                   ),
                   const SizedBox(height: 12),
@@ -108,14 +108,17 @@ extension _PlanDetailsView on _PlanScreenState {
                     ),
                   ],
                   const SizedBox(height: 22),
-                  const Text(
-                    'Estimated cost for this stop',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                  Text(
+                    context.l10n.estimatedStopCost,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   _detailCostRow(
                     Icons.confirmation_number_outlined,
-                    'Admission',
+                    context.l10n.admission,
                     stop.entryCost,
                   ),
                   if (admissionDetails.isNotEmpty)
@@ -129,9 +132,9 @@ extension _PlanDetailsView on _PlanScreenState {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Admission details from TAT',
-                            style: TextStyle(
+                          Text(
+                            context.l10n.admissionDetailsTat,
+                            style: const TextStyle(
                               color: Color(0xff876100),
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
@@ -153,27 +156,27 @@ extension _PlanDetailsView on _PlanScreenState {
                     ),
                   _detailCostRow(
                     Icons.restaurant_outlined,
-                    'Food',
+                    context.l10n.food,
                     stop.foodCost,
                   ),
                   _detailCostRow(
                     _PlanScreenState._modeOptions[stop.transportMode] ??
                         Icons.route,
-                    'Transport',
+                    context.l10n.transport,
                     stop.transportCost,
                   ),
                   const Divider(height: 28),
                   _detailCostRow(
                     Icons.account_balance_wallet_outlined,
-                    'Stop total',
+                    context.l10n.stopTotal,
                     stop.entryCost + stop.foodCost + stop.transportCost,
                     emphasis: true,
                   ),
                   if (stop.segments.isNotEmpty) ...[
                     const SizedBox(height: 22),
-                    const Text(
-                      'Journey details',
-                      style: TextStyle(
+                    Text(
+                      context.l10n.journeyDetails,
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
                       ),
@@ -191,7 +194,7 @@ extension _PlanDetailsView on _PlanScreenState {
                           ),
                         ),
                         title: Text(
-                          '${_modeLabel(segment.mode)} · ${segment.estimatedMinutes} min',
+                          '${_modeLabel(segment.mode)} · ${segment.estimatedMinutes} ${context.l10n.minutesShort}',
                         ),
                         subtitle: Text(
                           [
@@ -220,7 +223,7 @@ extension _PlanDetailsView on _PlanScreenState {
                         ),
                       ),
                       icon: const Icon(Icons.navigation),
-                      label: const Text('Navigate to this place'),
+                      label: Text(context.l10n.navigateToPlace),
                     ),
                   ),
                 ],
@@ -256,22 +259,22 @@ extension _PlanDetailsView on _PlanScreenState {
     final lines = <String>[];
     if (fee['thaiAdult'] != null) {
       lines.add(
-        'Adult: ฿${_money(double.tryParse('${fee['thaiAdult']}') ?? 0)}',
+        '${context.l10n.thaiAdult}: ฿${_money(double.tryParse('${fee['thaiAdult']}') ?? 0)}',
       );
     }
     if (fee['thaiChild'] != null) {
       lines.add(
-        'Child: ฿${_money(double.tryParse('${fee['thaiChild']}') ?? 0)}',
+        '${context.l10n.thaiChild}: ฿${_money(double.tryParse('${fee['thaiChild']}') ?? 0)}',
       );
     }
     if (fee['foreignerAdult'] != null) {
       lines.add(
-        'Foreigner adult: ฿${_money(double.tryParse('${fee['foreignerAdult']}') ?? 0)}',
+        '${context.l10n.foreignerAdult}: ฿${_money(double.tryParse('${fee['foreignerAdult']}') ?? 0)}',
       );
     }
     if (fee['foreignerChild'] != null) {
       lines.add(
-        'Foreigner child: ฿${_money(double.tryParse('${fee['foreignerChild']}') ?? 0)}',
+        '${context.l10n.foreignerChild}: ฿${_money(double.tryParse('${fee['foreignerChild']}') ?? 0)}',
       );
     }
     final detailText = stripHtmlText('${fee['detail'] ?? ''}');

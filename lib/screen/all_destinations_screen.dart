@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/screen/destination_detail_screen.dart';
 import 'package:myapp/services/app_services.dart';
 
@@ -13,13 +14,25 @@ class AllDestinationsScreen extends StatefulWidget {
 
 class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
   late Future<List<Map<String, dynamic>>> _destinationsFuture;
+  late String _loadedLanguage;
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
 
   @override
   void initState() {
     super.initState();
+    _loadedLanguage = AppServices.locale.languageCode;
     _destinationsFuture = _loadDestinations();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final language = Localizations.localeOf(context).languageCode;
+    if (language != _loadedLanguage) {
+      _loadedLanguage = language;
+      _destinationsFuture = _loadDestinations();
+    }
   }
 
   Future<List<Map<String, dynamic>>> _loadDestinations() async {
@@ -48,15 +61,16 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       backgroundColor: const Color(0xfff8f9fa),
       appBar: AppBar(
         backgroundColor: const Color(0xfff8f9fa),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          'All destinations',
-          style: TextStyle(fontWeight: FontWeight.w900),
+        title: Text(
+          l10n.allDestinations,
+          style: const TextStyle(fontWeight: FontWeight.w900),
         ),
       ),
       body: Column(
@@ -68,12 +82,12 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
               onChanged: (value) => setState(() => _query = value.trim()),
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
-                hintText: 'Search by place, province, or category',
+                hintText: l10n.searchDestinationsHint,
                 prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: _query.isEmpty
                     ? null
                     : IconButton(
-                        tooltip: 'Clear search',
+                        tooltip: l10n.clearSearch,
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _query = '');
@@ -99,10 +113,10 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
                 if (snapshot.hasError) {
                   return _message(
                     icon: Icons.cloud_off_outlined,
-                    title: 'Could not load destinations',
+                    title: l10n.couldNotLoadDestinations,
                     action: FilledButton(
                       onPressed: _refresh,
-                      child: const Text('Try again'),
+                      child: Text(l10n.tryAgain),
                     ),
                   );
                 }
@@ -110,14 +124,14 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
                 if (destinations.isEmpty) {
                   return _message(
                     icon: Icons.travel_explore_outlined,
-                    title: 'No destinations yet',
+                    title: l10n.noDestinationsYet,
                   );
                 }
                 final matches = destinations.where(_matchesSearch).toList();
                 if (matches.isEmpty) {
                   return _message(
                     icon: Icons.search_off_rounded,
-                    title: 'No places found for “$_query”',
+                    title: l10n.noPlacesFound(_query),
                   );
                 }
                 return RefreshIndicator(
@@ -173,9 +187,9 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
 
   Widget _destinationItem(Map<String, dynamic> destination) {
     final id = int.tryParse('${destination['id'] ?? ''}');
-    final name = '${destination['name'] ?? 'Destination'}';
+    final name = '${destination['name'] ?? context.l10n.destination}';
     final location =
-        '${destination['location'] ?? destination['city'] ?? 'Thailand'}';
+        '${destination['location'] ?? destination['city'] ?? context.l10n.thailand}';
     final image = '${destination['image'] ?? destination['image_url'] ?? ''}';
 
     return Material(

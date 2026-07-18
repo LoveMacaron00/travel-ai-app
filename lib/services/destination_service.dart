@@ -8,6 +8,7 @@ class DestinationService {
   final ApiClient _client;
   List<dynamic>? _cache;
   DateTime? _cacheTime;
+  String? _cacheLanguage;
 
   Future<Map<String, dynamic>> getDestinations({
     int? limit,
@@ -16,6 +17,7 @@ class DestinationService {
     final cacheFresh =
         _cache != null &&
         _cacheTime != null &&
+        _cacheLanguage == _client.languageCode &&
         DateTime.now().difference(_cacheTime!) < const Duration(minutes: 10);
     if (!forceRefresh && cacheFresh) {
       final cached = limit == null
@@ -34,6 +36,7 @@ class DestinationService {
         if (limit == null) {
           _cache = List<dynamic>.from(destinations);
           _cacheTime = DateTime.now();
+          _cacheLanguage = _client.languageCode;
         }
         return {'success': true, 'data': destinations};
       }

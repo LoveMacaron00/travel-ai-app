@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/model/scan_result.dart';
 import 'package:myapp/screen/chatbot_screen.dart';
 
@@ -18,6 +19,9 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        locale: Locale('th'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SingleChildScrollView(child: ScanResultView(result: result)),
         ),

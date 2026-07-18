@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/services/app_services.dart';
 import 'package:myapp/utils/destination_display.dart';
 
@@ -25,7 +26,8 @@ class DestinationDetailScreen extends StatefulWidget {
 }
 
 class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
-  late final Future<Map<String, dynamic>> _detailFuture;
+  late Future<Map<String, dynamic>> _detailFuture;
+  late String _loadedLanguage;
   final PageController _galleryController = PageController();
   int _imageIndex = 0;
   double? _galleryDragStartX;
@@ -33,7 +35,18 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _loadedLanguage = AppServices.locale.languageCode;
     _detailFuture = _loadDetails();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final language = Localizations.localeOf(context).languageCode;
+    if (language != _loadedLanguage) {
+      _loadedLanguage = language;
+      _detailFuture = _loadDetails();
+    }
   }
 
   Future<Map<String, dynamic>> _loadDetails() async {
@@ -66,7 +79,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
               ? Map<String, dynamic>.from(snapshot.data!['data'])
               : <String, dynamic>{};
           final name = '${detail['name'] ?? widget.fallbackName}';
-          final province = '${detail['province'] ?? 'Thailand'}';
+          final province = '${detail['province'] ?? context.l10n.thailand}';
           final images = collectDestinationImages(
             detail,
             fallback: widget.fallbackImageUrl,
@@ -159,7 +172,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                           top: 155,
                           child: _galleryButton(
                             icon: Icons.chevron_left_rounded,
-                            tooltip: 'Previous photo',
+                            tooltip: context.l10n.previousPhoto,
                             onPressed: () => _changeImage(-1, images.length),
                           ),
                         ),
@@ -168,7 +181,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                           top: 155,
                           child: _galleryButton(
                             icon: Icons.chevron_right_rounded,
-                            tooltip: 'Next photo',
+                            tooltip: context.l10n.nextPhoto,
                             onPressed: () => _changeImage(1, images.length),
                           ),
                         ),
@@ -279,9 +292,9 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'AT A GLANCE',
-                          style: TextStyle(
+                        Text(
+                          context.l10n.atAGlance.toUpperCase(),
+                          style: const TextStyle(
                             color: Color(0xff8b806f),
                             fontSize: 11,
                             letterSpacing: 1.2,
@@ -294,9 +307,9 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                             Expanded(
                               child: _quickFact(
                                 Icons.schedule_outlined,
-                                'Hours',
+                                context.l10n.hours,
                                 hours.isEmpty
-                                    ? 'Check before visiting'
+                                    ? context.l10n.checkBeforeVisiting
                                     : hours.split('\n').first,
                               ),
                             ),
@@ -308,9 +321,9 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                             Expanded(
                               child: _quickFact(
                                 Icons.confirmation_number_outlined,
-                                'Admission',
+                                context.l10n.admission,
                                 fee.isEmpty
-                                    ? 'See on arrival'
+                                    ? context.l10n.seeOnArrival
                                     : fee.values.first,
                               ),
                             ),
@@ -320,7 +333,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                           const SizedBox(height: 30),
                           _sectionTitle(
                             Icons.schedule_outlined,
-                            'Opening hours',
+                            context.l10n.openingHours,
                           ),
                           const SizedBox(height: 10),
                           Text(
@@ -335,7 +348,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                           const SizedBox(height: 30),
                           _sectionTitle(
                             Icons.confirmation_number_outlined,
-                            'Admission fee',
+                            context.l10n.admissionFee,
                           ),
                           const SizedBox(height: 10),
                           ...fee.entries.map(
@@ -346,7 +359,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                           const SizedBox(height: 30),
                           _sectionTitle(
                             Icons.menu_book_outlined,
-                            'About this place',
+                            context.l10n.aboutThisPlace,
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -361,9 +374,9 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                         if (snapshot.hasError ||
                             snapshot.data?['success'] == false) ...[
                           const SizedBox(height: 22),
-                          const Text(
-                            'Some details are unavailable right now.',
-                            style: TextStyle(color: Colors.black45),
+                          Text(
+                            context.l10n.detailsUnavailable,
+                            style: const TextStyle(color: Colors.black45),
                           ),
                         ],
                       ],
@@ -385,9 +398,9 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
             ),
             onPressed: widget.onExploreMap ?? () => Navigator.pop(context),
             icon: const Icon(Icons.map_outlined),
-            label: const Text(
-              'View on map',
-              style: TextStyle(fontWeight: FontWeight.w800),
+            label: Text(
+              context.l10n.viewOnMap,
+              style: const TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
         ),
@@ -485,18 +498,18 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
     final fee = resolveAdmissionFee(detail);
     if (fee == null) return const {};
     final values = <String, String>{};
-    const labels = {
-      'thaiAdult': 'Thai adult',
-      'thaiChild': 'Thai child',
-      'foreignerAdult': 'Foreigner adult',
-      'foreignerChild': 'Foreigner child',
+    final labels = {
+      'thaiAdult': context.l10n.thaiAdult,
+      'thaiChild': context.l10n.thaiChild,
+      'foreignerAdult': context.l10n.foreignerAdult,
+      'foreignerChild': context.l10n.foreignerChild,
     };
     for (final entry in labels.entries) {
       final value = fee[entry.key];
       if (value != null && '$value'.isNotEmpty) values[entry.value] = '฿$value';
     }
     final detailText = stripHtmlText('${fee['detail'] ?? ''}');
-    if (detailText.isNotEmpty) values['Conditions'] = detailText;
+    if (detailText.isNotEmpty) values[context.l10n.conditions] = detailText;
     return values;
   }
 }

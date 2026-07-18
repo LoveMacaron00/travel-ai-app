@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/services/app_services.dart';
 import 'package:myapp/widgets/media_image.dart';
 import 'package:image_picker/image_picker.dart';
@@ -55,11 +56,15 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       if (result['success']) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('บันทึกข้อมูลสำเร็จ!')));
+        ).showSnackBar(SnackBar(content: Text(context.l10n.savedSuccessfully)));
         _loadUserData();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'เกิดข้อผิดพลาด')),
+          SnackBar(
+            content: Text(
+              result['message'] ?? context.l10n.profileUpdateFailed,
+            ),
+          ),
         );
       }
     }
@@ -85,21 +90,23 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         setState(() => _isLoading = false);
         if (result['success']) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('อัปโหลดรูปโปรไฟล์สำเร็จ!')),
+            SnackBar(content: Text(context.l10n.profilePhotoUploaded)),
           );
           _loadUserData();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? 'อัปโหลดไม่สำเร็จ')),
+            SnackBar(
+              content: Text(result['message'] ?? context.l10n.uploadFailed),
+            ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('เกิดข้อผิดพลาด: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.errorOccurred(e.toString()))),
+        );
       }
     }
   }
@@ -113,11 +120,11 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          title: const Text('แก้ไข URL รูปโปรไฟล์'),
+          title: Text(context.l10n.editProfileImageUrl),
           content: TextField(
             controller: controller,
             decoration: InputDecoration(
-              hintText: 'กรอก URL ของรูปภาพ',
+              hintText: context.l10n.imageUrlHint,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -130,7 +137,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('ยกเลิก'),
+              child: Text(context.l10n.cancel),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -144,7 +151,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                 Navigator.pop(context);
                 _updateProfile(profileImageUrl: controller.text.trim());
               },
-              child: const Text('บันทึก'),
+              child: Text(context.l10n.save),
             ),
           ],
         );
@@ -167,9 +174,9 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'เปลี่ยนรูปโปรไฟล์',
-                  style: TextStyle(
+                Text(
+                  context.l10n.changeProfilePhoto,
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
@@ -178,7 +185,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                 const SizedBox(height: 20),
                 _buildBottomSheetTile(
                   icon: Icons.photo_library,
-                  label: 'เลือกจากคลังภาพ',
+                  label: context.l10n.chooseFromGallery,
                   onTap: () {
                     Navigator.pop(context);
                     _pickAndUploadImage(ImageSource.gallery);
@@ -187,7 +194,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                 const Divider(height: 1),
                 _buildBottomSheetTile(
                   icon: Icons.camera_alt,
-                  label: 'ถ่ายรูป',
+                  label: context.l10n.takePhoto,
                   onTap: () {
                     Navigator.pop(context);
                     _pickAndUploadImage(ImageSource.camera);
@@ -196,7 +203,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                 const Divider(height: 1),
                 _buildBottomSheetTile(
                   icon: Icons.link,
-                  label: 'ใส่ URL รูปภาพ',
+                  label: context.l10n.enterImageUrl,
                   onTap: () {
                     Navigator.pop(context);
                     _showUrlInputDialog();
@@ -239,12 +246,12 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          title: const Text('แก้ไขชื่อผู้ใช้'),
+          title: Text(context.l10n.editUsername),
           content: TextField(
             controller: controller,
             autofocus: true,
             decoration: InputDecoration(
-              hintText: 'กรอกชื่อผู้ใช้ใหม่',
+              hintText: context.l10n.newUsernameHint,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -257,7 +264,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('ยกเลิก'),
+              child: Text(context.l10n.cancel),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -273,7 +280,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                   _updateProfile(username: controller.text.trim());
                 }
               },
-              child: const Text('บันทึก'),
+              child: Text(context.l10n.save),
             ),
           ],
         );
@@ -284,6 +291,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final String userEmail = AppServices.auth.currentUser?['email'] ?? '';
+    final l10n = context.l10n;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -294,9 +302,9 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Account Settings',
-          style: TextStyle(
+        title: Text(
+          l10n.accountSettings,
+          style: const TextStyle(
             color: Colors.black87,
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -379,9 +387,9 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                   TextButton.icon(
                     onPressed: _showEditProfileImageBottomSheet,
                     icon: const Icon(Icons.edit, size: 15, color: _brandGold),
-                    label: const Text(
-                      'เปลี่ยนรูปโปรไฟล์',
-                      style: TextStyle(
+                    label: Text(
+                      l10n.changeProfilePhoto,
+                      style: const TextStyle(
                         color: _brandGold,
                         fontWeight: FontWeight.w600,
                       ),
@@ -396,9 +404,9 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
             const SizedBox(height: 24),
 
             // ── Account Info ───────────────────────────────────
-            const Text(
-              'ข้อมูลบัญชี',
-              style: TextStyle(
+            Text(
+              l10n.accountInformation,
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
                 color: Colors.grey,
@@ -410,8 +418,8 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
             // Username tile
             _buildSettingsTile(
               icon: Icons.person_outline,
-              label: 'ชื่อผู้ใช้',
-              value: _username.isNotEmpty ? _username : 'ยังไม่ได้ตั้งชื่อ',
+              label: l10n.username,
+              value: _username.isNotEmpty ? _username : l10n.notSet,
               onTap: _showEditUsernameDialog,
             ),
 
@@ -420,7 +428,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
             // Email tile (read-only)
             _buildSettingsTile(
               icon: Icons.email_outlined,
-              label: 'อีเมล',
+              label: l10n.email,
               value: userEmail.isNotEmpty ? userEmail : '-',
               onTap: null, // email is not editable
             ),

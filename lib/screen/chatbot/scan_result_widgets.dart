@@ -93,10 +93,13 @@ class ScanResultView extends StatelessWidget {
               result.translatedText.isNotEmpty) ...[
             const SizedBox(height: 16),
             if (result.originalText.isNotEmpty)
-              _ResultSection(title: 'Original Thai', body: result.originalText),
+              _ResultSection(
+                title: context.l10n.originalThai,
+                body: result.originalText,
+              ),
             if (result.translatedText.isNotEmpty)
               _ResultSection(
-                title: 'English translation',
+                title: context.l10n.englishTranslation,
                 body: result.translatedText,
               ),
           ],
@@ -105,11 +108,11 @@ class ScanResultView extends StatelessWidget {
                 _ResultSection(title: section.title, body: section.body),
           ),
           if (result.candidates.length > 1) ...[
-            const Padding(
-              padding: EdgeInsets.only(top: 12, bottom: 7),
+            Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 7),
               child: Text(
-                'Other possibilities',
-                style: TextStyle(
+                context.l10n.otherPossibilities,
+                style: const TextStyle(
                   color: Color(0xFF737B8C),
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -146,11 +149,11 @@ class ScanResultView extends StatelessWidget {
             ),
           ],
           if (result.confidence > 0 && result.confidence < 0.8)
-            const Padding(
-              padding: EdgeInsets.only(top: 12),
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
               child: Text(
-                'Not fully certain — try a clearer, closer photo.',
-                style: TextStyle(
+                context.l10n.notFullyCertain,
+                style: const TextStyle(
                   color: Color(0xFFA96C00),
                   fontSize: 12,
                   height: 1.35,

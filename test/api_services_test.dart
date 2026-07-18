@@ -57,13 +57,36 @@ void main() {
     });
   });
 
+  test('ApiClient sends the selected locale as Accept-Language', () async {
+    var languageCode = 'th';
+    final requests = <http.Request>[];
+    final client = ApiClient(
+      baseUrl: 'https://api.example.com/api',
+      tokenProvider: () => null,
+      languageProvider: () => languageCode,
+      httpClient: MockClient((request) async {
+        requests.add(request);
+        return http.Response('{}', 200);
+      }),
+    );
+
+    await client.get('/v2/places');
+    languageCode = 'en';
+    await client.get('/v2/places/123');
+
+    expect(requests[0].headers['Accept-Language'], 'th');
+    expect(requests[1].headers['Accept-Language'], 'en');
+  });
+
   test(
-    'DestinationService caches the full list and serves limited views',
+    'DestinationService caches by language and serves limited views',
     () async {
       var requests = 0;
+      var languageCode = 'th';
       final client = ApiClient(
         baseUrl: 'https://api.example.com/api',
         tokenProvider: () => null,
+        languageProvider: () => languageCode,
         httpClient: MockClient((request) async {
           requests++;
           return http.Response(
@@ -82,11 +105,14 @@ void main() {
 
       final full = await service.getDestinations();
       final limited = await service.getDestinations(limit: 2);
+      languageCode = 'en';
+      final english = await service.getDestinations();
 
       expect(full['success'], isTrue);
       expect((limited['data'] as List), hasLength(2));
       expect(limited['cached'], isTrue);
-      expect(requests, 1);
+      expect(english['cached'], isNot(true));
+      expect(requests, 2);
     },
   );
 

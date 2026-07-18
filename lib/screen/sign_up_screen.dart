@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:form_field_validator/form_field_validator.dart';
+import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/model/profile.dart';
 import 'package:myapp/screen/main_navigation_screen.dart';
 import 'package:myapp/services/app_services.dart';
@@ -37,7 +38,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         if (mounted) {
           unawaited(AppServices.activity.resume());
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registration successful!')),
+            SnackBar(content: Text(context.l10n.registrationSuccessful)),
           );
           Navigator.pushReplacement(
             context,
@@ -51,7 +52,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                registerResult['message']?.toString() ?? 'Registration failed',
+                registerResult['message']?.toString() ??
+                    context.l10n.registrationFailed,
               ),
             ),
           );
@@ -61,9 +63,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       formkey.currentState!.reset();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Registration failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              context.l10n.registrationFailedWithError(e.toString()),
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -117,6 +123,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     const Color brandGold = Color(0xFFF4C025);
     const Color bgGray = Color(0xFFFFFFFF);
     const Color borderGray = Color(0xFF747474);
+    final l10n = context.l10n;
 
     return Scaffold(
       backgroundColor: bgGray,
@@ -142,9 +149,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 34),
-                const Text(
-                  'Create a User\nAccount',
-                  style: TextStyle(
+                Text(
+                  l10n.createAccount,
+                  style: const TextStyle(
                     color: brandGold,
                     fontSize: 32,
                     fontWeight: FontWeight.w700,
@@ -152,9 +159,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 44),
-                const Text(
-                  'Email',
-                  style: TextStyle(
+                Text(
+                  l10n.email,
+                  style: const TextStyle(
                     fontSize: 15,
                     color: Colors.black,
                     fontWeight: FontWeight.w500,
@@ -163,21 +170,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 10),
                 TextFormField(
                   validator: MultiValidator([
-                    RequiredValidator(errorText: 'Email is required'),
-                    EmailValidator(errorText: 'Email is invalid'),
+                    RequiredValidator(errorText: l10n.emailRequired),
+                    EmailValidator(errorText: l10n.emailInvalid),
                   ]).call,
                   keyboardType: TextInputType.emailAddress,
                   onSaved: (value) => profile.email = value,
                   style: const TextStyle(fontSize: 15, color: borderGray),
                   decoration: _buildInputDecoration(
-                    hintText: 'Enter your email.',
+                    hintText: l10n.emailHint,
                     prefixIcon: Icons.mail_outline,
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'Password',
-                  style: TextStyle(
+                Text(
+                  l10n.password,
+                  style: const TextStyle(
                     fontSize: 15,
                     color: Colors.black,
                     fontWeight: FontWeight.w500,
@@ -186,17 +193,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 10),
                 TextFormField(
                   validator: MultiValidator([
-                    RequiredValidator(errorText: 'Password is required'),
-                    MinLengthValidator(
-                      8,
-                      errorText: 'Password must be at least 8 characters',
-                    ),
+                    RequiredValidator(errorText: l10n.passwordRequired),
+                    MinLengthValidator(8, errorText: l10n.passwordMinLength),
                   ]).call,
                   obscureText: _obscurePassword,
                   onSaved: (value) => profile.password = value,
                   style: const TextStyle(fontSize: 15, color: borderGray),
                   decoration: _buildInputDecoration(
-                    hintText: 'Enter your password.',
+                    hintText: l10n.passwordHint,
                     prefixIcon: Icons.lock_outline,
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -215,9 +219,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Must contain at least 8 characters.',
-                  style: TextStyle(
+                Text(
+                  l10n.passwordRequirement,
+                  style: const TextStyle(
                     fontSize: 13,
                     color: borderGray,
                     fontWeight: FontWeight.w400,
@@ -252,7 +256,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ),
                           )
-                        : const Text('Sign Up'),
+                        : Text(l10n.signUp),
                   ),
                 ),
               ],

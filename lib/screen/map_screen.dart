@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:myapp/config/app_config.dart';
+import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/model/place_marker.dart';
 import 'package:myapp/model/travel_plan.dart';
 import 'package:myapp/screen/destination_detail_screen.dart';
@@ -37,20 +38,22 @@ class MapScreenState extends State<MapScreen> {
   List<PlaceMarker> _suggestions = [];
   bool _showSuggestions = false;
   String? _pendingDestinationId;
+  late String _loadedLanguage;
 
   String _selectedCategory = 'all';
-  final List<Map<String, String>> _categories = [
-    {'id': 'all', 'label': 'ทุกหมวดหมู่'},
-    {'id': 'attraction', 'label': 'สถานที่ท่องเที่ยว'},
-    {'id': 'accommodation', 'label': 'ที่พัก'},
-    {'id': 'restaurant', 'label': 'ร้านอาหาร'},
-    {'id': 'shop', 'label': 'ร้านค้า'},
-    {'id': 'other', 'label': 'อื่นๆ'},
+  final List<String> _categories = [
+    'all',
+    'attraction',
+    'accommodation',
+    'restaurant',
+    'shop',
+    'other',
   ];
 
   @override
   void initState() {
     super.initState();
+    _loadedLanguage = AppServices.locale.languageCode;
     _currentPosition = _locationService.currentPosition;
     _locationService.addListener(_onSharedLocationChanged);
     _loadDestinations();
@@ -66,6 +69,16 @@ class MapScreenState extends State<MapScreen> {
         setState(() => _showSuggestions = false);
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final language = Localizations.localeOf(context).languageCode;
+    if (language != _loadedLanguage) {
+      _loadedLanguage = language;
+      _loadDestinations();
+    }
   }
 
   @override
@@ -147,8 +160,12 @@ class MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _loadDestinations() async {
+    final requestedLanguage = AppServices.locale.languageCode;
     try {
       final result = await AppServices.destinations.getDestinations();
+      if (!mounted || requestedLanguage != AppServices.locale.languageCode) {
+        return;
+      }
       if (result['success'] == true && result['data'] is List) {
         final List<dynamic> data = result['data'];
         List<PlaceMarker> fetchedPlaces = [];
@@ -170,10 +187,10 @@ class MapScreenState extends State<MapScreen> {
               title:
                   item['name']?.toString() ??
                   item['city']?.toString() ??
-                  'Unknown Place',
+                  context.l10n.unknownPlace,
               description:
                   item['location']?.toString() ??
-                  'Beautiful destination in Thailand.',
+                  context.l10n.beautifulThailandDestination,
               latitude: lat,
               longitude: lng,
               imageUrl: item['image'] != null
@@ -266,13 +283,9 @@ class MapScreenState extends State<MapScreen> {
     if (position != null) {
       _mapController.move(position, 15.0);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Unable to get your GPS location. Check location settings and permission.',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.gpsUnavailable)));
     }
   }
 
@@ -291,17 +304,17 @@ class MapScreenState extends State<MapScreen> {
   String _getCategoryLabel(String category) {
     switch (category.toLowerCase()) {
       case 'all':
-        return 'ทุกหมวดหมู่';
+        return context.l10n.categoryAll;
       case 'attraction':
-        return 'สถานที่ท่องเที่ยว';
+        return context.l10n.categoryAttraction;
       case 'accommodation':
-        return 'ที่พัก';
+        return context.l10n.categoryAccommodation;
       case 'restaurant':
-        return 'ร้านอาหาร';
+        return context.l10n.categoryRestaurant;
       case 'shop':
-        return 'ร้านค้า';
+        return context.l10n.categoryShop;
       case 'other':
-        return 'อื่นๆ';
+        return context.l10n.categoryOther;
       default:
         return category;
     }

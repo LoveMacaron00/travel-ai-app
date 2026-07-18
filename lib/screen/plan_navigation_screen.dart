@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:myapp/config/app_config.dart';
+import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/model/travel_plan.dart';
 import 'package:myapp/services/app_services.dart';
 
@@ -25,12 +26,15 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
   @override
   void initState() {
     super.initState();
-    _start();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _start();
+    });
   }
 
   Future<void> _start() async {
+    final l10n = context.l10n;
     if (!await Geolocator.isLocationServiceEnabled()) {
-      _message('Turn on location services to navigate.');
+      _message(l10n.turnOnLocationServices);
       return;
     }
     var permission = await Geolocator.checkPermission();
@@ -39,7 +43,7 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
     }
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
-      _message('Location permission is required for navigation.');
+      _message(l10n.locationPermissionRequired);
       return;
     }
     final first = await Geolocator.getCurrentPosition();
@@ -167,7 +171,9 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
                       ],
                     ),
                     child: Text(
-                      '${_remainingKm.toStringAsFixed(1)} km left',
+                      context.l10n.kilometersLeft(
+                        _remainingKm.toStringAsFixed(1),
+                      ),
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
@@ -198,9 +204,12 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
-                          'Navigate to',
-                          style: TextStyle(color: Colors.white60, fontSize: 12),
+                        Text(
+                          context.l10n.navigateTo,
+                          style: const TextStyle(
+                            color: Colors.white60,
+                            fontSize: 12,
+                          ),
                         ),
                         Text(
                           widget.destination.place,

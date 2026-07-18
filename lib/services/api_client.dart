@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:myapp/config/app_config.dart';
 
 typedef TokenProvider = String? Function();
+typedef LanguageProvider = String Function();
 
 /// HTTP boundary กลางของ mobile app
 ///
@@ -14,13 +15,18 @@ class ApiClient {
     http.Client? httpClient,
     String baseUrl = AppConfig.apiBaseUrl,
     required TokenProvider tokenProvider,
+    LanguageProvider? languageProvider,
   }) : httpClient = httpClient ?? http.Client(),
        baseUrl = baseUrl.replaceFirst(RegExp(r'/$'), ''),
-       _tokenProvider = tokenProvider;
+       _tokenProvider = tokenProvider,
+       _languageProvider = languageProvider ?? (() => 'th');
 
   final http.Client httpClient;
   final String baseUrl;
   final TokenProvider _tokenProvider;
+  final LanguageProvider _languageProvider;
+
+  String get languageCode => _languageProvider();
 
   Uri uri(String path) {
     final normalizedPath = path.startsWith('/') ? path : '/$path';
@@ -30,6 +36,7 @@ class ApiClient {
   Map<String, String> headers({bool json = true}) {
     final headers = <String, String>{
       if (json) 'Content-Type': 'application/json',
+      'Accept-Language': languageCode,
     };
     final token = _tokenProvider();
     if (token != null && token.isNotEmpty) {

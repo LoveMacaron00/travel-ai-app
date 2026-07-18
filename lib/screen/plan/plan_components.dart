@@ -14,10 +14,13 @@ extension _PlanComponents on _PlanScreenState {
       children: [
         Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
-                'Estimated trip cost',
-                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+                context.l10n.estimatedTripCost,
+                style: const TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ),
             Text(
@@ -50,9 +53,9 @@ extension _PlanComponents on _PlanScreenState {
           ),
         ),
         const SizedBox(height: 10),
-        const Text(
-          'Estimates may change with availability, season, and traffic.',
-          style: TextStyle(color: Colors.black38, fontSize: 11),
+        Text(
+          context.l10n.estimateDisclaimer,
+          style: const TextStyle(color: Colors.black38, fontSize: 11),
         ),
       ],
     ),
@@ -124,15 +127,15 @@ extension _PlanComponents on _PlanScreenState {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Current GPS location',
-                style: TextStyle(fontWeight: FontWeight.w700),
+              Text(
+                context.l10n.currentGpsLocation,
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               Text(
                 _position == null
                     ? (_locating
-                          ? 'Finding your location…'
-                          : 'Location unavailable')
+                          ? context.l10n.findingLocation
+                          : context.l10n.locationUnavailable)
                     : '${_position!.latitude.toStringAsFixed(5)}, ${_position!.longitude.toStringAsFixed(5)}',
                 style: const TextStyle(color: Colors.black45, fontSize: 12),
               ),
@@ -150,7 +153,7 @@ extension _PlanComponents on _PlanScreenState {
     children: options
         .map(
           (v) => FilterChip(
-            label: Text(v),
+            label: Text(_interestLabel(v)),
             selected: selected.contains(v),
             selectedColor: const Color(0xffffe7a0),
             checkmarkColor: const Color(0xff986b00),
@@ -204,11 +207,14 @@ extension _PlanComponents on _PlanScreenState {
             maxChildSize: .92,
             builder: (_, controller) => Column(
               children: [
-                const Padding(
-                  padding: EdgeInsets.only(top: 14),
+                Padding(
+                  padding: const EdgeInsets.only(top: 14),
                   child: Text(
-                    'Add a place',
-                    style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
+                    context.l10n.addAPlace,
+                    style: const TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
                 Padding(
@@ -216,7 +222,7 @@ extension _PlanComponents on _PlanScreenState {
                   child: TextField(
                     onChanged: (v) => setSheet(() => query = v),
                     decoration: _inputDecoration(
-                      'Search places in Thailand',
+                      context.l10n.searchPlacesThailand,
                       Icons.search,
                     ),
                   ),
@@ -339,9 +345,30 @@ extension _PlanComponents on _PlanScreenState {
     RegExp(r'\B(?=(\d{3})+(?!\d))'),
     (m) => ',',
   );
-  String _modeLabel(String v) => '${v[0].toUpperCase()}${v.substring(1)}';
-  String _title(String v) => v
-      .split(RegExp(r'[_ ]'))
-      .map((s) => s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}')
-      .join(' ');
+  String _modeLabel(String value) => switch (value.toLowerCase()) {
+    'car' => context.l10n.transportCar,
+    'walking' => context.l10n.transportWalking,
+    _ => _title(value),
+  };
+
+  String _interestLabel(String value) => switch (value) {
+    'Food' => context.l10n.interestFood,
+    'Culture' => context.l10n.interestCulture,
+    'Beach' => context.l10n.interestBeach,
+    'Nature' => context.l10n.interestNature,
+    'Shopping' => context.l10n.interestShopping,
+    'Nightlife' => context.l10n.interestNightlife,
+    _ => value,
+  };
+
+  String _title(String value) => switch (value.toLowerCase()) {
+    'food' => context.l10n.food,
+    'transport' => context.l10n.transport,
+    'admission' => context.l10n.admission,
+    _ =>
+      value
+          .split(RegExp(r'[_ ]'))
+          .map((s) => s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}')
+          .join(' '),
+  };
 }

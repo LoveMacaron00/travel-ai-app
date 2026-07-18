@@ -1,12 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/screen/welcome_screen.dart';
 import 'package:myapp/screen/main_navigation_screen.dart';
 import 'package:myapp/services/app_services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppServices.locale.init();
   // โหลด session ก่อนสร้าง widget แรก เพื่อไม่ให้หน้า Welcome กระพริบขึ้นมา
   // ระหว่างที่แอปกำลังตัดสินใจว่าผู้ใช้เคยเข้าสู่ระบบแล้วหรือไม่
   await AppServices.auth.initSession();
@@ -52,13 +55,24 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'GoThai',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.amber, useMaterial3: false),
-      home: AppServices.auth.token != null
-          ? const MainNavigationScreen()
-          : const WelcomeScreen(),
+    return ListenableBuilder(
+      listenable: AppServices.locale,
+      builder: (context, _) => MaterialApp(
+        onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
+        debugShowCheckedModeBanner: false,
+        locale: AppServices.locale.locale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        theme: ThemeData(primarySwatch: Colors.amber, useMaterial3: false),
+        home: AppServices.auth.token != null
+            ? const MainNavigationScreen()
+            : const WelcomeScreen(),
+      ),
     );
   }
 }

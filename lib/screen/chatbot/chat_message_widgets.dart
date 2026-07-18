@@ -36,11 +36,14 @@ class _ChatBubble extends StatelessWidget {
                 : CrossAxisAlignment.start,
             children: [
               if (!message.isUser)
-                const Padding(
-                  padding: EdgeInsets.only(left: 4, bottom: 5),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, bottom: 5),
                   child: Text(
-                    'AI Guide',
-                    style: TextStyle(color: Color(0xFFE8A900), fontSize: 12),
+                    context.l10n.aiGuide,
+                    style: const TextStyle(
+                      color: Color(0xFFE8A900),
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               Container(
@@ -128,7 +131,7 @@ class _SourcePill extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  (source['name'] ?? 'TAT place').toString(),
+                  (source['name'] ?? context.l10n.tatPlace).toString(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(

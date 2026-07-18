@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/screen/all_destinations_screen.dart';
 import 'package:myapp/screen/chatbot_screen.dart';
 import 'package:myapp/screen/destination_detail_screen.dart';
@@ -21,11 +22,23 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late Future<List<Map<String, dynamic>>> _destinationsFuture;
+  late String _loadedLanguage;
 
   @override
   void initState() {
     super.initState();
+    _loadedLanguage = AppServices.locale.languageCode;
     _destinationsFuture = _loadDestinations();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final language = Localizations.localeOf(context).languageCode;
+    if (language != _loadedLanguage) {
+      _loadedLanguage = language;
+      _destinationsFuture = _loadDestinations();
+    }
   }
 
   Future<List<Map<String, dynamic>>> _loadDestinations() async {
@@ -44,6 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     const Color brandGold = Color(0xFFF4C025);
     const Color lightGold = Color(0xFFFFD54F);
+    final l10n = context.l10n;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -136,9 +150,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     const SizedBox(height: 18),
-                    const Text(
-                      "Ready to explore Thailand?",
-                      style: TextStyle(
+                    Text(
+                      l10n.readyToExplore,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
@@ -172,9 +186,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               size: 20,
                             ),
                             const SizedBox(width: 8),
-                            const Text(
-                              "AI Travel Suite",
-                              style: TextStyle(
+                            Text(
+                              l10n.aiTravelSuite,
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black87,
@@ -188,12 +202,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             _buildFeatureItem(
                               Icons.calendar_month,
-                              "Plan Travel",
+                              l10n.planTravel,
                               brandGold,
                             ),
                             _buildFeatureItem(
                               Icons.forum,
-                              "Chatbot",
+                              l10n.chatbot,
                               brandGold,
                               onTap: () {
                                 Navigator.push(
@@ -206,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             _buildFeatureItem(
                               Icons.document_scanner_outlined,
-                              "Scan with AI",
+                              l10n.scanWithAi,
                               brandGold,
                               onTap: () {
                                 Navigator.push(
@@ -231,9 +245,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      " Destinations",
-                      style: TextStyle(
+                    Text(
+                      l10n.destinations,
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,
@@ -248,9 +262,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ),
-                      child: const Text(
-                        "See all",
-                        style: TextStyle(
+                      child: Text(
+                        l10n.seeAll,
+                        style: const TextStyle(
                           color: brandGold,
                           fontWeight: FontWeight.bold,
                         ),
@@ -270,8 +284,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (snapshot.hasError) {
                     return _buildDestinationMessage(
                       icon: Icons.cloud_off,
-                      title: 'Could not load TAT destinations',
-                      subtitle: 'Pull down to try again.',
+                      title: l10n.couldNotLoadTatDestinations,
+                      subtitle: l10n.pullDownTryAgain,
                     );
                   }
 
@@ -279,8 +293,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (destinations.isEmpty) {
                     return _buildDestinationMessage(
                       icon: Icons.travel_explore,
-                      title: 'No destinations yet',
-                      subtitle: 'TAT API did not return places with images.',
+                      title: l10n.noDestinationsYet,
+                      subtitle: l10n.tatReturnedNoImages,
                     );
                   }
 
@@ -307,7 +321,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDestinationCard(Map<String, dynamic> dest, Color brandGold) {
-    final String city = (dest['city'] ?? 'Thailand').toString();
+    final String city = (dest['city'] ?? context.l10n.thailand).toString();
     final String location = (dest['location'] ?? '').toString();
     final String image = (dest['image'] ?? '').toString();
     final int viewer = int.tryParse((dest['viewer'] ?? 0).toString()) ?? 0;
@@ -525,12 +539,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _formatViewerCount(int value) {
     if (value >= 1000000) {
-      return '${(value / 1000000).toStringAsFixed(1)}M views';
+      return context.l10n.viewsCount(
+        '${(value / 1000000).toStringAsFixed(1)}M',
+      );
     }
     if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(1)}K views';
+      return context.l10n.viewsCount('${(value / 1000).toStringAsFixed(1)}K');
     }
-    return '$value views';
+    return context.l10n.viewsCount('$value');
   }
 
   Widget _buildFeatureItem(

@@ -35,18 +35,18 @@ class _ScanModeSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 18),
-            const Text(
-              'Scan with AI',
-              style: TextStyle(
+            Text(
+              context.l10n.scanWithAi,
+              style: const TextStyle(
                 color: Color(0xFF202636),
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Choose what you want the guide to understand.',
-              style: TextStyle(color: Color(0xFF737B8C), fontSize: 13),
+            Text(
+              context.l10n.chooseScanMode,
+              style: const TextStyle(color: Color(0xFF737B8C), fontSize: 13),
             ),
             const SizedBox(height: 14),
             ...ScanMode.values.map(
@@ -76,7 +76,7 @@ class _ScanModeSheet extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              mode.title,
+                              _scanModeTitle(context, mode),
                               style: const TextStyle(
                                 color: Color(0xFF202636),
                                 fontSize: 15,
@@ -85,7 +85,7 @@ class _ScanModeSheet extends StatelessWidget {
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              mode.description,
+                              _scanModeDescription(context, mode),
                               style: const TextStyle(
                                 color: Color(0xFF737B8C),
                                 fontSize: 12,
@@ -141,7 +141,7 @@ class _ImageSourceSheet extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             Text(
-              mode.title,
+              _scanModeTitle(context, mode),
               style: const TextStyle(
                 color: Color(0xFF202636),
                 fontSize: 20,
@@ -154,7 +154,7 @@ class _ImageSourceSheet extends StatelessWidget {
                 Expanded(
                   child: _SourceAction(
                     icon: Icons.photo_camera_outlined,
-                    label: 'Take photo',
+                    label: context.l10n.takePhoto,
                     onTap: () => Navigator.pop(context, ImageSource.camera),
                   ),
                 ),
@@ -162,7 +162,7 @@ class _ImageSourceSheet extends StatelessWidget {
                 Expanded(
                   child: _SourceAction(
                     icon: Icons.photo_library_outlined,
-                    label: 'Photo library',
+                    label: context.l10n.photoLibrary,
                     onTap: () => Navigator.pop(context, ImageSource.gallery),
                   ),
                 ),
@@ -224,10 +224,10 @@ class _TypingBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = switch (mode) {
-      ScanMode.place => 'AI Guide is checking the place and nearby context...',
-      ScanMode.sign => 'AI Guide is reading and translating the sign...',
-      ScanMode.food => 'AI Guide is identifying the Thai dish...',
-      null => 'AI Guide is checking TAT details...',
+      ScanMode.place => context.l10n.typingPlace,
+      ScanMode.sign => context.l10n.typingSign,
+      ScanMode.food => context.l10n.typingFood,
+      null => context.l10n.typingTat,
     };
     return Align(
       alignment: Alignment.centerLeft,
@@ -266,7 +266,7 @@ class _ChatInput extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            tooltip: 'Scan with AI',
+            tooltip: context.l10n.scanWithAi,
             onPressed: isBusy ? null : onCamera,
             icon: const Icon(
               Icons.photo_camera_outlined,
@@ -287,9 +287,9 @@ class _ChatInput extends StatelessWidget {
                   Expanded(
                     child: TextField(
                       controller: controller,
-                      decoration: const InputDecoration(
-                        hintText: 'Ask about Thailand...',
-                        hintStyle: TextStyle(
+                      decoration: InputDecoration(
+                        hintText: context.l10n.askThailandHint,
+                        hintStyle: const TextStyle(
                           color: Color(0xFF858C9B),
                           fontSize: 14,
                         ),
