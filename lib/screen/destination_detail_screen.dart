@@ -86,6 +86,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
           );
           final description = stripHtmlText('${detail['description'] ?? ''}');
           final hours = formatDestinationOpeningHours(detail);
+          final hoursSummary = formatDestinationOpeningTimeSummary(detail);
           final fee = _fee(detail);
 
           return CustomScrollView(
@@ -308,9 +309,9 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                               child: _quickFact(
                                 Icons.schedule_outlined,
                                 context.l10n.hours,
-                                hours.isEmpty
+                                hoursSummary.isEmpty
                                     ? context.l10n.checkBeforeVisiting
-                                    : hours.split('\n').first,
+                                    : hoursSummary,
                               ),
                             ),
                             Container(

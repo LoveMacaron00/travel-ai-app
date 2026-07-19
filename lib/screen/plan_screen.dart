@@ -40,7 +40,7 @@ class _PlanScreenState extends State<PlanScreen> {
   String? _error;
   TravelPlan? _plan;
   List<PlaceMarker> _places = [];
-  final Set<String> _interests = {'Culture'};
+  final Set<String> _interests = {};
   final Set<String> _modes = {'car'};
   final List<PlaceMarker> _mustVisit = [];
   final Set<String> _excluded = {};
@@ -52,11 +52,14 @@ class _PlanScreenState extends State<PlanScreen> {
 
   static const _interestOptions = [
     'Food',
-    'Culture',
-    'Beach',
+    'Cafe',
     'Nature',
+    'Beach',
+    'Temple',
+    'Adventure',
     'Shopping',
     'Nightlife',
+    'Culture',
   ];
   static const _modeOptions = <String, IconData>{
     'car': Icons.directions_car,
@@ -67,10 +70,26 @@ class _PlanScreenState extends State<PlanScreen> {
   void initState() {
     super.initState();
     _loadedLanguage = AppServices.locale.languageCode;
+    _loadProfileInterests();
     _position = _locationService.currentPosition;
     _locationService.addListener(_onSharedLocationChanged);
     _loadPlaces();
     if (_position == null) _getLocation();
+  }
+
+  void _loadProfileInterests() {
+    final rawInterests = AppServices.auth.currentUser?['interests'];
+    if (rawInterests is! List) return;
+
+    final profileInterests = rawInterests
+        .map((interest) => interest.toString().trim().toLowerCase())
+        .where((interest) => interest.isNotEmpty)
+        .toSet();
+    _interests.addAll(
+      _interestOptions.where(
+        (option) => profileInterests.contains(option.toLowerCase()),
+      ),
+    );
   }
 
   @override

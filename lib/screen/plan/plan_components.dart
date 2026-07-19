@@ -353,11 +353,14 @@ extension _PlanComponents on _PlanScreenState {
 
   String _interestLabel(String value) => switch (value) {
     'Food' => context.l10n.interestFood,
-    'Culture' => context.l10n.interestCulture,
-    'Beach' => context.l10n.interestBeach,
+    'Cafe' => context.l10n.interestCafe,
     'Nature' => context.l10n.interestNature,
+    'Beach' => context.l10n.interestBeach,
+    'Temple' => context.l10n.interestTemple,
+    'Adventure' => context.l10n.interestAdventure,
     'Shopping' => context.l10n.interestShopping,
     'Nightlife' => context.l10n.interestNightlife,
+    'Culture' => context.l10n.interestCulture,
     _ => value,
   };
 

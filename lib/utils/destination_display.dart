@@ -38,10 +38,10 @@ String formatDestinationOpeningHours(Map<String, dynamic> detail) {
           final day = '${item['day'] ?? ''}';
           final open = '${item['open'] ?? item['openTime'] ?? ''}';
           final close = '${item['close'] ?? item['closeTime'] ?? ''}';
+          final time = _formatOpeningTimeRange(open, close);
           return [
-            day,
-            if (open.isNotEmpty) open,
-            if (close.isNotEmpty) close,
+            if (day.isNotEmpty) day,
+            if (time.isNotEmpty) time,
           ].join(' ').trim();
         })
         .where((line) => line.isNotEmpty)
@@ -51,11 +51,29 @@ String formatDestinationOpeningHours(Map<String, dynamic> detail) {
 
   final open = '${detail['opening_time'] ?? ''}';
   final close = '${detail['closing_time'] ?? ''}';
-  return [
-    open,
-    close,
-  ].where((time) => time.isNotEmpty && time != '00:00').join(' – ');
+  return _formatOpeningTimeRange(open, close);
 }
+
+String formatDestinationOpeningTimeSummary(Map<String, dynamic> detail) {
+  final raw = detail['opening_hours'];
+  if (raw is List) {
+    for (final item in raw.whereType<Map>()) {
+      final open = '${item['open'] ?? item['openTime'] ?? ''}';
+      final close = '${item['close'] ?? item['closeTime'] ?? ''}';
+      final time = _formatOpeningTimeRange(open, close);
+      if (time.isNotEmpty) return time;
+    }
+  }
+
+  final open = '${detail['opening_time'] ?? ''}';
+  final close = '${detail['closing_time'] ?? ''}';
+  return _formatOpeningTimeRange(open, close);
+}
+
+String _formatOpeningTimeRange(String open, String close) => [
+  open,
+  close,
+].where((time) => time.isNotEmpty && time != '00:00').join(' – ');
 
 /// เลือกค่า admission fee ตามลำดับความน่าเชื่อถือ:
 /// ค่าที่แอดมินบันทึก > TAT information.fee > TAT fee แบบเก่า

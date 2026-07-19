@@ -332,10 +332,10 @@ class _HomeScreenState extends State<HomeScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: () {
+          onTap: () async {
             final id = int.tryParse('${dest['id'] ?? ''}');
             if (id == null) return;
-            Navigator.push(
+            await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (_) => DestinationDetailScreen(
@@ -346,6 +346,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             );
+            if (!mounted) return;
+            setState(() {
+              _destinationsFuture = _loadDestinations();
+            });
           },
           child: Container(
             height: 200,
