@@ -618,6 +618,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get thailand => 'Thailand';
 
   @override
+  String get locationDetails => 'Location details';
+
+  @override
+  String get address => 'Address';
+
+  @override
+  String get province => 'Province';
+
+  @override
+  String get district => 'District';
+
+  @override
+  String get subDistrict => 'Sub-district';
+
+  @override
+  String get postcode => 'Postcode';
+
+  @override
   String viewsCount(String count) {
     return '$count views';
   }

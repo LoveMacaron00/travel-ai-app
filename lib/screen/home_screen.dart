@@ -321,6 +321,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDestinationCard(Map<String, dynamic> dest, Color brandGold) {
+    final String name = (dest['name'] ?? '').toString().trim();
     final String city = (dest['city'] ?? context.l10n.thailand).toString();
     final String location = (dest['location'] ?? '').toString();
     final String image = (dest['image'] ?? '').toString();
@@ -340,7 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
               MaterialPageRoute(
                 builder: (_) => DestinationDetailScreen(
                   destinationId: id,
-                  fallbackName: (dest['name'] ?? city).toString(),
+                  fallbackName: name.isNotEmpty ? name : city,
                   fallbackImageUrl: image,
                   onExploreMap: () => widget.onExploreDestination(id),
                 ),
@@ -436,7 +437,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          city,
+                          name.isNotEmpty ? name : city,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -456,9 +457,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                location.isNotEmpty
-                                    ? location
-                                    : (dest['name'] ?? '').toString(),
+                                location.isNotEmpty ? location : city,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(

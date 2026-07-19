@@ -79,7 +79,36 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
               ? Map<String, dynamic>.from(snapshot.data!['data'])
               : <String, dynamic>{};
           final name = '${detail['name'] ?? widget.fallbackName}';
-          final province = '${detail['province'] ?? context.l10n.thailand}';
+          final rawLocation = detail['location'];
+          final location = rawLocation is Map
+              ? Map<String, dynamic>.from(rawLocation)
+              : <String, dynamic>{};
+          final address = _firstLocationText([
+            location['address'],
+            detail['address'],
+          ]);
+          final province = _firstLocationText([
+            location['province'],
+            detail['province'],
+            context.l10n.thailand,
+          ]);
+          final district = _firstLocationText([
+            location['district'],
+            detail['district'],
+          ]);
+          final subDistrict = _firstLocationText([
+            location['subDistrict'],
+            detail['sub_district'],
+          ]);
+          final postcode = _firstLocationText([
+            location['postcode'],
+            detail['postcode'],
+          ]);
+          final locationSummary = [
+            subDistrict,
+            district,
+            province,
+          ].where((part) => part.isNotEmpty).join(', ');
           final images = collectDestinationImages(
             detail,
             fallback: widget.fallbackImageUrl,
@@ -261,7 +290,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                                 const SizedBox(width: 4),
                                 Expanded(
                                   child: Text(
-                                    province,
+                                    locationSummary,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
@@ -330,6 +359,19 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                             ),
                           ],
                         ),
+                        if (detail.isNotEmpty) ...[
+                          const SizedBox(height: 30),
+                          _sectionTitle(
+                            Icons.location_on_outlined,
+                            context.l10n.locationDetails,
+                          ),
+                          const SizedBox(height: 10),
+                          _locationRow(context.l10n.address, address),
+                          _locationRow(context.l10n.subDistrict, subDistrict),
+                          _locationRow(context.l10n.district, district),
+                          _locationRow(context.l10n.province, province),
+                          _locationRow(context.l10n.postcode, postcode),
+                        ],
                         if (hours.isNotEmpty) ...[
                           const SizedBox(height: 30),
                           _sectionTitle(
@@ -494,6 +536,35 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
       ],
     ),
   );
+
+  Widget _locationRow(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 7),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 112,
+          child: Text(label, style: const TextStyle(color: Colors.black54)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            value.isEmpty ? '-' : value,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  String _firstLocationText(List<dynamic> values) {
+    for (final value in values) {
+      final candidate = value is Map ? value['name'] : value;
+      final text = '${candidate ?? ''}'.trim();
+      if (text.isNotEmpty) return text;
+    }
+    return '';
+  }
 
   Map<String, String> _fee(Map<String, dynamic> detail) {
     final fee = resolveAdmissionFee(detail);

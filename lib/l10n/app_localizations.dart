@@ -1262,6 +1262,42 @@ abstract class AppLocalizations {
   /// **'Thailand'**
   String get thailand;
 
+  /// No description provided for @locationDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Location details'**
+  String get locationDetails;
+
+  /// No description provided for @address.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get address;
+
+  /// No description provided for @province.
+  ///
+  /// In en, this message translates to:
+  /// **'Province'**
+  String get province;
+
+  /// No description provided for @district.
+  ///
+  /// In en, this message translates to:
+  /// **'District'**
+  String get district;
+
+  /// No description provided for @subDistrict.
+  ///
+  /// In en, this message translates to:
+  /// **'Sub-district'**
+  String get subDistrict;
+
+  /// No description provided for @postcode.
+  ///
+  /// In en, this message translates to:
+  /// **'Postcode'**
+  String get postcode;
+
   /// No description provided for @viewsCount.
   ///
   /// In en, this message translates to:

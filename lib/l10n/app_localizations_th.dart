@@ -609,6 +609,24 @@ class AppLocalizationsTh extends AppLocalizations {
   String get thailand => 'ประเทศไทย';
 
   @override
+  String get locationDetails => 'รายละเอียดสถานที่ตั้ง';
+
+  @override
+  String get address => 'ที่อยู่';
+
+  @override
+  String get province => 'จังหวัด';
+
+  @override
+  String get district => 'อำเภอ/เขต';
+
+  @override
+  String get subDistrict => 'ตำบล/แขวง';
+
+  @override
+  String get postcode => 'รหัสไปรษณีย์';
+
+  @override
   String viewsCount(String count) {
     return '$count ครั้ง';
   }

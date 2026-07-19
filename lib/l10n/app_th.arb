@@ -209,6 +209,12 @@
   },
   "navigateTo": "นำทางไปยัง",
   "thailand": "ประเทศไทย",
+  "locationDetails": "รายละเอียดสถานที่ตั้ง",
+  "address": "ที่อยู่",
+  "province": "จังหวัด",
+  "district": "อำเภอ/เขต",
+  "subDistrict": "ตำบล/แขวง",
+  "postcode": "รหัสไปรษณีย์",
   "viewsCount": "{count} ครั้ง",
   "@viewsCount": {
     "placeholders": {"count": {"type": "String"}}

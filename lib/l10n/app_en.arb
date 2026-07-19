@@ -209,6 +209,12 @@
   },
   "navigateTo": "Navigate to",
   "thailand": "Thailand",
+  "locationDetails": "Location details",
+  "address": "Address",
+  "province": "Province",
+  "district": "District",
+  "subDistrict": "Sub-district",
+  "postcode": "Postcode",
   "viewsCount": "{count} views",
   "@viewsCount": {
     "placeholders": {"count": {"type": "String"}}
