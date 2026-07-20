@@ -370,6 +370,28 @@ class AppLocalizationsEn extends AppLocalizations {
       'Ask me about Thai destinations, opening hours, entrance fees, directions, food, or nearby recommendations.';
 
   @override
+  String get chatEditMessage => 'Edit message';
+
+  @override
+  String get chatDeleteMessage => 'Delete message';
+
+  @override
+  String get chatDeleteConfirmation =>
+      'Delete this message and its AI response?';
+
+  @override
+  String get chatEdited => 'Edited';
+
+  @override
+  String get chatMessageOptions => 'Message options';
+
+  @override
+  String get chatEditFailed => 'Unable to edit this message.';
+
+  @override
+  String get chatDeleteFailed => 'Unable to delete this message.';
+
+  @override
   String get today => 'Today';
 
   @override

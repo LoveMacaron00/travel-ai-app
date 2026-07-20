@@ -60,6 +60,9 @@ class ApiClient {
     body: body == null ? null : jsonEncode(body),
   );
 
+  Future<http.Response> delete(String path) =>
+      httpClient.delete(uri(path), headers: headers());
+
   Future<http.StreamedResponse> send(http.BaseRequest request) {
     request.headers.addAll(headers(json: request is! http.MultipartRequest));
     return httpClient.send(request);
@@ -104,6 +107,8 @@ class ApiClient {
     return resolved.scheme == api.scheme &&
         resolved.host == api.host &&
         resolved.port == api.port &&
-        resolved.path.startsWith('/uploads/');
+        (resolved.path.startsWith('/uploads/') ||
+            (resolved.path.startsWith('/api/chat/messages/') &&
+                resolved.path.endsWith('/image')));
   }
 }

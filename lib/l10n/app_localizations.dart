@@ -794,6 +794,48 @@ abstract class AppLocalizations {
   /// **'Ask me about Thai destinations, opening hours, entrance fees, directions, food, or nearby recommendations.'**
   String get chatIntro;
 
+  /// No description provided for @chatEditMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit message'**
+  String get chatEditMessage;
+
+  /// No description provided for @chatDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete message'**
+  String get chatDeleteMessage;
+
+  /// No description provided for @chatDeleteConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this message and its AI response?'**
+  String get chatDeleteConfirmation;
+
+  /// No description provided for @chatEdited.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited'**
+  String get chatEdited;
+
+  /// No description provided for @chatMessageOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Message options'**
+  String get chatMessageOptions;
+
+  /// No description provided for @chatEditFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to edit this message.'**
+  String get chatEditFailed;
+
+  /// No description provided for @chatDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to delete this message.'**
+  String get chatDeleteFailed;
+
   /// No description provided for @today.
   ///
   /// In en, this message translates to:

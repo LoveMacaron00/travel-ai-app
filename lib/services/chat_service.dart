@@ -8,6 +8,64 @@ class ChatService {
 
   final ApiClient _client;
 
+  Future<Map<String, dynamic>> _readAssistantStream(
+    http.StreamedResponse response, {
+    required String fallbackMessage,
+  }) async {
+    if (response.statusCode != 200) {
+      final body = await response.stream.bytesToString();
+      return {
+        'success': false,
+        'message': ApiClient.decodeMap(body)?['message'] ?? fallbackMessage,
+      };
+    }
+
+    final answer = StringBuffer();
+    List<dynamic> sources = const [];
+    int? userMessageId;
+    int? assistantMessageId;
+    List<int> deletedAssistantMessageIds = const [];
+    String? error;
+    await for (final line
+        in response.stream
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())) {
+      if (!line.startsWith('data: ')) continue;
+      try {
+        final event = jsonDecode(line.substring(6));
+        if (event['type'] == 'token') answer.write(event['text'] ?? '');
+        if (event['type'] == 'done') {
+          if (event['sources'] is List) sources = event['sources'];
+          userMessageId = int.tryParse('${event['userMessageId'] ?? ''}');
+          assistantMessageId = int.tryParse(
+            '${event['assistantMessageId'] ?? ''}',
+          );
+          if (event['deletedAssistantMessageIds'] is List) {
+            deletedAssistantMessageIds =
+                (event['deletedAssistantMessageIds'] as List)
+                    .map((id) => int.tryParse('$id'))
+                    .whereType<int>()
+                    .toList();
+          }
+        }
+        if (event['type'] == 'error') error = '${event['message']}';
+      } on FormatException {
+        // ข้าม event ที่ไม่สมบูรณ์แล้วอ่าน stream ต่อ
+      }
+    }
+    if (error != null) return {'success': false, 'message': error};
+    return {
+      'success': true,
+      'data': {
+        'answer': answer.toString(),
+        'sources': sources,
+        'user_message_id': userMessageId,
+        'assistant_message_id': assistantMessageId,
+        'deleted_assistant_message_ids': deletedAssistantMessageIds,
+      },
+    };
+  }
+
   Future<Map<String, dynamic>> getOrCreateSession() async {
     try {
       var response = await _client.get('/chat/sessions/latest');
@@ -45,33 +103,44 @@ class ChatService {
         _client.uri('/chat/sessions/$sessionId/messages'),
       )..body = jsonEncode({'message': message});
       final response = await _client.send(request);
-      if (response.statusCode != 200) {
-        return {'success': false, 'message': 'The assistant is unavailable'};
-      }
+      return _readAssistantStream(
+        response,
+        fallbackMessage: 'The assistant is unavailable',
+      );
+    } catch (error) {
+      return {'success': false, 'message': 'Network error: $error'};
+    }
+  }
 
-      final answer = StringBuffer();
-      List<dynamic> sources = const [];
-      String? error;
-      await for (final line
-          in response.stream
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())) {
-        if (!line.startsWith('data: ')) continue;
-        try {
-          final event = jsonDecode(line.substring(6));
-          if (event['type'] == 'token') answer.write(event['text'] ?? '');
-          if (event['type'] == 'done' && event['sources'] is List) {
-            sources = event['sources'];
-          }
-          if (event['type'] == 'error') error = '${event['message']}';
-        } on FormatException {
-          // ข้าม event ที่ไม่สมบูรณ์แล้วอ่าน stream ต่อ
-        }
+  Future<Map<String, dynamic>> updateMessage({
+    required int messageId,
+    required String message,
+  }) async {
+    try {
+      final request = http.Request(
+        'PATCH',
+        _client.uri('/chat/messages/$messageId'),
+      )..body = jsonEncode({'message': message});
+      final response = await _client.send(request);
+      return _readAssistantStream(
+        response,
+        fallbackMessage: 'Unable to edit this message',
+      );
+    } catch (error) {
+      return {'success': false, 'message': 'Network error: $error'};
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteMessage(int messageId) async {
+    try {
+      final response = await _client.delete('/chat/messages/$messageId');
+      final payload = ApiClient.decodeMap(response.body);
+      if (response.statusCode == 200 && payload != null) {
+        return {'success': true, 'data': payload};
       }
-      if (error != null) return {'success': false, 'message': error};
       return {
-        'success': true,
-        'data': {'answer': answer.toString(), 'sources': sources},
+        'success': false,
+        'message': payload?['message'] ?? 'Unable to delete this message',
       };
     } catch (error) {
       return {'success': false, 'message': 'Network error: $error'};

@@ -31,25 +31,55 @@ String _scanModeCaption(BuildContext context, ScanMode mode) => switch (mode) {
 };
 
 class ChatMessage {
+  final int? id;
+  final int? replyToMessageId;
   final String text;
   final bool isUser;
   final List<Map<String, dynamic>> sources;
   final Uint8List? imageBytes;
+  final String imageUrl;
   final String imageCaption;
   final ScanResult? scanResult;
+  final bool isEdited;
 
   const ChatMessage({
+    this.id,
+    this.replyToMessageId,
     required this.text,
     required this.isUser,
     this.sources = const [],
     this.imageBytes,
+    this.imageUrl = '',
     this.imageCaption = '',
     this.scanResult,
+    this.isEdited = false,
   });
+
+  ChatMessage copyWith({
+    int? id,
+    int? replyToMessageId,
+    String? text,
+    String? imageUrl,
+    String? imageCaption,
+    bool? isEdited,
+  }) {
+    return ChatMessage(
+      id: id ?? this.id,
+      replyToMessageId: replyToMessageId ?? this.replyToMessageId,
+      text: text ?? this.text,
+      isUser: isUser,
+      sources: sources,
+      imageBytes: imageBytes,
+      imageUrl: imageUrl ?? this.imageUrl,
+      imageCaption: imageCaption ?? this.imageCaption,
+      scanResult: scanResult,
+      isEdited: isEdited ?? this.isEdited,
+    );
+  }
 }
 
-/// Chat เดียวรองรับทั้งข้อความและภาพ โดยภาพจะถูกส่งแบบ in-memory ไปยัง server
-/// และไม่ถูกบันทึกเป็นไฟล์ต้นฉบับบน server
+/// Chat เดียวรองรับทั้งข้อความและภาพ โดยใช้ bytes แสดงทันทีระหว่างส่ง
+/// และใช้ private image URL เมื่อโหลดข้อความเดิมจาก server
 class ChatbotScreen extends StatefulWidget {
   final bool openScannerOnStart;
 
@@ -114,8 +144,15 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         final item = Map<String, dynamic>.from(raw);
         loaded.add(
           ChatMessage(
+            id: int.tryParse('${item['id'] ?? ''}'),
+            replyToMessageId: int.tryParse(
+              '${item['reply_to_message_id'] ?? ''}',
+            ),
             text: '${item['content'] ?? ''}',
             isUser: item['role'] == 'user',
+            imageUrl: AppServices.media.fullUrl(item['image_url']?.toString()),
+            imageCaption: '${item['image_caption'] ?? ''}',
+            isEdited: item['edited_at'] != null,
           ),
         );
       }
@@ -147,6 +184,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     final text = (overrideText ?? _controller.text).trim();
     if (text.isEmpty || _isSending || _sessionId == null) return;
 
+    final userMessageIndex = _messages.length;
     setState(() {
       _messages.add(ChatMessage(text: text, isUser: true));
       _controller.clear();
@@ -155,7 +193,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     });
     _scrollToBottom();
 
-    await _requestAssistantAnswer(text);
+    await _requestAssistantAnswer(text, userMessageIndex);
   }
 
   Future<void> _showScanFlow() async {
@@ -207,6 +245,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     }
     if (!mounted) return;
 
+    final userMessageIndex = _messages.length;
     setState(() {
       _messages.add(
         ChatMessage(
@@ -233,11 +272,20 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     setState(() {
       if (result['success'] == true) {
         final data = Map<String, dynamic>.from(result['data'] ?? {});
+        final userMessageId = int.tryParse('${data['user_message_id'] ?? ''}');
+        if (userMessageIndex < _messages.length) {
+          _messages[userMessageIndex] = _messages[userMessageIndex].copyWith(
+            id: userMessageId,
+            imageUrl: AppServices.media.fullUrl(data['image_url']?.toString()),
+          );
+        }
         final analysisJson = data['analysis'] is Map
             ? Map<String, dynamic>.from(data['analysis'])
             : <String, dynamic>{};
         _messages.add(
           ChatMessage(
+            id: int.tryParse('${data['assistant_message_id'] ?? ''}'),
+            replyToMessageId: userMessageId,
             text: (data['answer'] ?? '').toString(),
             isUser: false,
             scanResult: analysisJson.isEmpty
@@ -266,7 +314,10 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     );
   }
 
-  Future<void> _requestAssistantAnswer(String text) async {
+  Future<void> _requestAssistantAnswer(
+    String text,
+    int userMessageIndex,
+  ) async {
     if (!_isSending) {
       setState(() => _isSending = true);
     }
@@ -280,11 +331,19 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     setState(() {
       if (result['success'] == true) {
         final data = Map<String, dynamic>.from(result['data'] ?? {});
+        if (userMessageIndex < _messages.length) {
+          _messages[userMessageIndex] = _messages[userMessageIndex].copyWith(
+            id: int.tryParse('${data['user_message_id'] ?? ''}'),
+          );
+        }
+        final userMessageId = _messages[userMessageIndex].id;
         final rawSources = data['sources'] is List
             ? data['sources'] as List
             : [];
         _messages.add(
           ChatMessage(
+            id: int.tryParse('${data['assistant_message_id'] ?? ''}'),
+            replyToMessageId: userMessageId,
             text: (data['answer'] ?? context.l10n.noConfirmedTravelData)
                 .toString(),
             isUser: false,
@@ -305,6 +364,147 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       _isSending = false;
     });
     _scrollToBottom();
+  }
+
+  Future<void> _editMessage(ChatMessage message) async {
+    if (_isSending || message.id == null) return;
+    final editor = TextEditingController(text: message.text);
+    final updatedText = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.l10n.chatEditMessage),
+        content: TextField(
+          controller: editor,
+          autofocus: true,
+          maxLength: 2000,
+          minLines: 1,
+          maxLines: 5,
+          decoration: InputDecoration(hintText: context.l10n.askThailandHint),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(context.l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = editor.text.trim();
+              if (value.isNotEmpty) Navigator.pop(dialogContext, value);
+            },
+            child: Text(context.l10n.save),
+          ),
+        ],
+      ),
+    );
+    editor.dispose();
+    if (!mounted || updatedText == null) return;
+
+    setState(() {
+      _isSending = true;
+      _activeScanMode = null;
+    });
+    final result = await AppServices.chat.updateMessage(
+      messageId: message.id!,
+      message: updatedText,
+    );
+    if (!mounted) return;
+    if (result['success'] != true) {
+      setState(() => _isSending = false);
+      _showNotice(result['message'] ?? context.l10n.chatEditFailed);
+      return;
+    }
+
+    final data = Map<String, dynamic>.from(result['data'] ?? {});
+    final deletedAssistantIds = data['deleted_assistant_message_ids'] is List
+        ? (data['deleted_assistant_message_ids'] as List)
+              .map((id) => int.tryParse('$id'))
+              .whereType<int>()
+              .toSet()
+        : <int>{};
+    final index = _messages.indexWhere((item) => item.id == message.id);
+    if (index < 0) {
+      setState(() => _isSending = false);
+      return;
+    }
+    setState(() {
+      _messages[index] = _messages[index].copyWith(
+        text: updatedText,
+        isEdited: true,
+      );
+      _messages.removeWhere(
+        (item) =>
+            deletedAssistantIds.contains(item.id) ||
+            item.replyToMessageId == message.id,
+      );
+
+      final updatedUserIndex = _messages.indexWhere(
+        (item) => item.id == message.id,
+      );
+      final rawSources = data['sources'] is List ? data['sources'] as List : [];
+      _messages.insert(
+        updatedUserIndex + 1,
+        ChatMessage(
+          id: int.tryParse('${data['assistant_message_id'] ?? ''}'),
+          replyToMessageId: message.id,
+          text: (data['answer'] ?? context.l10n.noConfirmedTravelData)
+              .toString(),
+          isUser: false,
+          sources: rawSources
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList(),
+        ),
+      );
+      _isSending = false;
+    });
+    _scrollToBottom();
+  }
+
+  Future<void> _deleteMessage(ChatMessage message) async {
+    if (_isSending || message.id == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.l10n.chatDeleteMessage),
+        content: Text(context.l10n.chatDeleteConfirmation),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(context.l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(
+              context.l10n.chatDeleteMessage,
+              style: const TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true) return;
+
+    final result = await AppServices.chat.deleteMessage(message.id!);
+    if (!mounted) return;
+    if (result['success'] != true) {
+      _showNotice(result['message'] ?? context.l10n.chatDeleteFailed);
+      return;
+    }
+    final data = result['data'] is Map
+        ? Map<String, dynamic>.from(result['data'])
+        : <String, dynamic>{};
+    final deletedIds = data['deleted_message_ids'] is List
+        ? (data['deleted_message_ids'] as List)
+              .map((id) => int.tryParse('$id'))
+              .whereType<int>()
+              .toSet()
+        : <int>{message.id!};
+    setState(() {
+      _messages.removeWhere(
+        (item) =>
+            deletedIds.contains(item.id) || item.replyToMessageId == message.id,
+      );
+    });
   }
 
   @override
@@ -355,7 +555,20 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                         if (_isSending && index == _messages.length) {
                           return _TypingBubble(mode: _activeScanMode);
                         }
-                        return _ChatBubble(message: _messages[index]);
+                        final message = _messages[index];
+                        final hasImage =
+                            message.imageBytes != null ||
+                            message.imageUrl.isNotEmpty;
+                        return _ChatBubble(
+                          message: message,
+                          onEdit:
+                              message.isUser && message.id != null && !hasImage
+                              ? () => _editMessage(message)
+                              : null,
+                          onDelete: message.isUser && message.id != null
+                              ? () => _deleteMessage(message)
+                              : null,
+                        );
                       },
                     ),
             ),

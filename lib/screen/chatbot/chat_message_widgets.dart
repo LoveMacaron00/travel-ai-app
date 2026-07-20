@@ -3,8 +3,10 @@ part of '../chatbot_screen.dart';
 // Bubble ของข้อความ ผู้ใช้ และแหล่งอ้างอิง
 class _ChatBubble extends StatelessWidget {
   final ChatMessage message;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
-  const _ChatBubble({required this.message});
+  const _ChatBubble({required this.message, this.onEdit, this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +26,9 @@ class _ChatBubble extends StatelessWidget {
         constraints: BoxConstraints(
           maxWidth:
               MediaQuery.of(context).size.width *
-              (message.scanResult != null || message.imageBytes != null
+              (message.scanResult != null ||
+                      message.imageBytes != null ||
+                      message.imageUrl.isNotEmpty
                   ? 0.86
                   : 0.78),
         ),
@@ -65,7 +69,7 @@ class _ChatBubble extends StatelessWidget {
                           ),
                         ],
                 ),
-                child: message.imageBytes != null
+                child: message.imageBytes != null || message.imageUrl.isNotEmpty
                     ? _UserImageMessage(message: message)
                     : message.scanResult != null
                     ? ScanResultView(result: message.scanResult!)
@@ -78,6 +82,63 @@ class _ChatBubble extends StatelessWidget {
                         ),
                       ),
               ),
+              if (message.isUser && (onEdit != null || onDelete != null))
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (message.isEdited)
+                      Text(
+                        context.l10n.chatEdited,
+                        style: const TextStyle(
+                          color: Color(0xFF8D95A3),
+                          fontSize: 11,
+                        ),
+                      ),
+                    PopupMenuButton<String>(
+                      tooltip: context.l10n.chatMessageOptions,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 30,
+                        minHeight: 28,
+                      ),
+                      icon: const Icon(
+                        Icons.more_horiz,
+                        size: 18,
+                        color: Color(0xFF8D95A3),
+                      ),
+                      onSelected: (action) {
+                        if (action == 'edit') onEdit?.call();
+                        if (action == 'delete') onDelete?.call();
+                      },
+                      itemBuilder: (context) => [
+                        if (onEdit != null)
+                          PopupMenuItem(
+                            value: 'edit',
+                            child: ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.edit_outlined),
+                              title: Text(context.l10n.chatEditMessage),
+                            ),
+                          ),
+                        if (onDelete != null)
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.redAccent,
+                              ),
+                              title: Text(
+                                context.l10n.chatDeleteMessage,
+                                style: const TextStyle(color: Colors.redAccent),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               if (message.sources.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 ...message.sources
@@ -186,18 +247,36 @@ class _UserImageMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(13),
-          child: Image.memory(
+    final imageUrl = AppServices.media.fullUrl(message.imageUrl);
+    final image = message.imageBytes != null
+        ? Image.memory(
             message.imageBytes!,
             width: 260,
             height: 175,
             fit: BoxFit.cover,
-          ),
-        ),
+          )
+        : Image.network(
+            imageUrl,
+            headers: AppServices.media.headersFor(imageUrl),
+            width: 260,
+            height: 175,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              width: 260,
+              height: 175,
+              color: const Color(0xFFF2F3F5),
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.broken_image_outlined,
+                color: Color(0xFF9098A8),
+              ),
+            ),
+          );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(borderRadius: BorderRadius.circular(13), child: image),
         if (message.imageCaption.isNotEmpty) ...[
           const SizedBox(height: 10),
           Text(

@@ -367,6 +367,27 @@ class AppLocalizationsTh extends AppLocalizations {
       'ถามฉันเกี่ยวกับสถานที่ท่องเที่ยว เวลาเปิดทำการ ค่าเข้าชม เส้นทาง อาหาร หรือสถานที่แนะนำใกล้เคียงได้เลย';
 
   @override
+  String get chatEditMessage => 'แก้ไขข้อความ';
+
+  @override
+  String get chatDeleteMessage => 'ลบข้อความ';
+
+  @override
+  String get chatDeleteConfirmation => 'ลบข้อความนี้และคำตอบของ AI ใช่หรือไม่';
+
+  @override
+  String get chatEdited => 'แก้ไขแล้ว';
+
+  @override
+  String get chatMessageOptions => 'ตัวเลือกข้อความ';
+
+  @override
+  String get chatEditFailed => 'ไม่สามารถแก้ไขข้อความนี้ได้';
+
+  @override
+  String get chatDeleteFailed => 'ไม่สามารถลบข้อความนี้ได้';
+
+  @override
   String get today => 'วันนี้';
 
   @override
