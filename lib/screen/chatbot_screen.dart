@@ -237,8 +237,14 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     }
     final imageBytes = await image.readAsBytes();
 
-    var position = LocationService.instance.currentPosition;
-    if (mode == ScanMode.place && position == null) {
+    // GPS ปัจจุบันใช้ยืนยันสถานที่ได้เฉพาะรูปที่เพิ่งถ่ายจากกล้อง
+    // รูปจาก Gallery อาจถ่ายคนละเวลาและสถานที่ จึงไม่ส่งตำแหน่ง Emulator ไปปน
+    final shouldAttachCurrentLocation =
+        mode == ScanMode.place && source == ImageSource.camera;
+    var position = shouldAttachCurrentLocation
+        ? LocationService.instance.currentPosition
+        : null;
+    if (shouldAttachCurrentLocation && position == null) {
       position = await LocationService.instance.refresh(
         openSettingsWhenDenied: false,
       );
