@@ -294,6 +294,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             replyToMessageId: userMessageId,
             text: (data['answer'] ?? '').toString(),
             isUser: false,
+            imageUrl: AppServices.media.fullUrl(
+              data['assistant_image_url']?.toString(),
+            ),
             scanResult: analysisJson.isEmpty
                 ? null
                 : ScanResult.fromJson(analysisJson),

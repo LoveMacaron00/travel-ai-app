@@ -70,7 +70,7 @@ class _ChatBubble extends StatelessWidget {
                         ],
                 ),
                 child: message.imageBytes != null || message.imageUrl.isNotEmpty
-                    ? _UserImageMessage(message: message)
+                    ? _ImageMessage(message: message)
                     : message.scanResult != null
                     ? ScanResultView(result: message.scanResult!)
                     : Text(
@@ -240,10 +240,10 @@ class _SourcePill extends StatelessWidget {
   }
 }
 
-class _UserImageMessage extends StatelessWidget {
+class _ImageMessage extends StatelessWidget {
   final ChatMessage message;
 
-  const _UserImageMessage({required this.message});
+  const _ImageMessage({required this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -277,7 +277,20 @@ class _UserImageMessage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ClipRRect(borderRadius: BorderRadius.circular(13), child: image),
-        if (message.imageCaption.isNotEmpty) ...[
+        if (message.scanResult != null) ...[
+          const SizedBox(height: 10),
+          ScanResultView(result: message.scanResult!),
+        ] else if (message.text.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Text(
+            message.text,
+            style: const TextStyle(
+              color: Color(0xFF202636),
+              fontSize: 14,
+              height: 1.35,
+            ),
+          ),
+        ] else if (message.imageCaption.isNotEmpty) ...[
           const SizedBox(height: 10),
           Text(
             message.imageCaption,
