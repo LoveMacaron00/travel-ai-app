@@ -1,6 +1,6 @@
 part of '../map_screen.dart';
 
-// Layout ของแผนที่แยกจาก state, filter และ navigation orchestration
+// เลย์เอาต์แผนที่แยกจากสถานะ ตัวกรอง และการควบคุมการนำทาง
 extension _MapView on MapScreenState {
   Widget _buildMapView(BuildContext context) {
     return Scaffold(
@@ -65,14 +65,14 @@ extension _MapView on MapScreenState {
             ],
           ),
 
-          // ── SEARCH BAR + SUGGESTIONS ──
+          // ── แถบค้นหาและคำแนะนำ ──
           Positioned(
             top: 50.0,
             left: 16.0,
             right: 16.0,
             child: Column(
               children: [
-                // Search Input
+                // ช่องค้นหา
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   decoration: BoxDecoration(
@@ -113,7 +113,7 @@ extension _MapView on MapScreenState {
                   ),
                 ),
 
-                // Categories
+                // หมวดหมู่
                 const SizedBox(height: 10),
                 SizedBox(
                   height: 36,
@@ -173,7 +173,7 @@ extension _MapView on MapScreenState {
                   ),
                 ),
 
-                // Suggestions Dropdown
+                // รายการคำแนะนำแบบเลื่อนลง
                 if (_showSuggestions)
                   Container(
                     margin: const EdgeInsets.only(top: 4.0),

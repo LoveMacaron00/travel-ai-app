@@ -34,7 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _username = user['username'] ?? '';
       _profileImageUrl = user['profile_image_url'] ?? '';
 
-      // Load interests
+      // โหลดความสนใจ
       if (user['interests'] != null) {
         if (user['interests'] is List) {
           _interests = List<String>.from(user['interests']);
@@ -298,7 +298,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // User Avatar Section
+            // ส่วนรูปโปรไฟล์ผู้ใช้
             Center(
               child: Container(
                 decoration: BoxDecoration(
@@ -324,7 +324,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Username & Email
+            // ชื่อผู้ใช้และอีเมล
             Text(
               _username.isNotEmpty ? _username : l10n.setYourName,
               style: const TextStyle(
@@ -339,7 +339,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 30),
 
-            // Interests Section
+            // ส่วนความสนใจ
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -406,7 +406,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const Divider(height: 40, thickness: 1),
 
-            // Settings Section
+            // ส่วนการตั้งค่า
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -420,7 +420,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Account settings tile
+                // รายการตั้งค่าบัญชี
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(
@@ -436,12 +436,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         builder: (context) => const AccountSettingsScreen(),
                       ),
                     );
-                    // Refresh profile data when returning from Account Settings
+                    // โหลดข้อมูลโปรไฟล์ใหม่เมื่อกลับจากหน้าตั้งค่าบัญชี
                     setState(() => _loadUserData());
                   },
                 ),
 
-                // Language selection
+                // การเลือกภาษา
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(
@@ -464,7 +464,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 40),
 
-            // Log Out Button
+            // ปุ่มออกจากระบบ
             SizedBox(
               width: double.infinity,
               height: 52,

@@ -1,6 +1,6 @@
 part of '../chatbot_screen.dart';
 
-// Bottom sheets และ input controls ของ image scan/chat
+// แผงด้านล่างและตัวควบคุมข้อมูลนำเข้าของการสแกนรูปและแชท
 class _ScanModeSheet extends StatelessWidget {
   const _ScanModeSheet();
 

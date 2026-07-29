@@ -1,28 +1,27 @@
-# This file configures the analyzer, which statically analyzes Dart code to
-# check for errors, warnings, and lints.
+# ไฟล์นี้ใช้ตั้งค่าตัววิเคราะห์ซึ่งตรวจสอบโค้ด Dart แบบสแตติก
+# เพื่อค้นหาข้อผิดพลาด คำเตือน และปัญหาตามกฎ lint
 #
-# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
-# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
-# invoked from the command line by running `flutter analyze`.
+# ปัญหาที่ตัววิเคราะห์พบจะแสดงในส่วนติดต่อของ IDE ที่รองรับ Dart
+# (https://dart.dev/tools#ides-and-editors) และสามารถเรียกตัววิเคราะห์
+# ผ่านบรรทัดคำสั่งด้วย `flutter analyze`
 
-# The following line activates a set of recommended lints for Flutter apps,
-# packages, and plugins designed to encourage good coding practices.
+# บรรทัดต่อไปนี้เปิดใช้ชุดกฎ lint ที่แนะนำสำหรับแอป Flutter
+# แพ็กเกจ และปลั๊กอิน เพื่อส่งเสริมแนวทางการเขียนโค้ดที่ดี
 include: package:flutter_lints/flutter.yaml
 
 linter:
-  # The lint rules applied to this project can be customized in the
-  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
-  # included above or to enable additional rules. A list of all available lints
-  # and their documentation is published at https://dart.dev/lints.
+  # สามารถปรับแต่งกฎ lint ของโปรเจกต์ได้ในส่วนด้านล่าง
+  # โดยปิดกฎจาก `package:flutter_lints/flutter.yaml` ที่รวมไว้ด้านบน
+  # หรือเปิดใช้กฎเพิ่มเติม รายการกฎและเอกสารทั้งหมดอยู่ที่
+  # https://dart.dev/lints
   #
-  # Instead of disabling a lint rule for the entire project in the
-  # section below, it can also be suppressed for a single line of code
-  # or a specific dart file by using the `// ignore: name_of_lint` and
-  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
-  # producing the lint.
+  # นอกจากปิดกฎ lint สำหรับทั้งโปรเจกต์ในส่วนด้านล่างแล้ว
+  # ยังสามารถระงับกฎเฉพาะบรรทัดหรือเฉพาะไฟล์ Dart ได้ด้วยรูปแบบ
+  # `// ignore: name_of_lint` และ `// ignore_for_file: name_of_lint`
+  # ในบรรทัดหรือไฟล์ที่ทำให้เกิดคำเตือน
   rules:
-    # avoid_print: false # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true # Uncomment to enable the `prefer_single_quotes` rule
+    # avoid_print: false # ยกเลิก comment เพื่อปิดกฎ `avoid_print`
+    # prefer_single_quotes: true # ยกเลิก comment เพื่อเปิดกฎ `prefer_single_quotes`
 
-# Additional information about this file can be found at
+# ดูข้อมูลเพิ่มเติมเกี่ยวกับไฟล์นี้ได้ที่
 # https://dart.dev/guides/language/analysis-options

@@ -415,7 +415,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Username tile
+            // รายการชื่อผู้ใช้
             _buildSettingsTile(
               icon: Icons.person_outline,
               label: l10n.username,
@@ -425,12 +425,12 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
 
             const Divider(height: 1),
 
-            // Email tile (read-only)
+            // รายการอีเมล (อ่านอย่างเดียว)
             _buildSettingsTile(
               icon: Icons.email_outlined,
               label: l10n.email,
               value: userEmail.isNotEmpty ? userEmail : '-',
-              onTap: null, // email is not editable
+              onTap: null, // ไม่อนุญาตให้แก้ไขอีเมล
             ),
 
             const SizedBox(height: 32),

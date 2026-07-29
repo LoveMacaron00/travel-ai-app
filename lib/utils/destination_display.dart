@@ -3,11 +3,62 @@ import 'package:myapp/services/app_services.dart';
 /// รวมกติกาแปลงข้อมูลสถานที่จาก API ให้พร้อมแสดงผลใน UI
 ///
 /// ข้อมูลเก่าและข้อมูลจาก TAT มี shape ต่างกัน ฟังก์ชันในไฟล์นี้จึงเป็น
-/// compatibility boundary เพื่อไม่ให้แต่ละหน้าจอเขียน fallback ซ้ำกันเอง
-String stripHtmlText(String value) => value
-    .replaceAll(RegExp(r'<[^>]*>'), '')
-    .replaceAll(RegExp(r'\s+'), ' ')
-    .trim();
+/// เป็นขอบเขตความเข้ากันได้ เพื่อไม่ให้แต่ละหน้าจอเขียนค่าทดแทนซ้ำกันเอง
+String stripHtmlText(String value) {
+  var decoded = value;
+
+  // เนื้อหาจาก TAT อาจมี HTML entity ทั้งแบบปกติและแบบเข้ารหัสซ้ำ
+  // ถอดรหัสหลายรอบเพื่อจัดการค่าอย่าง &amp;ldquo; ให้เรียบร้อยด้วย
+  for (var pass = 0; pass < 3; pass++) {
+    final next = _decodeHtmlEntities(decoded);
+    if (next == decoded) break;
+    decoded = next;
+  }
+
+  return decoded
+      .replaceAll(RegExp(r'<[^>]*>'), '')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+}
+
+String _decodeHtmlEntities(String value) {
+  const namedEntities = <String, String>{
+    'amp': '&',
+    'apos': "'",
+    'gt': '>',
+    'hellip': '…',
+    'ldquo': '“',
+    'lsquo': '‘',
+    'lt': '<',
+    'mdash': '—',
+    'nbsp': ' ',
+    'ndash': '–',
+    'quot': '"',
+    'rdquo': '”',
+    'rsquo': '’',
+  };
+
+  return value.replaceAllMapped(
+    RegExp(r'&(#(?:[xX][0-9a-fA-F]+|[0-9]+)|[a-zA-Z]+);'),
+    (match) {
+      final entity = match.group(1)!;
+      if (entity.startsWith('#')) {
+        final isHex =
+            entity.length > 2 && (entity[1] == 'x' || entity[1] == 'X');
+        final digits = entity.substring(isHex ? 2 : 1);
+        final codePoint = int.tryParse(digits, radix: isHex ? 16 : 10);
+        if (codePoint == null ||
+            codePoint < 0 ||
+            codePoint > 0x10ffff ||
+            (codePoint >= 0xd800 && codePoint <= 0xdfff)) {
+          return match.group(0)!;
+        }
+        return String.fromCharCode(codePoint);
+      }
+      return namedEntities[entity.toLowerCase()] ?? match.group(0)!;
+    },
+  );
+}
 
 List<String> collectDestinationImages(
   Map<String, dynamic> detail, {
