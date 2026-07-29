@@ -500,7 +500,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get days => 'วัน';
 
   @override
-  String get estimatedBudget => 'งบประมาณโดยประมาณ';
+  String get estimatedBudget => 'งบประมาณ';
 
   @override
   String get whatDoYouEnjoy => 'คุณชอบอะไร';

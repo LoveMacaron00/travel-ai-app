@@ -508,7 +508,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get days => 'days';
 
   @override
-  String get estimatedBudget => 'Estimated budget';
+  String get estimatedBudget => 'Budget';
 
   @override
   String get whatDoYouEnjoy => 'What do you enjoy?';

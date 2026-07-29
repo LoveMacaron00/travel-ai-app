@@ -1055,7 +1055,7 @@ abstract class AppLocalizations {
   /// No description provided for @estimatedBudget.
   ///
   /// In en, this message translates to:
-  /// **'Estimated budget'**
+  /// **'Budget'**
   String get estimatedBudget;
 
   /// No description provided for @whatDoYouEnjoy.
