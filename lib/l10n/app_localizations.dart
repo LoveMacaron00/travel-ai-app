@@ -1034,6 +1034,36 @@ abstract class AppLocalizations {
   /// **'Your location is the starting point.'**
   String get locationStartingPoint;
 
+  /// No description provided for @selectProvince.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a province'**
+  String get selectProvince;
+
+  /// No description provided for @loadingProvinces.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading provinces…'**
+  String get loadingProvinces;
+
+  /// No description provided for @databaseProvinceOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Only destinations available in the database will be used.'**
+  String get databaseProvinceOnly;
+
+  /// No description provided for @provinceRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a province before creating a travel plan.'**
+  String get provinceRequired;
+
+  /// No description provided for @couldNotLoadProvinces.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load provinces'**
+  String get couldNotLoadProvinces;
+
   /// No description provided for @travelDates.
   ///
   /// In en, this message translates to:

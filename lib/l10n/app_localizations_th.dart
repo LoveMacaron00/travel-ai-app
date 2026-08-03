@@ -491,6 +491,21 @@ class AppLocalizationsTh extends AppLocalizations {
   String get locationStartingPoint => 'ตำแหน่งของคุณคือจุดเริ่มต้น';
 
   @override
+  String get selectProvince => 'เลือกจังหวัด';
+
+  @override
+  String get loadingProvinces => 'กำลังโหลดจังหวัด…';
+
+  @override
+  String get databaseProvinceOnly => 'ใช้เฉพาะสถานที่ที่มีอยู่ในฐานข้อมูล';
+
+  @override
+  String get provinceRequired => 'กรุณาเลือกจังหวัดก่อนสร้างแผนการเดินทาง';
+
+  @override
+  String get couldNotLoadProvinces => 'ไม่สามารถโหลดรายชื่อจังหวัดได้';
+
+  @override
   String get travelDates => 'วันที่เดินทาง';
 
   @override

@@ -12,6 +12,7 @@ import 'package:myapp/services/app_services.dart';
 import 'package:myapp/services/location_service.dart';
 import 'package:myapp/utils/destination_display.dart';
 import 'package:myapp/widgets/media_image.dart';
+import 'package:myapp/widgets/province_selector.dart';
 
 part 'plan/plan_view.dart';
 part 'plan/plan_details.dart';
@@ -36,10 +37,13 @@ class _PlanScreenState extends State<PlanScreen> {
   int _days = 3;
   LatLng? _position;
   bool _locating = false;
+  bool _loadingProvinces = false;
   bool _generating = false;
   String? _error;
   TravelPlan? _plan;
   List<PlaceMarker> _places = [];
+  List<ProvinceOption> _provinceOptions = [];
+  String? _selectedProvince;
   final Set<String> _interests = {};
   final Set<String> _modes = {'car'};
   final List<PlaceMarker> _mustVisit = [];
@@ -74,6 +78,7 @@ class _PlanScreenState extends State<PlanScreen> {
     _position = _locationService.currentPosition;
     _locationService.addListener(_onSharedLocationChanged);
     _loadPlaces();
+    _loadProvinces();
     if (_position == null) _getLocation();
   }
 
@@ -99,6 +104,7 @@ class _PlanScreenState extends State<PlanScreen> {
     if (language != _loadedLanguage) {
       _loadedLanguage = language;
       _loadPlaces();
+      _loadProvinces();
     }
   }
 
@@ -136,9 +142,42 @@ class _PlanScreenState extends State<PlanScreen> {
           longitude: double.tryParse('${j['longitude']}') ?? 0,
           imageUrl: AppServices.media.fullUrl('${j['image'] ?? ''}'),
           category: '${j['category'] ?? 'other'}',
+          province: '${j['provinceValue'] ?? j['province'] ?? ''}',
         );
       }).toList(),
     );
+  }
+
+  Future<void> _loadProvinces() async {
+    final requestedLanguage = AppServices.locale.languageCode;
+    if (mounted) setState(() => _loadingProvinces = true);
+
+    final result = await AppServices.destinations.getProvinces();
+    if (!mounted || requestedLanguage != AppServices.locale.languageCode) {
+      return;
+    }
+
+    if (result['success'] != true) {
+      setState(() {
+        _loadingProvinces = false;
+        _error = '${result['message'] ?? context.l10n.couldNotLoadProvinces}';
+      });
+      return;
+    }
+
+    final options = (result['data'] as List? ?? const [])
+        .whereType<Map>()
+        .map((item) => ProvinceOption.fromJson(Map<String, dynamic>.from(item)))
+        .where((item) => item.value.isNotEmpty)
+        .toList();
+    setState(() {
+      _provinceOptions = options;
+      if (!options.any((item) => item.value == _selectedProvince)) {
+        _selectedProvince = null;
+        _mustVisit.clear();
+      }
+      _loadingProvinces = false;
+    });
   }
 
   Future<void> _getLocation() async {
@@ -153,6 +192,8 @@ class _PlanScreenState extends State<PlanScreen> {
   }
 
   Map<String, dynamic> _input() => {
+    'destination': _selectedProvince,
+    'province': _selectedProvince,
     'days': _days,
     'budget': _budget.round(),
     'currency': 'THB',
@@ -175,9 +216,9 @@ class _PlanScreenState extends State<PlanScreen> {
   };
 
   Future<void> _generate() async {
-    if (_position == null) {
-      await _getLocation();
-      if (_position == null) return;
+    if (_selectedProvince == null) {
+      setState(() => _error = context.l10n.provinceRequired);
+      return;
     }
     setState(() {
       _generating = true;

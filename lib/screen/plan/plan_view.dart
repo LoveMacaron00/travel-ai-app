@@ -67,6 +67,24 @@ extension _PlanMainView on _PlanScreenState {
           subtitle: context.l10n.locationStartingPoint,
           child: Column(
             children: [
+              ProvinceSelector(
+                value: _selectedProvince,
+                options: _provinceOptions,
+                loading: _loadingProvinces,
+                decoration: _inputDecoration(
+                  context.l10n.province,
+                  Icons.location_city_outlined,
+                ).copyWith(helperText: context.l10n.databaseProvinceOnly),
+                selectHint: context.l10n.selectProvince,
+                loadingHint: context.l10n.loadingProvinces,
+                onChanged: (value) => _updateState(() {
+                  _selectedProvince = value;
+                  _mustVisit.removeWhere((place) => place.province != value);
+                  _excluded.clear();
+                  _error = null;
+                }),
+              ),
+              const SizedBox(height: 12),
               _locationTile(),
               const SizedBox(height: 12),
               InkWell(
@@ -166,7 +184,7 @@ extension _PlanMainView on _PlanScreenState {
                       .toList(),
                 ),
               OutlinedButton.icon(
-                onPressed: _showPlacePicker,
+                onPressed: _selectedProvince == null ? null : _showPlacePicker,
                 icon: const Icon(Icons.add_location_alt_outlined),
                 label: Text(context.l10n.addAPlace),
               ),

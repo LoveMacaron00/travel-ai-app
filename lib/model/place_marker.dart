@@ -6,6 +6,7 @@ class PlaceMarker {
   final double longitude;
   final String imageUrl;
   final String category;
+  final String province;
 
   PlaceMarker({
     required this.id,
@@ -15,5 +16,6 @@ class PlaceMarker {
     required this.longitude,
     required this.imageUrl,
     required this.category,
+    this.province = '',
   });
 }

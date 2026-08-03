@@ -499,6 +499,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locationStartingPoint => 'Your location is the starting point.';
 
   @override
+  String get selectProvince => 'Choose a province';
+
+  @override
+  String get loadingProvinces => 'Loading provinces…';
+
+  @override
+  String get databaseProvinceOnly =>
+      'Only destinations available in the database will be used.';
+
+  @override
+  String get provinceRequired =>
+      'Choose a province before creating a travel plan.';
+
+  @override
+  String get couldNotLoadProvinces => 'Could not load provinces';
+
+  @override
   String get travelDates => 'Travel dates';
 
   @override

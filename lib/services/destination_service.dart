@@ -69,4 +69,23 @@ class DestinationService {
       return {'success': false, 'message': 'Network error: $error'};
     }
   }
+
+  Future<Map<String, dynamic>> getProvinces() async {
+    try {
+      final response = await _client.get('/mobile/provinces');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {'success': true, 'data': data['data'] ?? []};
+      }
+      return {
+        'success': false,
+        'message': ApiClient.responseMessage(
+          response,
+          'Failed to load provinces',
+        ),
+      };
+    } catch (error) {
+      return {'success': false, 'message': 'Network error: $error'};
+    }
+  }
 }
