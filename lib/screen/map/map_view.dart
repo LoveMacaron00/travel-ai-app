@@ -105,10 +105,7 @@ extension _MapView on MapScreenState {
                               ),
                               onPressed: _clearSearch,
                             )
-                          : const Icon(
-                              Icons.auto_awesome,
-                              color: Colors.orangeAccent,
-                            ),
+                          : null,
                     ),
                   ),
                 ),

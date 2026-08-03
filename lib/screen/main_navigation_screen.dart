@@ -38,6 +38,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       case 0:
         return HomeScreen(
           onProfileTap: () => _selectTab(3),
+          onPlanTap: () => _selectTab(2),
           onExploreDestination: _showDestinationOnMap,
         );
       case 1:

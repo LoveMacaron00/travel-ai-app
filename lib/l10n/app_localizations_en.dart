@@ -506,7 +506,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get databaseProvinceOnly =>
-      'Only destinations available in the database will be used.';
+      'Optional — leave blank to search database destinations near your location.';
 
   @override
   String get provinceRequired =>

@@ -497,7 +497,8 @@ class AppLocalizationsTh extends AppLocalizations {
   String get loadingProvinces => 'กำลังโหลดจังหวัด…';
 
   @override
-  String get databaseProvinceOnly => 'ใช้เฉพาะสถานที่ที่มีอยู่ในฐานข้อมูล';
+  String get databaseProvinceOnly =>
+      'ไม่บังคับ — หากไม่เลือก ระบบจะค้นสถานที่จากฐานข้อมูลตามตำแหน่งของคุณ';
 
   @override
   String get provinceRequired => 'กรุณาเลือกจังหวัดก่อนสร้างแผนการเดินทาง';

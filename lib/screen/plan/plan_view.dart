@@ -67,6 +67,8 @@ extension _PlanMainView on _PlanScreenState {
           subtitle: context.l10n.locationStartingPoint,
           child: Column(
             children: [
+              _locationTile(),
+              const SizedBox(height: 12),
               ProvinceSelector(
                 value: _selectedProvince,
                 options: _provinceOptions,
@@ -79,13 +81,13 @@ extension _PlanMainView on _PlanScreenState {
                 loadingHint: context.l10n.loadingProvinces,
                 onChanged: (value) => _updateState(() {
                   _selectedProvince = value;
-                  _mustVisit.removeWhere((place) => place.province != value);
+                  if (value != null) {
+                    _mustVisit.removeWhere((place) => place.province != value);
+                  }
                   _excluded.clear();
                   _error = null;
                 }),
               ),
-              const SizedBox(height: 12),
-              _locationTile(),
               const SizedBox(height: 12),
               InkWell(
                 onTap: _pickDates,
@@ -184,7 +186,7 @@ extension _PlanMainView on _PlanScreenState {
                       .toList(),
                 ),
               OutlinedButton.icon(
-                onPressed: _selectedProvince == null ? null : _showPlacePicker,
+                onPressed: _showPlacePicker,
                 icon: const Icon(Icons.add_location_alt_outlined),
                 label: Text(context.l10n.addAPlace),
               ),
@@ -290,61 +292,74 @@ extension _PlanMainView on _PlanScreenState {
     );
   }
 
-  Widget _buildResult(TravelPlan plan) => CustomScrollView(
-    key: const ValueKey('result'),
-    slivers: [
-      SliverToBoxAdapter(
-        child: _header(
-          context.l10n.aiGeneratedPlan,
-          context.l10n.yourRoute,
-          back: _reset,
-        ),
-      ),
-      SliverToBoxAdapter(child: _planMap(plan)),
-      SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
-          child: Row(
-            children: [
-              _stat('${plan.allStops.length}', context.l10n.places),
-              _stat('${plan.days.length}', context.l10n.days),
-              _stat(
-                '฿${_money(plan.totalEstimatedCost)}',
-                context.l10n.estimated,
-              ),
-            ],
+  Widget _buildResult(TravelPlan plan) {
+    final selectedDay = _selectedDayFor(plan);
+    return CustomScrollView(
+      key: const ValueKey('result'),
+      slivers: [
+        SliverToBoxAdapter(
+          child: _header(
+            context.l10n.aiGeneratedPlan,
+            context.l10n.yourRoute,
+            back: _reset,
           ),
         ),
-      ),
-      SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                context.l10n.recommendedItinerary,
-                style: const TextStyle(
-                  fontSize: 21,
-                  fontWeight: FontWeight.w900,
+        SliverToBoxAdapter(child: _planMap(plan)),
+        if (plan.days.isNotEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 14),
+              child: PlanDaySelector(
+                dayNumbers: plan.days.map((day) => day.day).toList(),
+                selectedIndex: _selectedDayIndex.clamp(0, plan.days.length - 1),
+                dayLabel: context.l10n.day,
+                onSelected: _selectDay,
+              ),
+            ),
+          ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+            child: Row(
+              children: [
+                _stat('${plan.allStops.length}', context.l10n.places),
+                _stat('${plan.days.length}', context.l10n.days),
+                _stat(
+                  '฿${_money(plan.totalEstimatedCost)}',
+                  context.l10n.estimated,
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                plan.summary,
-                style: const TextStyle(color: Colors.black54, height: 1.45),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-      ...plan.days.expand(
-        (day) => [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n.recommendedItinerary,
+                  style: const TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  plan.summary,
+                  style: const TextStyle(color: Colors.black54, height: 1.45),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (selectedDay != null) ...[
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
               child: Text(
-                '${context.l10n.day} ${day.day} · ${day.theme.toUpperCase()}',
+                '${context.l10n.day} ${selectedDay.day} · ${selectedDay.theme.toUpperCase()}',
                 style: const TextStyle(
                   color: Color(0xff9a6b00),
                   fontWeight: FontWeight.w800,
@@ -354,74 +369,70 @@ extension _PlanMainView on _PlanScreenState {
             ),
           ),
           SliverList.builder(
-            itemCount: day.stops.length,
-            itemBuilder: (_, i) => _stopTile(day.stops[i], i + 1),
+            itemCount: selectedDay.stops.length,
+            itemBuilder: (_, i) => _stopTile(selectedDay.stops[i], i + 1),
+          ),
+        ],
+        SliverToBoxAdapter(child: _costSummary(plan)),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+            child: OutlinedButton.icon(
+              onPressed: _showPlacePicker,
+              icon: const Icon(Icons.add),
+              label: Text(context.l10n.addAnotherPlace),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _planMap(TravelPlan plan) {
+    final day = _selectedDayFor(plan);
+    final stops = day?.stops ?? const <TravelStop>[];
+    return Container(
+      key: _planMapKey,
+      height: 250,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(22)),
+      child: FlutterMap(
+        key: ValueKey('plan-map-day-${day?.day ?? 0}'),
+        mapController: _map,
+        options: MapOptions(
+          initialCenter: (stops.isEmpty
+              ? const LatLng(13.7563, 100.5018)
+              : LatLng(stops.first.latitude, stops.first.longitude)),
+          initialZoom: 15,
+        ),
+        children: [
+          TileLayer(
+            urlTemplate: AppConfig.mapTileUrl,
+            userAgentPackageName: 'com.example.myapp',
+          ),
+          if (_route.isNotEmpty)
+            PolylineLayer(
+              polylines: [
+                Polyline(points: _route, color: _gold, strokeWidth: 5),
+              ],
+            ),
+          MarkerLayer(
+            markers: stops.indexed
+                .map(
+                  (e) => Marker(
+                    point: LatLng(e.$2.latitude, e.$2.longitude),
+                    width: 132,
+                    height: 88,
+                    child: _buildPlanStopMarker(e.$2, e.$1 + 1),
+                  ),
+                )
+                .toList(),
           ),
         ],
       ),
-      SliverToBoxAdapter(child: _costSummary(plan)),
-      SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-          child: OutlinedButton.icon(
-            onPressed: _showPlacePicker,
-            icon: const Icon(Icons.add),
-            label: Text(context.l10n.addAnotherPlace),
-          ),
-        ),
-      ),
-    ],
-  );
-
-  Widget _planMap(TravelPlan plan) => Container(
-    height: 250,
-    margin: const EdgeInsets.symmetric(horizontal: 16),
-    clipBehavior: Clip.antiAlias,
-    decoration: BoxDecoration(borderRadius: BorderRadius.circular(22)),
-    child: FlutterMap(
-      mapController: _map,
-      options: MapOptions(
-        initialCenter:
-            _position ??
-            (plan.allStops.isEmpty
-                ? const LatLng(13.7563, 100.5018)
-                : LatLng(
-                    plan.allStops.first.latitude,
-                    plan.allStops.first.longitude,
-                  )),
-        initialZoom: 11,
-      ),
-      children: [
-        TileLayer(
-          urlTemplate: AppConfig.mapTileUrl,
-          userAgentPackageName: 'com.example.myapp',
-        ),
-        if (_route.isNotEmpty)
-          PolylineLayer(
-            polylines: [Polyline(points: _route, color: _gold, strokeWidth: 5)],
-          ),
-        MarkerLayer(
-          markers: [
-            if (_position != null)
-              Marker(
-                point: _position!,
-                width: 36,
-                height: 36,
-                child: const Icon(Icons.my_location, color: Colors.blue),
-              ),
-            ...plan.allStops.indexed.map(
-              (e) => Marker(
-                point: LatLng(e.$2.latitude, e.$2.longitude),
-                width: 132,
-                height: 88,
-                child: _buildPlanStopMarker(e.$2, e.$1 + 1),
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
+    );
+  }
 
   Widget _stopTile(TravelStop stop, int number) => Material(
     color: Colors.transparent,

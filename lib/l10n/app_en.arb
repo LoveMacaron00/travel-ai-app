@@ -170,7 +170,7 @@
   "locationStartingPoint": "Your location is the starting point.",
   "selectProvince": "Choose a province",
   "loadingProvinces": "Loading provinces…",
-  "databaseProvinceOnly": "Only destinations available in the database will be used.",
+  "databaseProvinceOnly": "Optional — leave blank to search database destinations near your location.",
   "provinceRequired": "Choose a province before creating a travel plan.",
   "couldNotLoadProvinces": "Could not load provinces",
   "travelDates": "Travel dates",

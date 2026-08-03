@@ -39,23 +39,35 @@ class ProvinceSelector extends StatelessWidget {
   final ValueChanged<String?> onChanged;
 
   @override
-  Widget build(BuildContext context) => DropdownButtonFormField<String>(
+  Widget build(BuildContext context) => KeyedSubtree(
     key: const ValueKey('plan-province-selector'),
-    initialValue: value,
-    isExpanded: true,
-    decoration: decoration,
-    hint: Text(loading ? loadingHint : selectHint),
-    items: options
-        .map(
-          (province) => DropdownMenuItem<String>(
-            value: province.value,
-            child: Text(
-              '${province.label} (${province.destinationCount})',
-              overflow: TextOverflow.ellipsis,
+    child: DropdownButtonFormField<String>(
+      key: ValueKey('plan-province-value-${value ?? 'any'}'),
+      initialValue: value,
+      isExpanded: true,
+      decoration: value == null
+          ? decoration
+          : decoration.copyWith(
+              suffixIcon: IconButton(
+                key: const ValueKey('clear-plan-province'),
+                tooltip: selectHint,
+                onPressed: () => onChanged(null),
+                icon: const Icon(Icons.close),
+              ),
             ),
-          ),
-        )
-        .toList(),
-    onChanged: loading ? null : onChanged,
+      hint: Text(loading ? loadingHint : selectHint),
+      items: options
+          .map(
+            (province) => DropdownMenuItem<String>(
+              value: province.value,
+              child: Text(
+                '${province.label} (${province.destinationCount})',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          )
+          .toList(),
+      onChanged: loading ? null : onChanged,
+    ),
   );
 }

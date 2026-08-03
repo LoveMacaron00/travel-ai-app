@@ -170,7 +170,7 @@
   "locationStartingPoint": "ตำแหน่งของคุณคือจุดเริ่มต้น",
   "selectProvince": "เลือกจังหวัด",
   "loadingProvinces": "กำลังโหลดจังหวัด…",
-  "databaseProvinceOnly": "ใช้เฉพาะสถานที่ที่มีอยู่ในฐานข้อมูล",
+  "databaseProvinceOnly": "ไม่บังคับ — หากไม่เลือก ระบบจะค้นสถานที่จากฐานข้อมูลตามตำแหน่งของคุณ",
   "provinceRequired": "กรุณาเลือกจังหวัดก่อนสร้างแผนการเดินทาง",
   "couldNotLoadProvinces": "ไม่สามารถโหลดรายชื่อจังหวัดได้",
   "travelDates": "วันที่เดินทาง",

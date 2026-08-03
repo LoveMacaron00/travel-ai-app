@@ -1049,7 +1049,7 @@ abstract class AppLocalizations {
   /// No description provided for @databaseProvinceOnly.
   ///
   /// In en, this message translates to:
-  /// **'Only destinations available in the database will be used.'**
+  /// **'Optional — leave blank to search database destinations near your location.'**
   String get databaseProvinceOnly;
 
   /// No description provided for @provinceRequired.

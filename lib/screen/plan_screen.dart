@@ -12,6 +12,7 @@ import 'package:myapp/services/app_services.dart';
 import 'package:myapp/services/location_service.dart';
 import 'package:myapp/utils/destination_display.dart';
 import 'package:myapp/widgets/media_image.dart';
+import 'package:myapp/widgets/plan_day_selector.dart';
 import 'package:myapp/widgets/province_selector.dart';
 
 part 'plan/plan_view.dart';
@@ -32,6 +33,7 @@ class PlanScreen extends StatefulWidget {
 class _PlanScreenState extends State<PlanScreen> {
   final LocationService _locationService = LocationService.instance;
   final _map = MapController();
+  final _planMapKey = GlobalKey();
   DateTimeRange? _dates;
   double _budget = 30000;
   int _days = 3;
@@ -49,6 +51,8 @@ class _PlanScreenState extends State<PlanScreen> {
   final List<PlaceMarker> _mustVisit = [];
   final Set<String> _excluded = {};
   List<LatLng> _route = [];
+  int _selectedDayIndex = 0;
+  int _routeRequestId = 0;
   late String _loadedLanguage;
 
   // extension view เรียกผ่าน wrapper นี้แทน protected State.setState โดยตรง
@@ -216,10 +220,6 @@ class _PlanScreenState extends State<PlanScreen> {
   };
 
   Future<void> _generate() async {
-    if (_selectedProvince == null) {
-      setState(() => _error = context.l10n.provinceRequired);
-      return;
-    }
     setState(() {
       _generating = true;
       _error = null;
@@ -235,6 +235,8 @@ class _PlanScreenState extends State<PlanScreen> {
       );
       setState(() {
         _plan = next;
+        _selectedDayIndex = 0;
+        _route = [];
         _generating = false;
       });
       await _buildRoute(next);
@@ -247,10 +249,19 @@ class _PlanScreenState extends State<PlanScreen> {
   }
 
   Future<void> _buildRoute(TravelPlan plan) async {
-    if (_position == null || plan.allStops.isEmpty) return;
+    final requestId = ++_routeRequestId;
+    final day = _selectedDayFor(plan);
+    if (day == null || day.stops.length < 2) {
+      if (mounted && requestId == _routeRequestId) {
+        setState(() => _route = []);
+      }
+      return;
+    }
+
     final points = <LatLng>[];
-    var from = _position!;
-    for (final stop in plan.allStops) {
+    var from = LatLng(day.stops.first.latitude, day.stops.first.longitude);
+    points.add(from);
+    for (final stop in day.stops.skip(1)) {
       final raw = await AppServices.trips.getRoadRoute(
         fromLat: from.latitude,
         fromLng: from.longitude,
@@ -258,6 +269,7 @@ class _PlanScreenState extends State<PlanScreen> {
         toLng: stop.longitude,
         mode: stop.transportMode,
       );
+      if (requestId != _routeRequestId) return;
       if (raw.isEmpty) {
         points.addAll([from, LatLng(stop.latitude, stop.longitude)]);
       } else {
@@ -265,7 +277,39 @@ class _PlanScreenState extends State<PlanScreen> {
       }
       from = LatLng(stop.latitude, stop.longitude);
     }
-    if (mounted) setState(() => _route = points);
+    if (mounted && requestId == _routeRequestId) {
+      setState(() => _route = points);
+    }
+  }
+
+  TravelDay? _selectedDayFor(TravelPlan plan) {
+    if (plan.days.isEmpty) return null;
+    final index = _selectedDayIndex.clamp(0, plan.days.length - 1);
+    return plan.days[index];
+  }
+
+  void _selectDay(int index) {
+    final plan = _plan;
+    if (plan == null || index < 0 || index >= plan.days.length) return;
+    final firstStop = plan.days[index].stops.firstOrNull;
+    setState(() {
+      _selectedDayIndex = index;
+      _route = [];
+    });
+    unawaited(_buildRoute(plan));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final mapContext = _planMapKey.currentContext;
+      if (!mounted || mapContext == null) return;
+      Scrollable.ensureVisible(
+        mapContext,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+        alignment: 0.05,
+      );
+      if (firstStop != null) {
+        _map.move(LatLng(firstStop.latitude, firstStop.longitude), 15);
+      }
+    });
   }
 
   Future<void> _removeStop(TravelStop stop) async {
@@ -274,12 +318,16 @@ class _PlanScreenState extends State<PlanScreen> {
     await _generate();
   }
 
-  void _reset() => setState(() {
-    _plan = null;
-    _route = [];
-    _excluded.clear();
-    _error = null;
-  });
+  void _reset() {
+    _routeRequestId++;
+    setState(() {
+      _plan = null;
+      _selectedDayIndex = 0;
+      _route = [];
+      _excluded.clear();
+      _error = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) => _buildScaffold(context);

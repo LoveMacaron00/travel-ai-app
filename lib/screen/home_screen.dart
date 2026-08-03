@@ -4,15 +4,18 @@ import 'package:myapp/screen/all_destinations_screen.dart';
 import 'package:myapp/screen/chatbot_screen.dart';
 import 'package:myapp/screen/destination_detail_screen.dart';
 import 'package:myapp/services/app_services.dart';
+import 'package:myapp/widgets/home_feature_item.dart';
 import 'package:myapp/widgets/media_image.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback onProfileTap;
+  final VoidCallback onPlanTap;
   final ValueChanged<int> onExploreDestination;
 
   const HomeScreen({
     super.key,
     required this.onProfileTap,
+    required this.onPlanTap,
     required this.onExploreDestination,
   });
 
@@ -200,12 +203,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            _buildFeatureItem(
+                            HomeFeatureItem(
                               Icons.calendar_month,
                               l10n.planTravel,
                               brandGold,
+                              onTap: widget.onPlanTap,
                             ),
-                            _buildFeatureItem(
+                            HomeFeatureItem(
                               Icons.forum,
                               l10n.chatbot,
                               brandGold,
@@ -218,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 );
                               },
                             ),
-                            _buildFeatureItem(
+                            HomeFeatureItem(
                               Icons.document_scanner_outlined,
                               l10n.scanWithAi,
                               brandGold,
@@ -549,42 +553,5 @@ class _HomeScreenState extends State<HomeScreen> {
       return context.l10n.viewsCount('${(value / 1000).toStringAsFixed(1)}K');
     }
     return context.l10n.viewsCount('$value');
-  }
-
-  Widget _buildFeatureItem(
-    IconData icon,
-    String label,
-    Color color, {
-    VoidCallback? onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(40),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-        child: Column(
-          children: [
-            Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 26),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
