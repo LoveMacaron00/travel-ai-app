@@ -359,11 +359,8 @@ extension _MapView on MapScreenState {
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12.0),
-                            child: Image.network(
+                            child: mediaNetworkImage(
                               _selectedMarker!.imageUrl,
-                              headers: AppServices.media.headersFor(
-                                _selectedMarker!.imageUrl,
-                              ),
                               width: 80.0,
                               height: 80.0,
                               fit: BoxFit.cover,

@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'package:myapp/services/api_client.dart';
+import 'package:myapp/services/image_upload.dart';
 import 'package:myapp/services/session_store.dart';
 
 class AuthService {
@@ -104,12 +105,12 @@ class AuthService {
     }
   }
 
-  Future<Map<String, dynamic>> uploadProfileImage(String filePath) async {
+  Future<Map<String, dynamic>> uploadProfileImage(ImageUpload image) async {
     try {
       final request = http.MultipartRequest(
         'POST',
         _client.uri('/users/profile/upload-image'),
-      )..files.add(await http.MultipartFile.fromPath('image', filePath));
+      )..files.add(image.asMultipartFile('image'));
       final streamed = await _client.send(request);
       final response = await http.Response.fromStream(streamed);
       final data = ApiClient.decodeMap(response.body);

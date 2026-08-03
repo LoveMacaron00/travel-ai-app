@@ -5,7 +5,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/model/scan_result.dart';
 import 'package:myapp/services/app_services.dart';
+import 'package:myapp/services/image_upload.dart';
 import 'package:myapp/services/location_service.dart';
+import 'package:myapp/widgets/media_image.dart';
 
 part 'chatbot/chat_message_widgets.dart';
 part 'chatbot/scan_result_widgets.dart';
@@ -268,7 +270,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
     final result = await AppServices.chat.sendImage(
       sessionId: _sessionId!,
-      filePath: image.path,
+      image: ImageUpload(
+        bytes: imageBytes,
+        filename: image.name,
+        mimeType: image.mimeType,
+      ),
       mode: mode.apiValue,
       latitude: position?.latitude,
       longitude: position?.longitude,

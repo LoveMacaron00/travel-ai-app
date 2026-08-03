@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/screen/destination_detail_screen.dart';
 import 'package:myapp/services/app_services.dart';
+import 'package:myapp/widgets/media_image.dart';
 
 class AllDestinationsScreen extends StatefulWidget {
   final ValueChanged<int> onExploreDestination;
@@ -219,9 +220,8 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
                 child: SizedBox(
                   width: 92,
                   height: 92,
-                  child: Image.network(
+                  child: mediaNetworkImage(
                     image,
-                    headers: AppServices.media.headersFor(image),
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(
                       color: const Color(0xffeee8df),

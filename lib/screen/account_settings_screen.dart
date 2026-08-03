@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/services/app_services.dart';
+import 'package:myapp/services/image_upload.dart';
 import 'package:myapp/widgets/media_image.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -84,7 +85,13 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
 
       setState(() => _isLoading = true);
 
-      final result = await AppServices.auth.uploadProfileImage(image.path);
+      final result = await AppServices.auth.uploadProfileImage(
+        ImageUpload(
+          bytes: await image.readAsBytes(),
+          filename: image.name,
+          mimeType: image.mimeType,
+        ),
+      );
 
       if (mounted) {
         setState(() => _isLoading = false);

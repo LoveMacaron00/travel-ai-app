@@ -369,9 +369,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Stack(
                 children: [
                   Positioned.fill(
-                    child: Image.network(
+                    child: mediaNetworkImage(
                       image,
-                      headers: AppServices.media.headersFor(image),
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         color: Colors.grey.shade300,

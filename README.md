@@ -13,7 +13,18 @@ Copy-Item .env.example .env
 flutter run --dart-define-from-file=.env
 ```
 
-`API_BASE_URL` มีค่าเริ่มต้นเป็น host ของ Android emulator (`10.0.2.2`) หากรันบนมือถือจริงให้เปลี่ยนเป็น LAN IP หรือ URL ของ server ที่ deploy แล้ว
+`API_BASE_URL` ใช้กับ Android emulator (`10.0.2.2`) และ native platform ส่วน
+`WEB_API_BASE_URL` ใช้กับ Chrome (`localhost`) ทำให้ใช้ `.env` ชุดเดียวพัฒนาได้ทั้งสองแบบ
+หากรันบนมือถือจริงให้เปลี่ยน `API_BASE_URL` เป็น LAN IP หรือ URL ของ server ที่ deploy แล้ว
+
+รันบน Chrome ด้วยพอร์ตคงที่ที่เตรียมไว้ใน CORS ของ API:
+
+```powershell
+flutter run -d chrome --web-port 7357 --dart-define-from-file=.env
+```
+
+Geolocation บนเว็บใช้ได้ผ่าน `localhost` หรือ HTTPS เท่านั้น เมื่อ deploy เว็บผ่าน
+HTTPS ต้องตั้ง `WEB_API_BASE_URL` เป็น HTTPS ด้วย มิฉะนั้น Chrome จะบล็อก mixed content
 
 ไฟล์นี้รับเฉพาะค่าที่เปิดเผยใน mobile app ได้ ห้ามใส่ AI API key หรือ JWT secret เพราะค่า compile-time สามารถถูกดึงออกจาก APK/IPA ได้
 
@@ -21,6 +32,7 @@ Build commands must receive the same environment file:
 
 ```powershell
 flutter build apk --dart-define-from-file=.env
+flutter build web --dart-define-from-file=.env
 ```
 
 ## ตรวจสอบโค้ด

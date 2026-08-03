@@ -9,6 +9,7 @@ import 'package:myapp/screen/destination_detail_screen.dart';
 import 'package:myapp/screen/plan_navigation_screen.dart';
 import 'package:myapp/services/app_services.dart';
 import 'package:myapp/services/location_service.dart';
+import 'package:myapp/widgets/media_image.dart';
 
 part 'map/map_view.dart';
 

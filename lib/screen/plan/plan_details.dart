@@ -60,11 +60,8 @@ extension _PlanDetailsView on _PlanScreenState {
                             itemCount: gallery.length,
                             itemBuilder: (_, index) => ClipRRect(
                               borderRadius: BorderRadius.circular(20),
-                              child: Image.network(
+                              child: mediaNetworkImage(
                                 gallery[index],
-                                headers: AppServices.media.headersFor(
-                                  gallery[index],
-                                ),
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => Container(
                                   color: const Color(0xffeee7da),

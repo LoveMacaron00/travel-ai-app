@@ -176,9 +176,8 @@ class _SourcePill extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: imageUrl.isNotEmpty
-                ? Image.network(
+                ? mediaNetworkImage(
                     imageUrl,
-                    headers: AppServices.media.headersFor(imageUrl),
                     width: 40,
                     height: 40,
                     fit: BoxFit.cover,
@@ -255,9 +254,8 @@ class _ImageMessage extends StatelessWidget {
             height: 175,
             fit: BoxFit.cover,
           )
-        : Image.network(
+        : mediaNetworkImage(
             imageUrl,
-            headers: AppServices.media.headersFor(imageUrl),
             width: 260,
             height: 175,
             fit: BoxFit.cover,

@@ -36,17 +36,21 @@ class LocationService extends ChangeNotifier {
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
         if (openSettingsWhenDenied &&
-            permission == LocationPermission.deniedForever) {
+            permission == LocationPermission.deniedForever &&
+            !kIsWeb) {
           await Geolocator.openAppSettings();
         }
         throw Exception('Location permission denied');
       }
 
-      final lastKnown = await Geolocator.getLastKnownPosition();
-      if (lastKnown != null) {
-        // แสดงค่าล่าสุดให้ UI ใช้ก่อนได้ แล้วค่อยแทนที่ด้วยพิกัดสดด้านล่าง
-        _currentPosition = LatLng(lastKnown.latitude, lastKnown.longitude);
-        notifyListeners();
+      // geolocator_web ไม่รองรับ getLastKnownPosition และจะ throw ทันที
+      if (!kIsWeb) {
+        final lastKnown = await Geolocator.getLastKnownPosition();
+        if (lastKnown != null) {
+          // แสดงค่าล่าสุดให้ UI ใช้ก่อนได้ แล้วค่อยแทนที่ด้วยพิกัดสดด้านล่าง
+          _currentPosition = LatLng(lastKnown.latitude, lastKnown.longitude);
+          notifyListeners();
+        }
       }
 
       Position? position;

@@ -13,11 +13,11 @@ typedef LanguageProvider = String Function();
 class ApiClient {
   ApiClient({
     http.Client? httpClient,
-    String baseUrl = AppConfig.apiBaseUrl,
+    String? baseUrl,
     required TokenProvider tokenProvider,
     LanguageProvider? languageProvider,
   }) : httpClient = httpClient ?? http.Client(),
-       baseUrl = baseUrl.replaceFirst(RegExp(r'/$'), ''),
+       baseUrl = _normalizeBaseUrl(baseUrl ?? AppConfig.apiBaseUrl),
        _tokenProvider = tokenProvider,
        _languageProvider = languageProvider ?? (() => 'th');
 
@@ -111,4 +111,20 @@ class ApiClient {
             (resolved.path.startsWith('/api/chat/messages/') &&
                 resolved.path.endsWith('/image')));
   }
+}
+
+String _normalizeBaseUrl(String value) {
+  final normalized = value.trim().replaceFirst(RegExp(r'/+$'), '');
+  final uri = Uri.tryParse(normalized);
+  if (uri == null ||
+      !uri.hasScheme ||
+      (uri.scheme != 'http' && uri.scheme != 'https') ||
+      uri.host.isEmpty) {
+    throw ArgumentError.value(
+      value,
+      'baseUrl',
+      'API base URL must be an absolute http(s) URL',
+    );
+  }
+  return normalized;
 }

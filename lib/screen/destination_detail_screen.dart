@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/services/app_services.dart';
 import 'package:myapp/utils/destination_display.dart';
+import 'package:myapp/widgets/media_image.dart';
 
 /// แสดงรายละเอียดจาก schema กลางของ mobile API และยังรองรับข้อมูล TAT รุ่นเก่า
 class DestinationDetailScreen extends StatefulWidget {
@@ -157,11 +158,8 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                                   itemCount: images.length,
                                   onPageChanged: (index) =>
                                       setState(() => _imageIndex = index),
-                                  itemBuilder: (_, index) => Image.network(
+                                  itemBuilder: (_, index) => mediaNetworkImage(
                                     images[index],
-                                    headers: AppServices.media.headersFor(
-                                      images[index],
-                                    ),
                                     fit: BoxFit.cover,
                                     errorBuilder: (_, __, ___) => Container(
                                       color: const Color(0xffe9e2d7),

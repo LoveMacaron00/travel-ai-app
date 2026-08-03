@@ -1,12 +1,12 @@
 {
-    "name": "myapp",
-    "short_name": "myapp",
+    "name": "GoThai",
+    "short_name": "GoThai",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "description": "GoThai travel assistant for Thailand.",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

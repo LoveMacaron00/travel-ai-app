@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:myapp/services/api_client.dart';
+import 'package:myapp/services/image_upload.dart';
 
 class ChatService {
   const ChatService({required ApiClient client}) : _client = client;
@@ -149,7 +150,7 @@ class ChatService {
 
   Future<Map<String, dynamic>> sendImage({
     required int sessionId,
-    required String filePath,
+    required ImageUpload image,
     required String mode,
     double? latitude,
     double? longitude,
@@ -162,7 +163,7 @@ class ChatService {
       request.fields['mode'] = mode;
       if (latitude != null) request.fields['latitude'] = '$latitude';
       if (longitude != null) request.fields['longitude'] = '$longitude';
-      request.files.add(await http.MultipartFile.fromPath('image', filePath));
+      request.files.add(image.asMultipartFile('image'));
 
       final streamed = await _client.send(request);
       final response = await http.Response.fromStream(streamed);

@@ -241,11 +241,8 @@ extension _PlanComponents on _PlanScreenState {
                                   width: 52,
                                   child: Icon(Icons.place),
                                 )
-                              : Image.network(
+                              : mediaNetworkImage(
                                   p.imageUrl,
-                                  headers: AppServices.media.headersFor(
-                                    p.imageUrl,
-                                  ),
                                   width: 52,
                                   height: 52,
                                   fit: BoxFit.cover,

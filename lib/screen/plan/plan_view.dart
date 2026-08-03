@@ -439,11 +439,8 @@ extension _PlanMainView on _PlanScreenState {
                           color: const Color(0xffeee7da),
                           child: const Icon(Icons.landscape),
                         )
-                      : Image.network(
+                      : mediaNetworkImage(
                           AppServices.media.fullUrl(stop.imageUrl),
-                          headers: AppServices.media.headersFor(
-                            AppServices.media.fullUrl(stop.imageUrl),
-                          ),
                           width: 76,
                           height: 76,
                           fit: BoxFit.cover,

@@ -33,27 +33,35 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
 
   Future<void> _start() async {
     final l10n = context.l10n;
-    if (!await Geolocator.isLocationServiceEnabled()) {
-      _message(l10n.turnOnLocationServices);
-      return;
-    }
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        _message(l10n.turnOnLocationServices);
+        return;
+      }
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        _message(l10n.locationPermissionRequired);
+        return;
+      }
+      final first = await Geolocator.getCurrentPosition();
+      await _updatePosition(first, refreshRoute: true);
+      _positionStream =
+          Geolocator.getPositionStream(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: 15,
+            ),
+          ).listen(
+            (position) => _updatePosition(position),
+            onError: (_) => _message(l10n.locationPermissionRequired),
+          );
+    } catch (_) {
       _message(l10n.locationPermissionRequired);
-      return;
     }
-    final first = await Geolocator.getCurrentPosition();
-    await _updatePosition(first, refreshRoute: true);
-    _positionStream = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 15,
-      ),
-    ).listen((p) => _updatePosition(p));
   }
 
   Future<void> _updatePosition(Position p, {bool refreshRoute = false}) async {
