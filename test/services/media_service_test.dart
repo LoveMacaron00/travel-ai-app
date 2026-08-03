@@ -28,4 +28,11 @@ void main() {
     expect(resolved, 'http://localhost:5000/uploads/profile.jpg');
     expect(media.headersFor(resolved), {'Authorization': 'Bearer token'});
   });
+
+  test('drops documentation-only placeholder image URLs', () {
+    final media = MediaService(client: client, useWebProxy: true);
+
+    expect(media.fullUrl('https://example.com/invented.jpg'), isEmpty);
+    expect(media.fullUrl('https://images.example.org/invented.jpg'), isEmpty);
+  });
 }

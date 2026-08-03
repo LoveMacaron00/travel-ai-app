@@ -13,9 +13,12 @@ class MediaService {
   String get defaultAvatarUrl => AppConfig.defaultAvatarUrl;
   String fullUrl(String? path) {
     final resolved = _client.fullImageUrl(path);
-    if (!_useWebProxy || resolved.isEmpty) return resolved;
+    if (resolved.isEmpty) return resolved;
 
     final mediaUri = Uri.tryParse(resolved);
+    if (_isPlaceholderMediaUri(mediaUri)) return '';
+    if (!_useWebProxy) return resolved;
+
     final apiUri = Uri.tryParse(_client.baseUrl);
     if (mediaUri == null || apiUri == null || !mediaUri.hasScheme) {
       return resolved;
@@ -35,4 +38,15 @@ class MediaService {
   }
 
   Map<String, String> headersFor(String url) => _client.mediaHeaders(url);
+
+  bool _isPlaceholderMediaUri(Uri? uri) {
+    if (uri == null) return false;
+
+    final host = uri.host.toLowerCase();
+    const documentationDomains = {'example.com', 'example.org', 'example.net'};
+    return documentationDomains.any(
+          (domain) => host == domain || host.endsWith('.$domain'),
+        ) ||
+        host.endsWith('.invalid');
+  }
 }

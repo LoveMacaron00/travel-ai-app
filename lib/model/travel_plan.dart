@@ -38,7 +38,7 @@ class TravelStop {
     activity: '${j['activity'] ?? ''}',
     latitude: _number(j['latitude']),
     longitude: _number(j['longitude']),
-    imageUrl: '${j['imageUrl'] ?? ''}',
+    imageUrl: _planImageUrl(j['imageUrl']),
     arrivalTime: '${j['arrivalTime'] ?? ''}',
     durationMinutes: _number(j['durationMinutes']).round(),
     entryCost: _number(j['entryCost']),
@@ -134,3 +134,21 @@ class TravelPlan {
 
 double _number(dynamic value) =>
     value is num ? value.toDouble() : double.tryParse('$value') ?? 0;
+
+// example.com/.org/.net are documentation-only domains. Older AI plans may
+// contain invented URLs on those hosts, so treat them as missing media instead
+// of sending a request that is guaranteed to fail.
+String _planImageUrl(dynamic value) {
+  final url = '${value ?? ''}'.trim();
+  if (url.isEmpty) return '';
+
+  final uri = Uri.tryParse(url);
+  if (uri == null) return '';
+
+  final host = uri.host.toLowerCase();
+  const placeholderDomains = {'example.com', 'example.org', 'example.net'};
+  final isPlaceholder = placeholderDomains.any(
+    (domain) => host == domain || host.endsWith('.$domain'),
+  );
+  return isPlaceholder || host.endsWith('.invalid') ? '' : url;
+}
