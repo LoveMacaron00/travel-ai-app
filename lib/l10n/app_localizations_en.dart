@@ -608,6 +608,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get transportWalking => 'Walking';
 
   @override
+  String get transportBus => 'Bus';
+
+  @override
+  String get transportTrain => 'Train';
+
+  @override
+  String get transportFerry => 'Ferry';
+
+  @override
+  String get transportFlight => 'Flight';
+
+  @override
   String get couldNotCreatePlan => 'Could not create a plan.';
 
   @override

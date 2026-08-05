@@ -23,6 +23,13 @@ const _gold = Color(0xffe9ad0c);
 const _ink = Color(0xff292620);
 const _canvas = Color(0xfff7f2e8);
 
+class _PlanRouteLeg {
+  const _PlanRouteLeg({required this.mode, required this.points});
+
+  final String mode;
+  final List<LatLng> points;
+}
+
 /// สร้างและแสดงแผนเที่ยวจาก AI ก่อนส่งจุดแวะไปยังหน้าจอนำทาง
 class PlanScreen extends StatefulWidget {
   const PlanScreen({super.key});
@@ -50,7 +57,7 @@ class _PlanScreenState extends State<PlanScreen> {
   final Set<String> _modes = {'car'};
   final List<PlaceMarker> _mustVisit = [];
   final Set<String> _excluded = {};
-  List<LatLng> _route = [];
+  List<_PlanRouteLeg> _route = [];
   int _selectedDayIndex = 0;
   int _routeRequestId = 0;
   late String _loadedLanguage;
@@ -72,6 +79,10 @@ class _PlanScreenState extends State<PlanScreen> {
   static const _modeOptions = <String, IconData>{
     'car': Icons.directions_car,
     'walking': Icons.directions_walk,
+    'bus': Icons.directions_bus,
+    'train': Icons.train,
+    'ferry': Icons.directions_boat,
+    'flight': Icons.flight,
   };
 
   @override
@@ -258,27 +269,34 @@ class _PlanScreenState extends State<PlanScreen> {
       return;
     }
 
-    final points = <LatLng>[];
+    final legs = <_PlanRouteLeg>[];
     var from = LatLng(day.stops.first.latitude, day.stops.first.longitude);
-    points.add(from);
     for (final stop in day.stops.skip(1)) {
-      final raw = await AppServices.trips.getRoadRoute(
-        fromLat: from.latitude,
-        fromLng: from.longitude,
-        toLat: stop.latitude,
-        toLng: stop.longitude,
-        mode: stop.transportMode,
-      );
+      final to = LatLng(stop.latitude, stop.longitude);
+      final mode = stop.transportMode.toLowerCase();
+      final usesRoadRoute = mode == 'car' || mode == 'walking' || mode == 'bus';
+      final raw = usesRoadRoute
+          ? await AppServices.trips.getRoadRoute(
+              fromLat: from.latitude,
+              fromLng: from.longitude,
+              toLat: to.latitude,
+              toLng: to.longitude,
+              mode: mode,
+            )
+          : const <List<double>>[];
       if (requestId != _routeRequestId) return;
-      if (raw.isEmpty) {
-        points.addAll([from, LatLng(stop.latitude, stop.longitude)]);
-      } else {
-        points.addAll(raw.map((p) => LatLng(p[0], p[1])));
-      }
-      from = LatLng(stop.latitude, stop.longitude);
+      legs.add(
+        _PlanRouteLeg(
+          mode: mode,
+          points: raw.isEmpty
+              ? [from, to]
+              : raw.map((p) => LatLng(p[0], p[1])).toList(),
+        ),
+      );
+      from = to;
     }
     if (mounted && requestId == _routeRequestId) {
-      setState(() => _route = points);
+      setState(() => _route = legs);
     }
   }
 

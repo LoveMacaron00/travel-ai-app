@@ -72,6 +72,9 @@ class TripService {
     required double toLng,
     String mode = 'driving',
   }) async {
+    if (!const {'car', 'walking', 'bus', 'cycling', 'driving'}.contains(mode)) {
+      return const [];
+    }
     final profile = mode == 'walking'
         ? 'foot'
         : mode == 'cycling'

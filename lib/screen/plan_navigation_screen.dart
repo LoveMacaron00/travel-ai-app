@@ -82,15 +82,37 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
     });
     _map.move(next, 16);
     if (refreshRoute || _route.isEmpty) {
-      final raw = await AppServices.trips.getRoadRoute(
-        fromLat: p.latitude,
-        fromLng: p.longitude,
-        toLat: widget.destination.latitude,
-        toLng: widget.destination.longitude,
-        mode: widget.destination.transportMode,
-      );
+      final mode = widget.destination.transportMode.toLowerCase();
+      final usesRoadRoute = const {'car', 'walking', 'bus'}.contains(mode);
+      final raw = usesRoadRoute
+          ? await AppServices.trips.getRoadRoute(
+              fromLat: p.latitude,
+              fromLng: p.longitude,
+              toLat: widget.destination.latitude,
+              toLng: widget.destination.longitude,
+              mode: mode,
+            )
+          : const <List<double>>[];
       if (mounted) {
-        setState(() => _route = raw.map((e) => LatLng(e[0], e[1])).toList());
+        setState(
+          () => _route = raw.isEmpty
+              ? [
+                  next,
+                  LatLng(
+                    widget.destination.latitude,
+                    widget.destination.longitude,
+                  ),
+                ]
+              : raw.map((e) => LatLng(e[0], e[1])).toList(),
+        );
+        if (!usesRoadRoute) {
+          _map.fitCamera(
+            CameraFit.bounds(
+              bounds: LatLngBounds.fromPoints(_route),
+              padding: const EdgeInsets.all(56),
+            ),
+          );
+        }
       }
     }
   }
@@ -130,7 +152,10 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
                     Polyline(
                       points: _route,
                       strokeWidth: 6,
-                      color: const Color(0xffe8ad10),
+                      color: _routeColor(widget.destination.transportMode),
+                      pattern: _usesRoadRoute(widget.destination.transportMode)
+                          ? const StrokePattern.solid()
+                          : StrokePattern.dashed(segments: const [12, 8]),
                     ),
                   ],
                 ),
@@ -256,6 +281,18 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
     elevation: 3,
     child: IconButton(onPressed: onTap, icon: Icon(icon)),
   );
+
+  bool _usesRoadRoute(String mode) =>
+      const {'car', 'walking', 'bus'}.contains(mode.toLowerCase());
+
+  Color _routeColor(String mode) => switch (mode.toLowerCase()) {
+    'walking' => const Color(0xff6d7278),
+    'bus' => const Color(0xff2d7dd2),
+    'train' => const Color(0xff7b2cbf),
+    'ferry' => const Color(0xff0096c7),
+    'flight' => const Color(0xffe76f51),
+    _ => const Color(0xffe8ad10),
+  };
 
   Widget _buildDestinationMarker() {
     return Column(

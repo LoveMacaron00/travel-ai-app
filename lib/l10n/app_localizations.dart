@@ -1244,6 +1244,30 @@ abstract class AppLocalizations {
   /// **'Walking'**
   String get transportWalking;
 
+  /// No description provided for @transportBus.
+  ///
+  /// In en, this message translates to:
+  /// **'Bus'**
+  String get transportBus;
+
+  /// No description provided for @transportTrain.
+  ///
+  /// In en, this message translates to:
+  /// **'Train'**
+  String get transportTrain;
+
+  /// No description provided for @transportFerry.
+  ///
+  /// In en, this message translates to:
+  /// **'Ferry'**
+  String get transportFerry;
+
+  /// No description provided for @transportFlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Flight'**
+  String get transportFlight;
+
   /// No description provided for @couldNotCreatePlan.
   ///
   /// In en, this message translates to:

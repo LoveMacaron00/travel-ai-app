@@ -104,6 +104,24 @@ extension _PlanDetailsView on _PlanScreenState {
                       ),
                     ),
                   ],
+                  if (stop.tip.trim().isNotEmpty &&
+                      stop.tip.trim() != description) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xfffff4d2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        stop.tip.trim(),
+                        style: const TextStyle(
+                          color: Color(0xff684d0a),
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 22),
                   Text(
                     context.l10n.estimatedStopCost,

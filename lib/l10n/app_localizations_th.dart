@@ -597,6 +597,18 @@ class AppLocalizationsTh extends AppLocalizations {
   String get transportWalking => 'เดิน';
 
   @override
+  String get transportBus => 'รถโดยสาร';
+
+  @override
+  String get transportTrain => 'รถไฟ';
+
+  @override
+  String get transportFerry => 'เรือ';
+
+  @override
+  String get transportFlight => 'เครื่องบิน';
+
+  @override
   String get couldNotCreatePlan => 'ไม่สามารถสร้างแผนได้';
 
   @override

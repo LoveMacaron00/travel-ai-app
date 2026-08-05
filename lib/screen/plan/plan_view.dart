@@ -405,6 +405,16 @@ extension _PlanMainView on _PlanScreenState {
               ? const LatLng(13.7563, 100.5018)
               : LatLng(stops.first.latitude, stops.first.longitude)),
           initialZoom: 15,
+          initialCameraFit: stops.length > 1
+              ? CameraFit.bounds(
+                  bounds: LatLngBounds.fromPoints(
+                    stops
+                        .map((stop) => LatLng(stop.latitude, stop.longitude))
+                        .toList(),
+                  ),
+                  padding: const EdgeInsets.all(36),
+                )
+              : null,
         ),
         children: [
           TileLayer(
@@ -413,9 +423,18 @@ extension _PlanMainView on _PlanScreenState {
           ),
           if (_route.isNotEmpty)
             PolylineLayer(
-              polylines: [
-                Polyline(points: _route, color: _gold, strokeWidth: 5),
-              ],
+              polylines: _route
+                  .map(
+                    (leg) => Polyline(
+                      points: leg.points,
+                      color: _routeColor(leg.mode),
+                      strokeWidth: 5,
+                      pattern: _usesRoadRoute(leg.mode)
+                          ? const StrokePattern.solid()
+                          : StrokePattern.dashed(segments: const [12, 8]),
+                    ),
+                  )
+                  .toList(),
             ),
           MarkerLayer(
             markers: stops.indexed
@@ -527,7 +546,7 @@ extension _PlanMainView on _PlanScreenState {
               ],
             ),
             const SizedBox(height: 12),
-            if (stop.segments.length > 1)
+            if (stop.segments.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Wrap(

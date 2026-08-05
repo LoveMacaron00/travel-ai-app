@@ -347,7 +347,23 @@ extension _PlanComponents on _PlanScreenState {
   String _modeLabel(String value) => switch (value.toLowerCase()) {
     'car' => context.l10n.transportCar,
     'walking' => context.l10n.transportWalking,
+    'bus' => context.l10n.transportBus,
+    'train' => context.l10n.transportTrain,
+    'ferry' => context.l10n.transportFerry,
+    'flight' => context.l10n.transportFlight,
     _ => _title(value),
+  };
+
+  bool _usesRoadRoute(String mode) =>
+      const {'car', 'walking', 'bus'}.contains(mode.toLowerCase());
+
+  Color _routeColor(String mode) => switch (mode.toLowerCase()) {
+    'walking' => const Color(0xff6d7278),
+    'bus' => const Color(0xff2d7dd2),
+    'train' => const Color(0xff7b2cbf),
+    'ferry' => const Color(0xff0096c7),
+    'flight' => const Color(0xffe76f51),
+    _ => _gold,
   };
 
   String _interestLabel(String value) => switch (value) {
