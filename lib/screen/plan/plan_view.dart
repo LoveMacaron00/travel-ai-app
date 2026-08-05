@@ -74,7 +74,7 @@ extension _PlanMainView on _PlanScreenState {
                 options: _provinceOptions,
                 loading: _loadingProvinces,
                 decoration: _inputDecoration(
-                  context.l10n.province,
+                  null,
                   Icons.location_city_outlined,
                 ).copyWith(helperText: context.l10n.databaseProvinceOnly),
                 selectHint: context.l10n.selectProvince,
@@ -94,7 +94,7 @@ extension _PlanMainView on _PlanScreenState {
                 borderRadius: BorderRadius.circular(16),
                 child: InputDecorator(
                   decoration: _inputDecoration(
-                    context.l10n.travelDates,
+                    null,
                     Icons.calendar_today_outlined,
                   ),
                   child: Text(

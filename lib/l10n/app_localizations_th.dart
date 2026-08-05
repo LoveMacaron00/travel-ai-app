@@ -494,8 +494,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get loadingProvinces => 'กำลังโหลดจังหวัด…';
 
   @override
-  String get databaseProvinceOnly =>
-      'ไม่บังคับ — หากไม่เลือก ระบบจะค้นสถานที่จากฐานข้อมูลตามตำแหน่งของคุณ';
+  String get databaseProvinceOnly => 'ไม่บังคับ';
 
   @override
   String get provinceRequired => 'กรุณาเลือกจังหวัดก่อนสร้างแผนการเดินทาง';
@@ -507,7 +506,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get travelDates => 'วันที่เดินทาง';
 
   @override
-  String get chooseDates => 'เลือกวันที่';
+  String get chooseDates => 'เลือกวันที่เดินทาง';
 
   @override
   String get days => 'วัน';

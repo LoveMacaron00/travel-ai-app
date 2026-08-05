@@ -321,6 +321,15 @@ class _PlanScreenState extends State<PlanScreen> {
   void _reset() {
     _routeRequestId++;
     setState(() {
+      _dates = null;
+      _budget = 30000;
+      _days = 3;
+      _selectedProvince = null;
+      _interests.clear();
+      _modes
+        ..clear()
+        ..add('car');
+      _mustVisit.clear();
       _plan = null;
       _selectedDayIndex = 0;
       _route = [];

@@ -1043,7 +1043,7 @@ abstract class AppLocalizations {
   /// No description provided for @databaseProvinceOnly.
   ///
   /// In en, this message translates to:
-  /// **'Optional — leave blank to search database destinations near your location.'**
+  /// **'Optional'**
   String get databaseProvinceOnly;
 
   /// No description provided for @provinceRequired.
@@ -1067,7 +1067,7 @@ abstract class AppLocalizations {
   /// No description provided for @chooseDates.
   ///
   /// In en, this message translates to:
-  /// **'Choose dates'**
+  /// **'Choose travel dates'**
   String get chooseDates;
 
   /// No description provided for @days.

@@ -502,8 +502,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loadingProvinces => 'Loading provinces…';
 
   @override
-  String get databaseProvinceOnly =>
-      'Optional — leave blank to search database destinations near your location.';
+  String get databaseProvinceOnly => 'Optional';
 
   @override
   String get provinceRequired =>
@@ -516,7 +515,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get travelDates => 'Travel dates';
 
   @override
-  String get chooseDates => 'Choose dates';
+  String get chooseDates => 'Choose travel dates';
 
   @override
   String get days => 'days';

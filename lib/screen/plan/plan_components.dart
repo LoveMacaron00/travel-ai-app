@@ -283,7 +283,7 @@ extension _PlanComponents on _PlanScreenState {
     );
   }
 
-  InputDecoration _inputDecoration(String label, IconData icon) =>
+  InputDecoration _inputDecoration(String? label, IconData icon) =>
       InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: _gold),
