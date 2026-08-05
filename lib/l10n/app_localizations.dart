@@ -566,12 +566,6 @@ abstract class AppLocalizations {
   /// **'Enter your password.'**
   String get passwordHint;
 
-  /// No description provided for @forgotPassword.
-  ///
-  /// In en, this message translates to:
-  /// **'Forgot password?'**
-  String get forgotPassword;
-
   /// No description provided for @passwordRequirement.
   ///
   /// In en, this message translates to:

@@ -247,9 +247,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get passwordHint => 'กรอกรหัสผ่านของคุณ';
 
   @override
-  String get forgotPassword => 'ลืมรหัสผ่าน?';
-
-  @override
   String get passwordRequirement => 'ต้องมีอย่างน้อย 8 ตัวอักษร';
 
   @override

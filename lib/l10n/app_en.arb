@@ -84,7 +84,6 @@
   "passwordMinLength": "Password must be at least 8 characters",
   "emailHint": "Enter your email.",
   "passwordHint": "Enter your password.",
-  "forgotPassword": "Forgot password?",
   "passwordRequirement": "Must contain at least 8 characters.",
   "registrationSuccessful": "Registration successful!",
   "registrationFailed": "Registration failed",
