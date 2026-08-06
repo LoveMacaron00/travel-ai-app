@@ -181,7 +181,7 @@
   "howCanYouTravel": "คุณเดินทางแบบใดได้บ้าง",
   "longTripsSegments": "การเดินทางไกลจะแบ่งเป็นช่วงถนนและขนส่ง",
   "mustVisitPlaces": "สถานที่ที่ต้องไป",
-  "mustVisitOptional": "ไม่บังคับ — AI จะรวมสถานที่ที่คุณเลือก",
+  "mustVisitOptional": "ไม่บังคับ",
   "addAPlace": "เพิ่มสถานที่",
   "designingTrip": "กำลังออกแบบทริป…",
   "createTravelPlan": "สร้างแผนการเดินทาง",

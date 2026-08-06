@@ -1115,7 +1115,7 @@ abstract class AppLocalizations {
   /// No description provided for @mustVisitOptional.
   ///
   /// In en, this message translates to:
-  /// **'Optional — AI will include your selections.'**
+  /// **'Optional'**
   String get mustVisitOptional;
 
   /// No description provided for @addAPlace.

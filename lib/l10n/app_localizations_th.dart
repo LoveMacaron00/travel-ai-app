@@ -530,7 +530,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get mustVisitPlaces => 'สถานที่ที่ต้องไป';
 
   @override
-  String get mustVisitOptional => 'ไม่บังคับ — AI จะรวมสถานที่ที่คุณเลือก';
+  String get mustVisitOptional => 'ไม่บังคับ';
 
   @override
   String get addAPlace => 'เพิ่มสถานที่';

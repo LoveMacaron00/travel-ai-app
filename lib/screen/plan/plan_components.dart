@@ -366,6 +366,15 @@ extension _PlanComponents on _PlanScreenState {
     _ => _gold,
   };
 
+  Color _routeLabelColor(String mode) => switch (mode.toLowerCase()) {
+    'walking' => const Color(0xff4f5459),
+    'bus' => const Color(0xff1f5f9f),
+    'train' => const Color(0xff61208f),
+    'ferry' => const Color(0xff00779e),
+    'flight' => const Color(0xffb84d36),
+    _ => const Color(0xff7a5800),
+  };
+
   String _interestLabel(String value) => switch (value) {
     'Food' => context.l10n.interestFood,
     'Cafe' => context.l10n.interestCafe,

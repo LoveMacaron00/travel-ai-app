@@ -560,14 +560,17 @@ extension _PlanMainView on _PlanScreenState {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xfffff3cc),
+                            color: _routeColor(
+                              segment.mode,
+                            ).withValues(alpha: .14),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
                             '${_modeLabel(segment.mode)} · ${segment.estimatedMinutes} ${context.l10n.minutesShort} · ฿${_money(segment.estimatedCost)}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
-                              color: Color(0xff7a5800),
+                              color: _routeLabelColor(segment.mode),
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
