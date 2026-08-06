@@ -354,6 +354,37 @@ extension _PlanMainView on _PlanScreenState {
             ),
           ),
         ),
+        SliverToBoxAdapter(
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xfffff4d2),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xffffd76a)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Color(0xff9a6b00),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    context.l10n.aiPlanDisclaimer,
+                    style: const TextStyle(
+                      color: Color(0xff684d0a),
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         if (selectedDay != null) ...[
           SliverToBoxAdapter(
             child: Padding(

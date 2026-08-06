@@ -563,6 +563,10 @@ class AppLocalizationsTh extends AppLocalizations {
   String get recommendedItinerary => 'แผนการเดินทางที่แนะนำ';
 
   @override
+  String get aiPlanDisclaimer =>
+      'คำแนะนำนี้สร้างโดย AI ข้อมูลสถานที่ เส้นทาง เวลา ค่าใช้จ่าย และตารางเดินทางอาจคลาดเคลื่อน โปรดตรวจสอบข้อมูลกับผู้ให้บริการก่อนเดินทางจริง';
+
+  @override
   String get day => 'วันที่';
 
   @override
