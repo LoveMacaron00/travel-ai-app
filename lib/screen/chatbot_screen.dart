@@ -240,7 +240,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     final imageBytes = await image.readAsBytes();
 
     // GPS ปัจจุบันใช้ยืนยันสถานที่ได้เฉพาะรูปที่เพิ่งถ่ายจากกล้อง
-    // รูปจาก Gallery อาจถ่ายคนละเวลาและสถานที่ จึงไม่ส่งตำแหน่ง Emulator ไปปน
+    // รูปจาก Gallery อาจถ่ายคนละเวลาและสถานที่ จึงไม่ส่งตำแหน่งปัจจุบันไปปน
     final shouldAttachCurrentLocation =
         mode == ScanMode.place && source == ImageSource.camera;
     var position = shouldAttachCurrentLocation

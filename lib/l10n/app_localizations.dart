@@ -1124,6 +1124,12 @@ abstract class AppLocalizations {
   /// **'Add a place'**
   String get addAPlace;
 
+  /// No description provided for @mustVisitLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'You can add up to 5 must-visit places.'**
+  String get mustVisitLimitReached;
+
   /// No description provided for @designingTrip.
   ///
   /// In en, this message translates to:

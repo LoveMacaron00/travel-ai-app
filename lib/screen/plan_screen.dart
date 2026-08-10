@@ -38,6 +38,8 @@ class PlanScreen extends StatefulWidget {
 }
 
 class _PlanScreenState extends State<PlanScreen> {
+  static const _maxMustVisitPlaces = 5;
+
   final LocationService _locationService = LocationService.instance;
   final _map = MapController();
   final _planMapKey = GlobalKey();

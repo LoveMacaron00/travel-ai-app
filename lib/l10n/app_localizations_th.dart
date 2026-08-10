@@ -536,6 +536,9 @@ class AppLocalizationsTh extends AppLocalizations {
   String get addAPlace => 'เพิ่มสถานที่';
 
   @override
+  String get mustVisitLimitReached => 'เพิ่มสถานที่ที่ต้องไปได้สูงสุด 5 แห่ง';
+
+  @override
   String get designingTrip => 'กำลังออกแบบทริป…';
 
   @override

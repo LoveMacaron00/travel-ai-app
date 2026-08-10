@@ -186,6 +186,13 @@ extension _PlanComponents on _PlanScreenState {
   }
 
   void _showPlacePicker() {
+    if (_mustVisit.length >= _PlanScreenState._maxMustVisitPlaces) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.mustVisitLimitReached)),
+      );
+      return;
+    }
+
     String query = '';
     showModalBottomSheet(
       context: context,
@@ -235,6 +242,7 @@ extension _PlanComponents on _PlanScreenState {
                     itemCount: filtered.length,
                     itemBuilder: (_, i) {
                       final p = filtered[i];
+                      final description = stripHtmlText(p.description);
                       return ListTile(
                         leading: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
@@ -254,14 +262,28 @@ extension _PlanComponents on _PlanScreenState {
                           p.title,
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
-                        subtitle: Text(
-                          p.description,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        subtitle: description.isEmpty
+                            ? null
+                            : Text(
+                                description,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                         trailing: const Icon(Icons.add_circle, color: _gold),
                         onTap: () async {
                           if (!_mustVisit.any((x) => x.id == p.id)) {
+                            if (_mustVisit.length >=
+                                _PlanScreenState._maxMustVisitPlaces) {
+                              Navigator.pop(sheetContext);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    context.l10n.mustVisitLimitReached,
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
                             _mustVisit.add(p);
                           }
                           Navigator.pop(sheetContext);

@@ -546,6 +546,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAPlace => 'Add a place';
 
   @override
+  String get mustVisitLimitReached => 'You can add up to 5 must-visit places.';
+
+  @override
   String get designingTrip => 'Designing your trip…';
 
   @override

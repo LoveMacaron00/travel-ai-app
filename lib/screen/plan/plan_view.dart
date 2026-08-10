@@ -152,6 +152,8 @@ extension _PlanMainView on _PlanScreenState {
                     avatar: Icon(e.value, size: 17),
                     label: Text(_modeLabel(e.key)),
                     selected: _modes.contains(e.key),
+                    selectedColor: const Color(0xffffe7a0),
+                    showCheckmark: false,
                     onSelected: (v) => _updateState(() {
                       if (v) {
                         _modes.add(e.key);
@@ -179,14 +181,22 @@ extension _PlanMainView on _PlanScreenState {
                       .map(
                         (p) => InputChip(
                           label: Text(p.title),
+                          backgroundColor: const Color(0xffffe7a0),
+                          deleteIconColor: const Color(0xff986b00),
+                          side: BorderSide.none,
                           onDeleted: () =>
                               _updateState(() => _mustVisit.remove(p)),
                         ),
                       )
                       .toList(),
                 ),
+              if (_mustVisit.isNotEmpty) const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: _showPlacePicker,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(42),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
                 icon: const Icon(Icons.add_location_alt_outlined),
                 label: Text(context.l10n.addAPlace),
               ),

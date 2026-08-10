@@ -183,6 +183,7 @@
   "mustVisitPlaces": "Must-visit places",
   "mustVisitOptional": "Optional",
   "addAPlace": "Add a place",
+  "mustVisitLimitReached": "You can add up to 5 must-visit places.",
   "designingTrip": "Designing your trip…",
   "createTravelPlan": "Create my travel plan",
   "thailandNearYou": "THAILAND · NEAR YOU",

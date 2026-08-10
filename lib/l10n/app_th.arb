@@ -183,6 +183,7 @@
   "mustVisitPlaces": "สถานที่ที่ต้องไป",
   "mustVisitOptional": "ไม่บังคับ",
   "addAPlace": "เพิ่มสถานที่",
+  "mustVisitLimitReached": "เพิ่มสถานที่ที่ต้องไปได้สูงสุด 5 แห่ง",
   "designingTrip": "กำลังออกแบบทริป…",
   "createTravelPlan": "สร้างแผนการเดินทาง",
   "thailandNearYou": "ประเทศไทย · ใกล้คุณ",
