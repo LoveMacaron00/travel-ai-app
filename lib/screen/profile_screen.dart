@@ -6,6 +6,7 @@ import 'package:myapp/services/app_services.dart';
 import 'package:myapp/widgets/media_image.dart';
 import 'package:myapp/screen/welcome_screen.dart';
 import 'package:myapp/screen/account_settings_screen.dart';
+import 'package:myapp/screen/travel_footprint_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final VoidCallback onBackTap;
@@ -403,6 +404,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         }).toList(),
                       ),
               ],
+            ),
+            const Divider(height: 40, thickness: 1),
+
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xfffff8e4),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                leading: Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: brandGold.withValues(alpha: 0.18),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.public, color: brandGold),
+                ),
+                title: Text(
+                  l10n.travelFootprint,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 3),
+                  child: Text(
+                    l10n.travelFootprintSubtitle,
+                    style: const TextStyle(fontSize: 12, height: 1.3),
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right, color: brandGold),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const TravelFootprintScreen(),
+                  ),
+                ),
+              ),
             ),
             const Divider(height: 40, thickness: 1),
 

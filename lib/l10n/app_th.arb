@@ -36,6 +36,64 @@
   "planTravel": "วางแผนเที่ยว",
   "chatbot": "แชตบอต",
   "scanWithAi": "สแกนด้วย AI",
+  "travelDiary": "ไดอารี่",
+  "smartTravelDiary": "Smart Travel Diary",
+  "travelDiarySubtitle": "เก็บรูป พิกัด และความทรงจำในแต่ละวัน",
+  "diaryAutoDescription": "เปิด GPS ไว้เพื่อบันทึกสถานที่ที่คุณไปอัตโนมัติ หรือถ่ายภาพผ่าน AI Camera เพื่อสร้างบันทึกพร้อมข้อมูลสถานที่",
+  "openAiCamera": "เปิด AI Camera",
+  "diarySavedAutomatically": "เพิ่มรูปและข้อมูลจาก AI ลง Diary อัตโนมัติแล้ว",
+  "diaryDay": "วันที่ {day} : {place}",
+  "@diaryDay": {
+    "placeholders": {
+      "day": {"type": "int"},
+      "place": {"type": "String"}
+    }
+  },
+  "culturalInsight": "ข้อมูลจาก AI",
+  "writeDiaryHint": "คุณสามารถเขียนบันทึกเพิ่มเติมได้",
+  "diaryMinutes": "{minutes} นาที",
+  "@diaryMinutes": {
+    "placeholders": {"minutes": {"type": "int"}}
+  },
+  "diaryHours": "{hours} ชั่วโมง",
+  "@diaryHours": {
+    "placeholders": {"hours": {"type": "int"}}
+  },
+  "diaryHoursMinutes": "{hours} ชั่วโมง {minutes} นาที",
+  "@diaryHoursMinutes": {
+    "placeholders": {
+      "hours": {"type": "int"},
+      "minutes": {"type": "int"}
+    }
+  },
+  "addMemory": "เพิ่มความทรงจำ",
+  "noDiaryEntries": "ยังไม่มีบันทึกการเดินทาง",
+  "noDiaryEntriesDescription": "เพิ่มรูปและข้อความจากทริปของคุณ พิกัด GPS จะถูกบันทึกให้อัตโนมัติ",
+  "memoryNote": "เรื่องราวของวันนี้",
+  "memoryNoteHint": "เขียนความประทับใจหรือสิ่งที่อยากจดจำ",
+  "provinceVisited": "จังหวัดที่ไป",
+  "provinceHint": "เช่น เชียงใหม่",
+  "capturePhoto": "ถ่ายรูป",
+  "choosePhoto": "เลือกรูป",
+  "saveMemory": "บันทึกความทรงจำ",
+  "editMemory": "แก้ไขความทรงจำ",
+  "deleteMemory": "ลบความทรงจำ",
+  "deleteMemoryConfirmation": "ต้องการลบบันทึกนี้ใช่หรือไม่",
+  "memorySaved": "บันทึกความทรงจำแล้ว",
+  "travelFootprint": "Travel Footprint",
+  "travelFootprintSubtitle": "ดูจังหวัดและสถานที่ที่คุณเคยเดินทางไป",
+  "visitedProvinces": "จังหวัดที่เคยไป",
+  "visitedProvinceCount": "ไปแล้ว {count} จังหวัด",
+  "@visitedProvinceCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "noFootprint": "ยังไม่มีรอยเท้าการเดินทาง",
+  "noFootprintDescription": "เพิ่มจังหวัดและพิกัดในไดอารี่ แล้วแผนที่ของคุณจะค่อยๆ เติมสี",
+  "memoriesCount": "{count} ความทรงจำ",
+  "@memoriesCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "openTravelDiary": "เปิดไดอารี่",
   "destinations": "สถานที่ท่องเที่ยว",
   "seeAll": "ดูทั้งหมด",
   "couldNotLoadTatDestinations": "ไม่สามารถโหลดสถานที่จาก TAT ได้",

@@ -4,7 +4,9 @@ import 'package:myapp/screen/home_screen.dart';
 import 'package:myapp/screen/profile_screen.dart';
 import 'package:myapp/screen/map_screen.dart';
 import 'package:myapp/screen/plan_screen.dart';
+import 'package:myapp/screen/travel_diary_screen.dart';
 import 'package:myapp/services/location_service.dart';
+import 'package:myapp/services/app_services.dart';
 
 /// Shell หลังเข้าสู่ระบบ เก็บแต่ละ tab ไว้ใน IndexedStack เพื่อรักษา state
 /// เช่น ตำแหน่งแผนที่และรายการแผน เมื่อผู้ใช้สลับแท็บไปมา
@@ -17,6 +19,7 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
+  bool _showingDiary = false;
   late final List<Widget?> _screens;
   final GlobalKey<MapScreenState> _mapScreenKey = GlobalKey<MapScreenState>();
 
@@ -25,11 +28,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     super.initState();
     _screens = List<Widget?>.filled(4, null);
     _screens[0] = _createScreen(0);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && LocationService.instance.currentPosition == null) {
-        LocationService.instance.refresh(openSettingsWhenDenied: false);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      if (LocationService.instance.currentPosition == null) {
+        await LocationService.instance.refresh(openSettingsWhenDenied: false);
       }
+      await LocationService.instance.startTracking();
+      await AppServices.diaryAutomation.start();
     });
+  }
+
+  @override
+  void dispose() {
+    AppServices.diaryAutomation.stop();
+    LocationService.instance.stopTracking();
+    super.dispose();
   }
 
   Widget _createScreen(int index) {
@@ -39,6 +52,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         return HomeScreen(
           onProfileTap: () => _selectTab(3),
           onPlanTap: () => _selectTab(2),
+          onDiaryTap: _showDiary,
           onExploreDestination: _showDestinationOnMap,
         );
       case 1:
@@ -54,9 +68,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   void _selectTab(int index) {
     setState(() {
+      _showingDiary = false;
       _screens[index] ??= _createScreen(index);
       _selectedIndex = index;
     });
+  }
+
+  void _showDiary() {
+    setState(() => _showingDiary = true);
   }
 
   void _onItemTapped(int index) {
@@ -76,44 +95,56 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const Color brandGold = Color(0xFFF4C025);
     final l10n = context.l10n;
 
-    return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: List.generate(
-          _screens.length,
-          (index) => _screens[index] ?? const SizedBox.shrink(),
+    return PopScope(
+      canPop: !_showingDiary,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _showingDiary) {
+          setState(() => _showingDiary = false);
+        }
+      },
+      child: Scaffold(
+        body: _showingDiary
+            ? TravelDiaryScreen(
+                onBack: () => setState(() => _showingDiary = false),
+              )
+            : IndexedStack(
+                index: _selectedIndex,
+                children: List.generate(
+                  _screens.length,
+                  (index) => _screens[index] ?? const SizedBox.shrink(),
+                ),
+              ),
+        bottomNavigationBar: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: brandGold,
+          unselectedItemColor: Colors.black38,
+          showUnselectedLabels: true,
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          items: [
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.home_outlined),
+              activeIcon: const Icon(Icons.home),
+              label: l10n.home,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.map_outlined),
+              activeIcon: const Icon(Icons.map),
+              label: l10n.map,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.calendar_today_outlined),
+              activeIcon: const Icon(Icons.calendar_today),
+              label: l10n.plan,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.person_outline),
+              activeIcon: const Icon(Icons.person),
+              label: l10n.profile,
+            ),
+          ],
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: brandGold,
-        unselectedItemColor: Colors.black38,
-        showUnselectedLabels: true,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home_outlined),
-            activeIcon: const Icon(Icons.home),
-            label: l10n.home,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.map_outlined),
-            activeIcon: const Icon(Icons.map),
-            label: l10n.map,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.calendar_today_outlined),
-            activeIcon: const Icon(Icons.calendar_today),
-            label: l10n.plan,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person_outline),
-            activeIcon: const Icon(Icons.person),
-            label: l10n.profile,
-          ),
-        ],
       ),
     );
   }

@@ -117,6 +117,124 @@ class AppLocalizationsTh extends AppLocalizations {
   String get scanWithAi => 'สแกนด้วย AI';
 
   @override
+  String get travelDiary => 'ไดอารี่';
+
+  @override
+  String get smartTravelDiary => 'Smart Travel Diary';
+
+  @override
+  String get travelDiarySubtitle => 'เก็บรูป พิกัด และความทรงจำในแต่ละวัน';
+
+  @override
+  String get diaryAutoDescription =>
+      'เปิด GPS ไว้เพื่อบันทึกสถานที่ที่คุณไปอัตโนมัติ หรือถ่ายภาพผ่าน AI Camera เพื่อสร้างบันทึกพร้อมข้อมูลสถานที่';
+
+  @override
+  String get openAiCamera => 'เปิด AI Camera';
+
+  @override
+  String get diarySavedAutomatically =>
+      'เพิ่มรูปและข้อมูลจาก AI ลง Diary อัตโนมัติแล้ว';
+
+  @override
+  String diaryDay(int day, String place) {
+    return 'วันที่ $day : $place';
+  }
+
+  @override
+  String get culturalInsight => 'ข้อมูลจาก AI';
+
+  @override
+  String get writeDiaryHint => 'คุณสามารถเขียนบันทึกเพิ่มเติมได้';
+
+  @override
+  String diaryMinutes(int minutes) {
+    return '$minutes นาที';
+  }
+
+  @override
+  String diaryHours(int hours) {
+    return '$hours ชั่วโมง';
+  }
+
+  @override
+  String diaryHoursMinutes(int hours, int minutes) {
+    return '$hours ชั่วโมง $minutes นาที';
+  }
+
+  @override
+  String get addMemory => 'เพิ่มความทรงจำ';
+
+  @override
+  String get noDiaryEntries => 'ยังไม่มีบันทึกการเดินทาง';
+
+  @override
+  String get noDiaryEntriesDescription =>
+      'เพิ่มรูปและข้อความจากทริปของคุณ พิกัด GPS จะถูกบันทึกให้อัตโนมัติ';
+
+  @override
+  String get memoryNote => 'เรื่องราวของวันนี้';
+
+  @override
+  String get memoryNoteHint => 'เขียนความประทับใจหรือสิ่งที่อยากจดจำ';
+
+  @override
+  String get provinceVisited => 'จังหวัดที่ไป';
+
+  @override
+  String get provinceHint => 'เช่น เชียงใหม่';
+
+  @override
+  String get capturePhoto => 'ถ่ายรูป';
+
+  @override
+  String get choosePhoto => 'เลือกรูป';
+
+  @override
+  String get saveMemory => 'บันทึกความทรงจำ';
+
+  @override
+  String get editMemory => 'แก้ไขความทรงจำ';
+
+  @override
+  String get deleteMemory => 'ลบความทรงจำ';
+
+  @override
+  String get deleteMemoryConfirmation => 'ต้องการลบบันทึกนี้ใช่หรือไม่';
+
+  @override
+  String get memorySaved => 'บันทึกความทรงจำแล้ว';
+
+  @override
+  String get travelFootprint => 'Travel Footprint';
+
+  @override
+  String get travelFootprintSubtitle => 'ดูจังหวัดและสถานที่ที่คุณเคยเดินทางไป';
+
+  @override
+  String get visitedProvinces => 'จังหวัดที่เคยไป';
+
+  @override
+  String visitedProvinceCount(int count) {
+    return 'ไปแล้ว $count จังหวัด';
+  }
+
+  @override
+  String get noFootprint => 'ยังไม่มีรอยเท้าการเดินทาง';
+
+  @override
+  String get noFootprintDescription =>
+      'เพิ่มจังหวัดและพิกัดในไดอารี่ แล้วแผนที่ของคุณจะค่อยๆ เติมสี';
+
+  @override
+  String memoriesCount(int count) {
+    return '$count ความทรงจำ';
+  }
+
+  @override
+  String get openTravelDiary => 'เปิดไดอารี่';
+
+  @override
   String get destinations => 'สถานที่ท่องเที่ยว';
 
   @override

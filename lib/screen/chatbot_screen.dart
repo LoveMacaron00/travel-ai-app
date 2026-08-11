@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -239,10 +240,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     }
     final imageBytes = await image.readAsBytes();
 
-    // GPS ปัจจุบันใช้ยืนยันสถานที่ได้เฉพาะรูปที่เพิ่งถ่ายจากกล้อง
-    // รูปจาก Gallery อาจถ่ายคนละเวลาและสถานที่ จึงไม่ส่งตำแหน่งปัจจุบันไปปน
-    final shouldAttachCurrentLocation =
-        mode == ScanMode.place && source == ImageSource.camera;
+    // รูปที่ถ่ายสดใช้ GPS ปัจจุบันสร้าง Smart Diary อัตโนมัติได้
+    // ส่วนรูปจาก Gallery อาจถ่ายคนละเวลา จึงไม่ผูกตำแหน่งปัจจุบันให้
+    final shouldAttachCurrentLocation = source == ImageSource.camera;
     var position = shouldAttachCurrentLocation
         ? LocationService.instance.currentPosition
         : null;
@@ -254,6 +254,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     if (!mounted) return;
 
     final userMessageIndex = _messages.length;
+    ScanResult? completedScanResult;
+    String completedAnswer = '';
+    var scanSucceeded = false;
     setState(() {
       _messages.add(
         ChatMessage(
@@ -283,7 +286,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
     setState(() {
       if (result['success'] == true) {
+        scanSucceeded = true;
         final data = Map<String, dynamic>.from(result['data'] ?? {});
+        completedAnswer = (data['answer'] ?? '').toString();
         final userMessageId = int.tryParse('${data['user_message_id'] ?? ''}');
         if (userMessageIndex < _messages.length) {
           _messages[userMessageIndex] = _messages[userMessageIndex].copyWith(
@@ -294,18 +299,19 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         final analysisJson = data['analysis'] is Map
             ? Map<String, dynamic>.from(data['analysis'])
             : <String, dynamic>{};
+        completedScanResult = analysisJson.isEmpty
+            ? null
+            : ScanResult.fromJson(analysisJson);
         _messages.add(
           ChatMessage(
             id: int.tryParse('${data['assistant_message_id'] ?? ''}'),
             replyToMessageId: userMessageId,
-            text: (data['answer'] ?? '').toString(),
+            text: completedAnswer,
             isUser: false,
             imageUrl: AppServices.media.fullUrl(
               data['assistant_image_url']?.toString(),
             ),
-            scanResult: analysisJson.isEmpty
-                ? null
-                : ScanResult.fromJson(analysisJson),
+            scanResult: completedScanResult,
           ),
         );
       } else {
@@ -319,6 +325,31 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       _isSending = false;
       _activeScanMode = null;
     });
+    if (source == ImageSource.camera && scanSucceeded) {
+      final diaryResult =
+          completedScanResult ??
+          ScanResult(
+            mode: mode,
+            title: _scanModeTitle(context, mode),
+            subtitle: completedAnswer,
+            confidence: 0,
+            sections: const [],
+            candidates: const [],
+            originalText: '',
+            translatedText: '',
+          );
+      unawaited(
+        AppServices.diaryAutomation
+            .recordAiCapture(
+              result: diaryResult,
+              imagePath: image.path,
+              position: position,
+            )
+            .then((_) {
+              if (mounted) _showNotice(context.l10n.diarySavedAutomatically);
+            }),
+      );
+    }
     _scrollToBottom();
   }
 

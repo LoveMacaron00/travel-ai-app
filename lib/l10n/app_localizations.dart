@@ -314,6 +314,210 @@ abstract class AppLocalizations {
   /// **'Scan with AI'**
   String get scanWithAi;
 
+  /// No description provided for @travelDiary.
+  ///
+  /// In en, this message translates to:
+  /// **'Diary'**
+  String get travelDiary;
+
+  /// No description provided for @smartTravelDiary.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Travel Diary'**
+  String get smartTravelDiary;
+
+  /// No description provided for @travelDiarySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep each day\'s photos, location, and memories'**
+  String get travelDiarySubtitle;
+
+  /// No description provided for @diaryAutoDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep GPS on to record nearby places automatically, or take a photo with AI Camera to create a diary entry with place insights.'**
+  String get diaryAutoDescription;
+
+  /// No description provided for @openAiCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Open AI Camera'**
+  String get openAiCamera;
+
+  /// No description provided for @diarySavedAutomatically.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI photo and insights were added to your diary automatically.'**
+  String get diarySavedAutomatically;
+
+  /// No description provided for @diaryDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day} : {place}'**
+  String diaryDay(int day, String place);
+
+  /// No description provided for @culturalInsight.
+  ///
+  /// In en, this message translates to:
+  /// **'Cultural Insight'**
+  String get culturalInsight;
+
+  /// No description provided for @writeDiaryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You can write your diary.'**
+  String get writeDiaryHint;
+
+  /// No description provided for @diaryMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String diaryMinutes(int minutes);
+
+  /// No description provided for @diaryHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} hours'**
+  String diaryHours(int hours);
+
+  /// No description provided for @diaryHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} hr {minutes} min'**
+  String diaryHoursMinutes(int hours, int minutes);
+
+  /// No description provided for @addMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Add memory'**
+  String get addMemory;
+
+  /// No description provided for @noDiaryEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'No travel memories yet'**
+  String get noDiaryEntries;
+
+  /// No description provided for @noDiaryEntriesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a photo and note from your trip. Your GPS location will be captured automatically.'**
+  String get noDiaryEntriesDescription;
+
+  /// No description provided for @memoryNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s story'**
+  String get memoryNote;
+
+  /// No description provided for @memoryNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a highlight or something you want to remember'**
+  String get memoryNoteHint;
+
+  /// No description provided for @provinceVisited.
+  ///
+  /// In en, this message translates to:
+  /// **'Province visited'**
+  String get provinceVisited;
+
+  /// No description provided for @provinceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example, Chiang Mai'**
+  String get provinceHint;
+
+  /// No description provided for @capturePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get capturePhoto;
+
+  /// No description provided for @choosePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose photo'**
+  String get choosePhoto;
+
+  /// No description provided for @saveMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Save memory'**
+  String get saveMemory;
+
+  /// No description provided for @editMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit memory'**
+  String get editMemory;
+
+  /// No description provided for @deleteMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete memory'**
+  String get deleteMemory;
+
+  /// No description provided for @deleteMemoryConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this diary entry?'**
+  String get deleteMemoryConfirmation;
+
+  /// No description provided for @memorySaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory saved'**
+  String get memorySaved;
+
+  /// No description provided for @travelFootprint.
+  ///
+  /// In en, this message translates to:
+  /// **'Travel Footprint'**
+  String get travelFootprint;
+
+  /// No description provided for @travelFootprintSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'See the provinces and places you have explored'**
+  String get travelFootprintSubtitle;
+
+  /// No description provided for @visitedProvinces.
+  ///
+  /// In en, this message translates to:
+  /// **'Visited provinces'**
+  String get visitedProvinces;
+
+  /// No description provided for @visitedProvinceCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} provinces visited'**
+  String visitedProvinceCount(int count);
+
+  /// No description provided for @noFootprint.
+  ///
+  /// In en, this message translates to:
+  /// **'No travel footprint yet'**
+  String get noFootprint;
+
+  /// No description provided for @noFootprintDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a province and GPS location to your diary to start coloring your map.'**
+  String get noFootprintDescription;
+
+  /// No description provided for @memoriesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} memories'**
+  String memoriesCount(int count);
+
+  /// No description provided for @openTravelDiary.
+  ///
+  /// In en, this message translates to:
+  /// **'Open diary'**
+  String get openTravelDiary;
+
   /// No description provided for @destinations.
   ///
   /// In en, this message translates to:

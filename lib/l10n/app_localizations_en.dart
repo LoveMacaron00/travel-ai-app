@@ -118,6 +118,127 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scanWithAi => 'Scan with AI';
 
   @override
+  String get travelDiary => 'Diary';
+
+  @override
+  String get smartTravelDiary => 'Smart Travel Diary';
+
+  @override
+  String get travelDiarySubtitle =>
+      'Keep each day\'s photos, location, and memories';
+
+  @override
+  String get diaryAutoDescription =>
+      'Keep GPS on to record nearby places automatically, or take a photo with AI Camera to create a diary entry with place insights.';
+
+  @override
+  String get openAiCamera => 'Open AI Camera';
+
+  @override
+  String get diarySavedAutomatically =>
+      'The AI photo and insights were added to your diary automatically.';
+
+  @override
+  String diaryDay(int day, String place) {
+    return 'Day $day : $place';
+  }
+
+  @override
+  String get culturalInsight => 'Cultural Insight';
+
+  @override
+  String get writeDiaryHint => 'You can write your diary.';
+
+  @override
+  String diaryMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String diaryHours(int hours) {
+    return '$hours hours';
+  }
+
+  @override
+  String diaryHoursMinutes(int hours, int minutes) {
+    return '$hours hr $minutes min';
+  }
+
+  @override
+  String get addMemory => 'Add memory';
+
+  @override
+  String get noDiaryEntries => 'No travel memories yet';
+
+  @override
+  String get noDiaryEntriesDescription =>
+      'Add a photo and note from your trip. Your GPS location will be captured automatically.';
+
+  @override
+  String get memoryNote => 'Today\'s story';
+
+  @override
+  String get memoryNoteHint =>
+      'Write a highlight or something you want to remember';
+
+  @override
+  String get provinceVisited => 'Province visited';
+
+  @override
+  String get provinceHint => 'For example, Chiang Mai';
+
+  @override
+  String get capturePhoto => 'Take photo';
+
+  @override
+  String get choosePhoto => 'Choose photo';
+
+  @override
+  String get saveMemory => 'Save memory';
+
+  @override
+  String get editMemory => 'Edit memory';
+
+  @override
+  String get deleteMemory => 'Delete memory';
+
+  @override
+  String get deleteMemoryConfirmation => 'Delete this diary entry?';
+
+  @override
+  String get memorySaved => 'Memory saved';
+
+  @override
+  String get travelFootprint => 'Travel Footprint';
+
+  @override
+  String get travelFootprintSubtitle =>
+      'See the provinces and places you have explored';
+
+  @override
+  String get visitedProvinces => 'Visited provinces';
+
+  @override
+  String visitedProvinceCount(int count) {
+    return '$count provinces visited';
+  }
+
+  @override
+  String get noFootprint => 'No travel footprint yet';
+
+  @override
+  String get noFootprintDescription =>
+      'Add a province and GPS location to your diary to start coloring your map.';
+
+  @override
+  String memoriesCount(int count) {
+    return '$count memories';
+  }
+
+  @override
+  String get openTravelDiary => 'Open diary';
+
+  @override
   String get destinations => 'Destinations';
 
   @override

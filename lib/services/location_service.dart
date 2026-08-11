@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -11,6 +13,7 @@ class LocationService extends ChangeNotifier {
   LatLng? _currentPosition;
   bool _isLoading = false;
   String? _error;
+  StreamSubscription<Position>? _positionSubscription;
 
   LatLng? get currentPosition => _currentPosition;
   bool get isLoading => _isLoading;
@@ -83,5 +86,36 @@ class LocationService extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> startTracking() async {
+    if (_positionSubscription != null || kIsWeb) return;
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      return;
+    }
+    _positionSubscription =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 60,
+          ),
+        ).listen(
+          (position) {
+            _currentPosition = LatLng(position.latitude, position.longitude);
+            _error = null;
+            notifyListeners();
+          },
+          onError: (Object error) {
+            _error = '$error';
+            notifyListeners();
+          },
+        );
+  }
+
+  Future<void> stopTracking() async {
+    await _positionSubscription?.cancel();
+    _positionSubscription = null;
   }
 }

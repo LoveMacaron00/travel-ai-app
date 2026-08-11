@@ -10,12 +10,14 @@ import 'package:myapp/widgets/media_image.dart';
 class HomeScreen extends StatefulWidget {
   final VoidCallback onProfileTap;
   final VoidCallback onPlanTap;
+  final VoidCallback onDiaryTap;
   final ValueChanged<int> onExploreDestination;
 
   const HomeScreen({
     super.key,
     required this.onProfileTap,
     required this.onPlanTap,
+    required this.onDiaryTap,
     required this.onExploreDestination,
   });
 
@@ -236,6 +238,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 );
                               },
+                            ),
+                            HomeFeatureItem(
+                              Icons.auto_stories_outlined,
+                              l10n.travelDiary,
+                              brandGold,
+                              onTap: widget.onDiaryTap,
                             ),
                           ],
                         ),

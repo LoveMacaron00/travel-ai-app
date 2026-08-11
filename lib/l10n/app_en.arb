@@ -36,6 +36,64 @@
   "planTravel": "Plan Travel",
   "chatbot": "Chatbot",
   "scanWithAi": "Scan with AI",
+  "travelDiary": "Diary",
+  "smartTravelDiary": "Smart Travel Diary",
+  "travelDiarySubtitle": "Keep each day's photos, location, and memories",
+  "diaryAutoDescription": "Keep GPS on to record nearby places automatically, or take a photo with AI Camera to create a diary entry with place insights.",
+  "openAiCamera": "Open AI Camera",
+  "diarySavedAutomatically": "The AI photo and insights were added to your diary automatically.",
+  "diaryDay": "Day {day} : {place}",
+  "@diaryDay": {
+    "placeholders": {
+      "day": {"type": "int"},
+      "place": {"type": "String"}
+    }
+  },
+  "culturalInsight": "Cultural Insight",
+  "writeDiaryHint": "You can write your diary.",
+  "diaryMinutes": "{minutes} min",
+  "@diaryMinutes": {
+    "placeholders": {"minutes": {"type": "int"}}
+  },
+  "diaryHours": "{hours} hours",
+  "@diaryHours": {
+    "placeholders": {"hours": {"type": "int"}}
+  },
+  "diaryHoursMinutes": "{hours} hr {minutes} min",
+  "@diaryHoursMinutes": {
+    "placeholders": {
+      "hours": {"type": "int"},
+      "minutes": {"type": "int"}
+    }
+  },
+  "addMemory": "Add memory",
+  "noDiaryEntries": "No travel memories yet",
+  "noDiaryEntriesDescription": "Add a photo and note from your trip. Your GPS location will be captured automatically.",
+  "memoryNote": "Today's story",
+  "memoryNoteHint": "Write a highlight or something you want to remember",
+  "provinceVisited": "Province visited",
+  "provinceHint": "For example, Chiang Mai",
+  "capturePhoto": "Take photo",
+  "choosePhoto": "Choose photo",
+  "saveMemory": "Save memory",
+  "editMemory": "Edit memory",
+  "deleteMemory": "Delete memory",
+  "deleteMemoryConfirmation": "Delete this diary entry?",
+  "memorySaved": "Memory saved",
+  "travelFootprint": "Travel Footprint",
+  "travelFootprintSubtitle": "See the provinces and places you have explored",
+  "visitedProvinces": "Visited provinces",
+  "visitedProvinceCount": "{count} provinces visited",
+  "@visitedProvinceCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "noFootprint": "No travel footprint yet",
+  "noFootprintDescription": "Add a province and GPS location to your diary to start coloring your map.",
+  "memoriesCount": "{count} memories",
+  "@memoriesCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "openTravelDiary": "Open diary",
   "destinations": "Destinations",
   "seeAll": "See all",
   "couldNotLoadTatDestinations": "Could not load TAT destinations",
