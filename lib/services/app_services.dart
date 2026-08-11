@@ -8,6 +8,7 @@ import 'package:myapp/services/locale_controller.dart';
 import 'package:myapp/services/session_store.dart';
 import 'package:myapp/services/trip_service.dart';
 import 'package:myapp/services/travel_diary_automation_service.dart';
+import 'package:myapp/services/travel_diary_service.dart';
 
 /// Composition root: ประกอบ service จริงของแอปเพียงจุดเดียว
 /// domain service แต่ละตัวรับ dependency ทาง constructor จึงสร้างชุด mock แยกใน test ได้
@@ -35,10 +36,11 @@ class AppServices {
   static final TripService trips = TripService(client: client);
   static final ChatService chat = ChatService(client: client);
   static final MediaService media = MediaService(client: client);
+  static final TravelDiaryService diary = TravelDiaryService(client: client);
   static final TravelDiaryAutomationService diaryAutomation =
       TravelDiaryAutomationService(
         destinations: destinations,
-        media: media,
+        diary: diary,
         currentUser: () => session.currentUser,
       );
 }

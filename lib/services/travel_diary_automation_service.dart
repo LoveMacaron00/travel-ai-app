@@ -6,45 +6,53 @@ import 'package:myapp/model/scan_result.dart';
 import 'package:myapp/model/travel_diary_entry.dart';
 import 'package:myapp/services/destination_service.dart';
 import 'package:myapp/services/location_service.dart';
-import 'package:myapp/services/media_service.dart';
-import 'package:myapp/services/travel_diary_store.dart';
+import 'package:myapp/services/travel_diary_service.dart';
 import 'package:myapp/utils/destination_display.dart';
 
 class TravelDiaryAutomationService {
   TravelDiaryAutomationService({
     required DestinationService destinations,
-    required MediaService media,
+    required TravelDiaryService diary,
     required Map<String, dynamic>? Function() currentUser,
   }) : _destinationsService = destinations,
-       _media = media,
+       _diary = diary,
        _currentUser = currentUser;
 
   final DestinationService _destinationsService;
-  final MediaService _media;
+  final TravelDiaryService _diary;
   final Map<String, dynamic>? Function() _currentUser;
   final LocationService _location = LocationService.instance;
 
   List<_DiaryDestination> _destinations = [];
-  TravelDiaryStore? _store;
-  String? _accountKey;
+  String? _activeUserKey;
   bool _started = false;
   bool _evaluating = false;
   DateTime? _lastEvaluation;
   Timer? _heartbeat;
+  Future<void>? _startFuture;
 
   Future<void> start() async {
     final user = _currentUser();
     if (user == null) return;
-    final accountKey = _accountKeyFor(user);
-    if (_started && _accountKey == accountKey) return;
+    final userKey = '${user['id'] ?? user['email'] ?? ''}';
+    if (_started && _activeUserKey == userKey) {
+      await _startFuture;
+      return;
+    }
+
     stop();
-    _accountKey = accountKey;
-    _store = TravelDiaryStore(accountKey);
+    _activeUserKey = userKey;
     _started = true;
     _location.addListener(_onLocationChanged);
     _heartbeat = Timer.periodic(const Duration(minutes: 5), (_) {
       unawaited(_evaluatePosition(force: true));
     });
+    final initialization = _initialize();
+    _startFuture = initialization;
+    await initialization;
+  }
+
+  Future<void> _initialize() async {
     await _loadDestinations();
     await _evaluatePosition(force: true);
   }
@@ -53,20 +61,19 @@ class TravelDiaryAutomationService {
     if (_started) _location.removeListener(_onLocationChanged);
     _heartbeat?.cancel();
     _heartbeat = null;
+    _startFuture = null;
     _started = false;
-    _store = null;
-    _accountKey = null;
+    _activeUserKey = null;
     _lastEvaluation = null;
   }
 
-  Future<void> recordAiCapture({
+  Future<bool> recordAiCapture({
     required ScanResult result,
-    required String imagePath,
+    required String imageUrl,
     required LatLng? position,
   }) async {
     await start();
-    final store = _store;
-    if (store == null) return;
+    if (!_started) return false;
     if (_destinations.isEmpty) await _loadDestinations();
 
     final now = DateTime.now();
@@ -77,7 +84,7 @@ class TravelDiaryAutomationService {
         nearestCandidate != null && nearestCandidate.distanceMeters <= 1000
         ? nearestCandidate
         : null;
-    final entries = await store.load();
+    final entries = await _diary.load();
     TravelDiaryEntry? matching;
     for (final entry in entries) {
       final closeInTime =
@@ -102,14 +109,11 @@ class TravelDiaryAutomationService {
       }
     }
 
-    final id = matching?.id ?? now.microsecondsSinceEpoch.toString();
-    final preservedImage = await store.preserveImage(
-      imagePath,
-      '${id}_${now.microsecondsSinceEpoch}',
-    );
-    final imagePaths = [...?matching?.imagePaths];
-    if (preservedImage.isNotEmpty && !imagePaths.contains(preservedImage)) {
-      imagePaths.add(preservedImage);
+    final imageUrls = [...?matching?.imageUrls];
+    for (final candidate in [imageUrl, nearest?.imageUrl ?? '']) {
+      if (candidate.isNotEmpty && !imageUrls.contains(candidate)) {
+        imageUrls.add(candidate);
+      }
     }
     final insight = _scanInsight(result);
     final title = matching?.title.isNotEmpty == true
@@ -118,7 +122,7 @@ class TravelDiaryAutomationService {
         ? result.title.trim()
         : nearest?.title ?? '';
     final updated = TravelDiaryEntry(
-      id: id,
+      id: matching?.id ?? 'camera_${now.microsecondsSinceEpoch}',
       date: matching?.date ?? now,
       lastSeenAt: now,
       title: title,
@@ -127,14 +131,13 @@ class TravelDiaryAutomationService {
           ? matching!.province
           : nearest?.province ?? '',
       insight: insight.isNotEmpty ? insight : matching?.insight ?? '',
-      imagePaths: imagePaths,
-      imageUrls: matching?.imageUrls ?? const [],
+      imageUrls: imageUrls,
       latitude: position?.latitude ?? matching?.latitude,
       longitude: position?.longitude ?? matching?.longitude,
       destinationId: matching?.destinationId ?? nearest?.id,
       source: 'aiCamera',
     );
-    await store.upsert(updated);
+    return _diary.upsert(updated);
   }
 
   void _onLocationChanged() {
@@ -155,9 +158,7 @@ class TravelDiaryAutomationService {
       if (_destinations.isEmpty) await _loadDestinations();
       final nearest = _nearestDestination(_location.currentPosition!);
       if (nearest == null || nearest.distanceMeters > 350) return;
-      final store = _store;
-      if (store == null) return;
-      final entries = await store.load();
+      final entries = await _diary.load();
       TravelDiaryEntry? currentVisit;
       for (final entry in entries) {
         if (entry.destinationId != nearest.id) continue;
@@ -169,7 +170,7 @@ class TravelDiaryAutomationService {
       }
 
       if (currentVisit == null) {
-        await store.upsert(
+        await _diary.upsert(
           TravelDiaryEntry(
             id: 'gps_${nearest.id}_${now.microsecondsSinceEpoch}',
             date: now,
@@ -178,7 +179,6 @@ class TravelDiaryAutomationService {
             note: '',
             province: nearest.province,
             insight: nearest.insight,
-            imageUrls: nearest.imageUrl.isEmpty ? const [] : [nearest.imageUrl],
             latitude: _location.currentPosition!.latitude,
             longitude: _location.currentPosition!.longitude,
             destinationId: nearest.id,
@@ -186,7 +186,7 @@ class TravelDiaryAutomationService {
           ),
         );
       } else {
-        await store.upsert(
+        await _diary.upsert(
           currentVisit.copyWith(
             lastSeenAt: now,
             latitude: _location.currentPosition!.latitude,
@@ -205,10 +205,7 @@ class TravelDiaryAutomationService {
     _destinations = (result['data'] as List)
         .whereType<Map>()
         .map(
-          (raw) => _DiaryDestination.fromJson(
-            Map<String, dynamic>.from(raw),
-            _media,
-          ),
+          (raw) => _DiaryDestination.fromJson(Map<String, dynamic>.from(raw)),
         )
         .where((destination) => destination.hasCoordinates)
         .toList();
@@ -236,12 +233,6 @@ class TravelDiaryAutomationService {
     }
     return result.subtitle.trim();
   }
-
-  String _accountKeyFor(Map<String, dynamic> user) =>
-      '${user['id'] ?? user['email'] ?? 'guest'}'.replaceAll(
-        RegExp(r'[^a-zA-Z0-9_-]'),
-        '_',
-      );
 }
 
 class _DiaryDestination {
@@ -256,10 +247,7 @@ class _DiaryDestination {
     this.distanceMeters = double.infinity,
   });
 
-  factory _DiaryDestination.fromJson(
-    Map<String, dynamic> json,
-    MediaService media,
-  ) {
+  factory _DiaryDestination.fromJson(Map<String, dynamic> json) {
     final rawLocation = json['location'];
     final location = rawLocation is Map
         ? Map<String, dynamic>.from(rawLocation)
@@ -271,7 +259,7 @@ class _DiaryDestination {
           '${json['provinceValue'] ?? location['province'] ?? json['province'] ?? ''}'
               .trim(),
       insight: stripHtmlText('${json['description'] ?? ''}'),
-      imageUrl: media.fullUrl('${json['image'] ?? json['image_url'] ?? ''}'),
+      imageUrl: '${json['image'] ?? json['image_url'] ?? ''}'.trim(),
       latitude:
           double.tryParse('${json['latitude'] ?? location['latitude']}') ??
           double.nan,

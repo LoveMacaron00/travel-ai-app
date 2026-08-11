@@ -256,6 +256,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     final userMessageIndex = _messages.length;
     ScanResult? completedScanResult;
     String completedAnswer = '';
+    String completedImageUrl = '';
     var scanSucceeded = false;
     setState(() {
       _messages.add(
@@ -289,6 +290,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         scanSucceeded = true;
         final data = Map<String, dynamic>.from(result['data'] ?? {});
         completedAnswer = (data['answer'] ?? '').toString();
+        completedImageUrl = (data['image_url'] ?? '').toString();
         final userMessageId = int.tryParse('${data['user_message_id'] ?? ''}');
         if (userMessageIndex < _messages.length) {
           _messages[userMessageIndex] = _messages[userMessageIndex].copyWith(
@@ -342,11 +344,13 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         AppServices.diaryAutomation
             .recordAiCapture(
               result: diaryResult,
-              imagePath: image.path,
+              imageUrl: completedImageUrl,
               position: position,
             )
-            .then((_) {
-              if (mounted) _showNotice(context.l10n.diarySavedAutomatically);
+            .then((saved) {
+              if (mounted && saved) {
+                _showNotice(context.l10n.diarySavedAutomatically);
+              }
             }),
       );
     }

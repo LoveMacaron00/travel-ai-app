@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -8,7 +7,7 @@ import 'package:myapp/model/travel_diary_entry.dart';
 import 'package:myapp/screen/chatbot_screen.dart';
 import 'package:myapp/services/app_services.dart';
 import 'package:myapp/services/location_service.dart';
-import 'package:myapp/services/travel_diary_store.dart';
+import 'package:myapp/services/travel_diary_service.dart';
 import 'package:myapp/widgets/media_image.dart';
 
 const _diaryGold = Color(0xfff4b400);
@@ -25,7 +24,7 @@ class TravelDiaryScreen extends StatefulWidget {
 }
 
 class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
-  late final TravelDiaryStore _store;
+  late final TravelDiaryService _diary;
   final Map<String, Timer> _noteSaveTimers = {};
   Timer? _locationReloadTimer;
   List<TravelDiaryEntry> _entries = [];
@@ -34,12 +33,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
   @override
   void initState() {
     super.initState();
-    final user = AppServices.auth.currentUser;
-    final accountKey = '${user?['id'] ?? user?['email'] ?? 'guest'}'.replaceAll(
-      RegExp(r'[^a-zA-Z0-9_-]'),
-      '_',
-    );
-    _store = TravelDiaryStore(accountKey);
+    _diary = AppServices.diary;
     LocationService.instance.addListener(_onLocationChanged);
     _initializeDiary();
   }
@@ -67,7 +61,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
   }
 
   Future<void> _loadEntries() async {
-    final entries = await _store.load();
+    final entries = await _diary.load();
     if (!mounted) return;
     setState(() {
       _entries = entries;
@@ -92,7 +86,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       if (index < 0) return;
       final updated = _entries[index].copyWith(note: note.trim());
       _entries[index] = updated;
-      unawaited(_store.upsert(updated));
+      unawaited(_diary.upsert(updated));
     });
   }
 
@@ -118,9 +112,9 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       ),
     );
     if (confirmed != true) return;
+    final deleted = await _diary.delete(entry.id);
+    if (!deleted) return;
     _entries.removeWhere((item) => item.id == entry.id);
-    await _store.save(_entries);
-    await _store.deleteImages(entry.imagePaths);
     if (mounted) setState(() {});
   }
 
@@ -403,7 +397,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (entry.imagePaths.isNotEmpty || entry.imageUrls.isNotEmpty) ...[
+        if (entry.imageUrls.isNotEmpty) ...[
           _imageGallery(entry),
           const SizedBox(height: 10),
         ],
@@ -457,10 +451,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
   );
 
   Widget _imageGallery(TravelDiaryEntry entry) {
-    final images = <_DiaryImage>[
-      ...entry.imagePaths.map(_DiaryImage.local),
-      ...entry.imageUrls.map(_DiaryImage.network),
-    ];
+    final images = entry.imageUrls;
     if (images.length == 1) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(13),
@@ -504,17 +495,11 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     );
   }
 
-  Widget _image(_DiaryImage image) => image.isLocal
-      ? Image.file(
-          File(image.value),
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => _imageFallback(),
-        )
-      : mediaNetworkImage(
-          image.value,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => _imageFallback(),
-        );
+  Widget _image(String imageUrl) => mediaNetworkImage(
+    imageUrl,
+    fit: BoxFit.cover,
+    errorBuilder: (_, _, _) => _imageFallback(),
+  );
 
   Widget _imageFallback() => const ColoredBox(
     color: Color(0xffeeeeee),
@@ -536,12 +521,4 @@ class _DiaryDay {
   final DateTime date;
   final String place;
   final List<TravelDiaryEntry> entries;
-}
-
-class _DiaryImage {
-  const _DiaryImage.local(this.value) : isLocal = true;
-  const _DiaryImage.network(this.value) : isLocal = false;
-
-  final String value;
-  final bool isLocal;
 }

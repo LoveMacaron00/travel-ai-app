@@ -6,7 +6,7 @@ import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/model/travel_diary_entry.dart';
 import 'package:myapp/screen/travel_diary_screen.dart';
 import 'package:myapp/services/app_services.dart';
-import 'package:myapp/services/travel_diary_store.dart';
+import 'package:myapp/services/travel_diary_service.dart';
 
 const _footprintGold = Color(0xfff4b400);
 const _footprintCanvas = Color(0xfff8f9fa);
@@ -19,24 +19,20 @@ class TravelFootprintScreen extends StatefulWidget {
 }
 
 class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
-  late final TravelDiaryStore _store;
+  late final TravelDiaryService _diary;
   List<TravelDiaryEntry> _entries = [];
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    final user = AppServices.auth.currentUser;
-    final accountKey = '${user?['id'] ?? user?['email'] ?? 'guest'}'.replaceAll(
-      RegExp(r'[^a-zA-Z0-9_-]'),
-      '_',
-    );
-    _store = TravelDiaryStore(accountKey);
+    _diary = AppServices.diary;
     _loadEntries();
   }
 
   Future<void> _loadEntries() async {
-    final entries = await _store.load();
+    await AppServices.diaryAutomation.start();
+    final entries = await _diary.load();
     if (!mounted) return;
     setState(() {
       _entries = entries;
