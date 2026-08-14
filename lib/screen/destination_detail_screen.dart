@@ -436,6 +436,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
           child: FilledButton.icon(
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xffe9ad0c),
+              foregroundColor: Colors.black,
             ),
             onPressed: widget.onExploreMap ?? () => Navigator.pop(context),
             icon: const Icon(Icons.map_outlined),

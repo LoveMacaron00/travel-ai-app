@@ -219,7 +219,7 @@ extension _PlanMainView on _PlanScreenState {
             child: FilledButton.icon(
               style: FilledButton.styleFrom(
                 backgroundColor: _gold,
-                foregroundColor: Colors.white,
+                foregroundColor: Colors.black,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -632,6 +632,7 @@ extension _PlanMainView on _PlanScreenState {
                 FilledButton.icon(
                   style: FilledButton.styleFrom(
                     backgroundColor: _gold,
+                    foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(13),
                     ),

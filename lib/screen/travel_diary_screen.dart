@@ -246,7 +246,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
             onPressed: _openAiCamera,
             style: FilledButton.styleFrom(
               backgroundColor: _diaryGold,
-              foregroundColor: Colors.white,
+              foregroundColor: Colors.black,
               minimumSize: const Size(190, 48),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),

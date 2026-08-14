@@ -68,7 +68,22 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        theme: ThemeData(primarySwatch: Colors.amber, useMaterial3: false),
+        theme: ThemeData(
+          primarySwatch: Colors.amber,
+          useMaterial3: false,
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFF4C025),
+              foregroundColor: Colors.black,
+            ),
+          ),
+          filledButtonTheme: FilledButtonThemeData(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFF4C025),
+              foregroundColor: Colors.black,
+            ),
+          ),
+        ),
         home: AppServices.auth.token != null
             ? const MainNavigationScreen()
             : const WelcomeScreen(),
