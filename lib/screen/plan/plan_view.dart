@@ -300,90 +300,148 @@ extension _PlanMainView on _PlanScreenState {
 
   Widget _buildResult(TravelPlan plan) {
     final selectedDay = _selectedDayFor(plan);
-    return CustomScrollView(
+    return Stack(
       key: const ValueKey('result'),
-      slivers: [
-        SliverToBoxAdapter(
-          child: _header(
-            context.l10n.aiGeneratedPlan,
-            context.l10n.yourRoute,
-            back: _reset,
-          ),
-        ),
-        SliverToBoxAdapter(child: _planMap(plan)),
-        if (plan.days.isNotEmpty)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 14),
-              child: PlanDaySelector(
-                dayNumbers: plan.days.map((day) => day.day).toList(),
-                selectedIndex: _selectedDayIndex.clamp(0, plan.days.length - 1),
-                dayLabel: context.l10n.day,
-                onSelected: _selectDay,
-              ),
+      children: [
+        Positioned.fill(child: _planMap(plan, fullScreen: true)),
+        DraggableScrollableSheet(
+          initialChildSize: .68,
+          minChildSize: .08,
+          maxChildSize: .94,
+          builder: (_, controller) => DecoratedBox(
+            decoration: const BoxDecoration(
+              color: _canvas,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
-          ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
-            child: Row(
-              children: [
-                _stat('${plan.allStops.length}', context.l10n.places),
-                _stat('${plan.days.length}', context.l10n.days),
-                _stat(
-                  '฿${_money(plan.totalEstimatedCost)}',
-                  context.l10n.estimated,
-                ),
-              ],
-            ),
-          ),
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.recommendedItinerary,
-                  style: const TextStyle(
-                    fontSize: 21,
-                    fontWeight: FontWeight.w900,
+            child: CustomScrollView(
+              controller: controller,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: _header(
+                    context.l10n.aiGeneratedPlan,
+                    context.l10n.yourRoute,
+                    back: _reset,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  plan.summary,
-                  style: const TextStyle(color: Colors.black54, height: 1.45),
+                if (plan.days.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 14),
+                      child: PlanDaySelector(
+                        dayNumbers: plan.days.map((day) => day.day).toList(),
+                        selectedIndex: _selectedDayIndex.clamp(
+                          0,
+                          plan.days.length - 1,
+                        ),
+                        dayLabel: context.l10n.day,
+                        onSelected: _selectDay,
+                      ),
+                    ),
+                  ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+                    child: Row(
+                      children: [
+                        _stat('${plan.allStops.length}', context.l10n.places),
+                        _stat('${plan.days.length}', context.l10n.days),
+                        _stat(
+                          '฿${_money(plan.totalEstimatedCost)}',
+                          context.l10n.estimated,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ],
-            ),
-          ),
-        ),
-        SliverToBoxAdapter(
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xfffff4d2),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xffffd76a)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.warning_amber_rounded,
-                  color: Color(0xff9a6b00),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.l10n.recommendedItinerary,
+                          style: const TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          plan.summary,
+                          style: const TextStyle(
+                            color: Colors.black54,
+                            height: 1.45,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    context.l10n.aiPlanDisclaimer,
-                    style: const TextStyle(
-                      color: Color(0xff684d0a),
-                      fontSize: 12,
-                      height: 1.4,
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xfffff4d2),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xffffd76a)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          color: Color(0xff9a6b00),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            context.l10n.aiPlanDisclaimer,
+                            style: const TextStyle(
+                              color: Color(0xff684d0a),
+                              fontSize: 12,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (selectedDay != null) ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+                      child: Text(
+                        '${context.l10n.day} ${selectedDay.day} · ${selectedDay.theme.toUpperCase()}',
+                        style: const TextStyle(
+                          color: Color(0xff9a6b00),
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: .5,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SliverReorderableList(
+                    itemCount: selectedDay.stops.length,
+                    onReorder: _reorderStops,
+                    itemBuilder: (_, i) => _stopTile(
+                      selectedDay.stops[i],
+                      i + 1,
+                      key: ValueKey(selectedDay.stops[i]),
+                      reorderIndex: i,
+                    ),
+                  ),
+                ],
+                SliverToBoxAdapter(child: _costSummary(plan)),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                    child: OutlinedButton.icon(
+                      onPressed: _showPlacePicker,
+                      icon: const Icon(Icons.add),
+                      label: Text(context.l10n.addAnotherPlace),
                     ),
                   ),
                 ),
@@ -391,55 +449,23 @@ extension _PlanMainView on _PlanScreenState {
             ),
           ),
         ),
-        if (selectedDay != null) ...[
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
-              child: Text(
-                '${context.l10n.day} ${selectedDay.day} · ${selectedDay.theme.toUpperCase()}',
-                style: const TextStyle(
-                  color: Color(0xff9a6b00),
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: .5,
-                ),
-              ),
-            ),
-          ),
-          SliverReorderableList(
-            itemCount: selectedDay.stops.length,
-            onReorder: _reorderStops,
-            itemBuilder: (_, i) => _stopTile(
-              selectedDay.stops[i],
-              i + 1,
-              key: ValueKey(selectedDay.stops[i]),
-              reorderIndex: i,
-            ),
-          ),
-        ],
-        SliverToBoxAdapter(child: _costSummary(plan)),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-            child: OutlinedButton.icon(
-              onPressed: _showPlacePicker,
-              icon: const Icon(Icons.add),
-              label: Text(context.l10n.addAnotherPlace),
-            ),
-          ),
-        ),
       ],
     );
   }
 
-  Widget _planMap(TravelPlan plan) {
+  Widget _planMap(TravelPlan plan, {bool fullScreen = false}) {
     final day = _selectedDayFor(plan);
     final stops = day?.stops ?? const <TravelStop>[];
     return Container(
       key: _planMapKey,
-      height: 250,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      height: fullScreen ? null : 250,
+      margin: fullScreen
+          ? EdgeInsets.zero
+          : const EdgeInsets.symmetric(horizontal: 16),
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(22)),
+      decoration: BoxDecoration(
+        borderRadius: fullScreen ? null : BorderRadius.circular(22),
+      ),
       child: FlutterMap(
         key: ValueKey('plan-map-day-${day?.day ?? 0}'),
         mapController: _map,
