@@ -416,10 +416,65 @@ class _PlanScreenState extends State<PlanScreen> {
     });
   }
 
-  Future<void> _removeStop(TravelStop stop) async {
-    _excluded.add(stop.place);
-    _mustVisit.removeWhere((p) => p.title == stop.place);
-    await _generate();
+  void _reorderStops(int oldIndex, int newIndex) {
+    final plan = _plan;
+    if (plan == null) return;
+    final day = _selectedDayFor(plan);
+    if (day == null) return;
+
+    if (newIndex > oldIndex) newIndex--;
+    if (oldIndex == newIndex) return;
+
+    final stops = List<TravelStop>.from(day.stops);
+    final stop = stops.removeAt(oldIndex);
+    stops.insert(newIndex, stop);
+    _replaceSelectedDayStops(stops);
+  }
+
+  void _removeStop(int stopIndex) {
+    final plan = _plan;
+    if (plan == null) return;
+    final day = _selectedDayFor(plan);
+    if (day == null || stopIndex < 0 || stopIndex >= day.stops.length) return;
+
+    final removed = day.stops[stopIndex];
+    _excluded.add(removed.place);
+    _mustVisit.removeWhere(
+      (place) =>
+          place.id == removed.destinationId || place.title == removed.place,
+    );
+    final stops = List<TravelStop>.from(day.stops)..removeAt(stopIndex);
+    _replaceSelectedDayStops(stops);
+  }
+
+  void _replaceSelectedDayStops(List<TravelStop> stops) {
+    final plan = _plan;
+    if (plan == null) return;
+
+    final selectedIndex = _selectedDayIndex.clamp(0, plan.days.length - 1);
+    final days = [
+      for (var index = 0; index < plan.days.length; index++)
+        TravelDay(
+          day: plan.days[index].day,
+          theme: plan.days[index].theme,
+          stops: index == selectedIndex
+              ? stops
+              : List<TravelStop>.from(plan.days[index].stops),
+        ),
+    ];
+    final updatedPlan = TravelPlan(
+      tripId: plan.tripId,
+      summary: plan.summary,
+      totalEstimatedCost: plan.totalEstimatedCost,
+      budgetBreakdown: plan.budgetBreakdown,
+      days: days,
+      tips: plan.tips,
+    );
+    setState(() {
+      _plan = updatedPlan;
+      _route = [];
+    });
+    unawaited(_buildRoute(updatedPlan));
   }
 
   void _reset() {

@@ -405,9 +405,15 @@ extension _PlanMainView on _PlanScreenState {
               ),
             ),
           ),
-          SliverList.builder(
+          SliverReorderableList(
             itemCount: selectedDay.stops.length,
-            itemBuilder: (_, i) => _stopTile(selectedDay.stops[i], i + 1),
+            onReorder: _reorderStops,
+            itemBuilder: (_, i) => _stopTile(
+              selectedDay.stops[i],
+              i + 1,
+              key: ValueKey(selectedDay.stops[i]),
+              reorderIndex: i,
+            ),
           ),
         ],
         SliverToBoxAdapter(child: _costSummary(plan)),
@@ -490,161 +496,176 @@ extension _PlanMainView on _PlanScreenState {
     );
   }
 
-  Widget _stopTile(TravelStop stop, int number) => Material(
-    color: Colors.transparent,
-    child: InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () => _showStopDetails(stop, number),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 5, 16, 7),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xffeadcc2)),
-        ),
-        child: Column(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CircleAvatar(
-                  radius: 15,
-                  backgroundColor: _gold,
-                  foregroundColor: Colors.white,
-                  child: Text('$number'),
-                ),
-                const SizedBox(width: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: stop.imageUrl.isEmpty
-                      ? Container(
-                          width: 76,
-                          height: 76,
-                          color: const Color(0xffeee7da),
-                          child: const Icon(Icons.landscape),
-                        )
-                      : mediaNetworkImage(
-                          AppServices.media.fullUrl(stop.imageUrl),
-                          width: 76,
-                          height: 76,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
+  Widget _stopTile(
+    TravelStop stop,
+    int number, {
+    required Key key,
+    required int reorderIndex,
+  }) => KeyedSubtree(
+    key: key,
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => _showStopDetails(stop, number),
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 5, 16, 7),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xffeadcc2)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 15,
+                    backgroundColor: _gold,
+                    foregroundColor: Colors.white,
+                    child: Text('$number'),
+                  ),
+                  const SizedBox(width: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: stop.imageUrl.isEmpty
+                        ? Container(
                             width: 76,
                             height: 76,
                             color: const Color(0xffeee7da),
                             child: const Icon(Icons.landscape),
+                          )
+                        : mediaNetworkImage(
+                            AppServices.media.fullUrl(stop.imageUrl),
+                            width: 76,
+                            height: 76,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 76,
+                              height: 76,
+                              color: const Color(0xffeee7da),
+                              child: const Icon(Icons.landscape),
+                            ),
+                          ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          stop.place,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        stop.place,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
+                        Text(
+                          '${stop.arrivalTime} · ${stop.durationMinutes} ${context.l10n.minutesShort}',
+                          style: const TextStyle(
+                            color: Colors.black45,
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                      Text(
-                        '${stop.arrivalTime} · ${stop.durationMinutes} ${context.l10n.minutesShort}',
-                        style: const TextStyle(
-                          color: Colors.black45,
-                          fontSize: 12,
+                        const SizedBox(height: 5),
+                        Text(
+                          stop.activity,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.black54,
+                            height: 1.3,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        stop.activity,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.black54,
-                          height: 1.3,
-                        ),
+                      ],
+                    ),
+                  ),
+                  ReorderableDragStartListener(
+                    index: reorderIndex,
+                    child: const Padding(
+                      padding: EdgeInsets.all(6),
+                      child: Icon(Icons.drag_handle, color: Colors.black45),
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    onSelected: (v) {
+                      if (v == 'remove') _removeStop(reorderIndex);
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: 'remove',
+                        child: Text(context.l10n.removeFromPlan),
                       ),
                     ],
                   ),
-                ),
-                PopupMenuButton<String>(
-                  onSelected: (v) {
-                    if (v == 'remove') _removeStop(stop);
-                  },
-                  itemBuilder: (_) => [
-                    PopupMenuItem(
-                      value: 'remove',
-                      child: Text(context.l10n.removeFromPlan),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (stop.segments.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: stop.segments
-                      .map(
-                        (segment) => Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _routeColor(
-                              segment.mode,
-                            ).withValues(alpha: .14),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '${_modeLabel(segment.mode)} · ${segment.estimatedMinutes} ${context.l10n.minutesShort} · ฿${_money(segment.estimatedCost)}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: _routeLabelColor(segment.mode),
-                              fontWeight: FontWeight.w600,
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (stop.segments.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: stop.segments
+                        .map(
+                          (segment) => Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _routeColor(
+                                segment.mode,
+                              ).withValues(alpha: .14),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${_modeLabel(segment.mode)} · ${segment.estimatedMinutes} ${context.l10n.minutesShort} · ฿${_money(segment.estimatedCost)}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: _routeLabelColor(segment.mode),
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                        ),
-                      )
-                      .toList(),
+                        )
+                        .toList(),
+                  ),
                 ),
+              Row(
+                children: [
+                  _price(Icons.confirmation_number_outlined, stop.entryCost),
+                  const SizedBox(width: 8),
+                  _price(
+                    _PlanScreenState._modeOptions[stop.transportMode] ??
+                        Icons.route,
+                    stop.transportCost,
+                  ),
+                  const Spacer(),
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _gold,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                    ),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PlanNavigationScreen(destination: stop),
+                      ),
+                    ),
+                    icon: const Icon(Icons.navigation, size: 17),
+                    label: Text(context.l10n.navigate),
+                  ),
+                ],
               ),
-            Row(
-              children: [
-                _price(Icons.confirmation_number_outlined, stop.entryCost),
-                const SizedBox(width: 8),
-                _price(
-                  _PlanScreenState._modeOptions[stop.transportMode] ??
-                      Icons.route,
-                  stop.transportCost,
-                ),
-                const Spacer(),
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _gold,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(13),
-                    ),
-                  ),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => PlanNavigationScreen(destination: stop),
-                    ),
-                  ),
-                  icon: const Icon(Icons.navigation, size: 17),
-                  label: Text(context.l10n.navigate),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ),
