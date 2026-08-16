@@ -447,6 +447,21 @@ class _PlanScreenState extends State<PlanScreen> {
     _replaceSelectedDayStops(stops);
   }
 
+  void _addStopToSelectedDay(PlaceMarker place) {
+    final plan = _plan;
+    if (plan == null) return;
+    final day = _selectedDayFor(plan);
+    if (day == null ||
+        day.stops.any((stop) => stop.destinationId == place.id)) {
+      return;
+    }
+
+    _replaceSelectedDayStops([
+      ...day.stops,
+      _mustVisitStop(place, day.stops.length),
+    ]);
+  }
+
   void _replaceSelectedDayStops(List<TravelStop> stops) {
     final plan = _plan;
     if (plan == null) return;

@@ -272,7 +272,7 @@ extension _PlanComponents on _PlanScreenState {
                                 overflow: TextOverflow.ellipsis,
                               ),
                         trailing: const Icon(Icons.add_circle, color: _gold),
-                        onTap: () async {
+                        onTap: () {
                           if (!_mustVisit.any((x) => x.id == p.id)) {
                             if (_mustVisit.length >=
                                 _PlanScreenState._maxMustVisitPlaces) {
@@ -290,7 +290,7 @@ extension _PlanComponents on _PlanScreenState {
                           }
                           Navigator.pop(sheetContext);
                           if (_plan != null) {
-                            await _generate();
+                            _addStopToSelectedDay(p);
                           } else if (mounted) {
                             _updateState(() {});
                           }
