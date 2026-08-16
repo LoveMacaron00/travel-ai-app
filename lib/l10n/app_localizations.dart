@@ -1319,7 +1319,7 @@ abstract class AppLocalizations {
   /// No description provided for @mustVisitOptional.
   ///
   /// In en, this message translates to:
-  /// **'Optional'**
+  /// **'Selected places are always included'**
   String get mustVisitOptional;
 
   /// No description provided for @addAPlace.
