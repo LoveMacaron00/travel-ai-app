@@ -456,6 +456,10 @@ extension _PlanMainView on _PlanScreenState {
   Widget _planMap(TravelPlan plan, {bool fullScreen = false}) {
     final day = _selectedDayFor(plan);
     final stops = day?.stops ?? const <TravelStop>[];
+    final mapPoints = [
+      if (_position != null) LatLng(_position!.latitude, _position!.longitude),
+      ...stops.map((stop) => LatLng(stop.latitude, stop.longitude)),
+    ];
     return Container(
       key: _planMapKey,
       height: fullScreen ? null : 250,
@@ -466,56 +470,100 @@ extension _PlanMainView on _PlanScreenState {
       decoration: BoxDecoration(
         borderRadius: fullScreen ? null : BorderRadius.circular(22),
       ),
-      child: FlutterMap(
-        key: ValueKey('plan-map-day-${day?.day ?? 0}'),
-        mapController: _map,
-        options: MapOptions(
-          initialCenter: (stops.isEmpty
-              ? const LatLng(13.7563, 100.5018)
-              : LatLng(stops.first.latitude, stops.first.longitude)),
-          initialZoom: 15,
-          initialCameraFit: stops.length > 1
-              ? CameraFit.bounds(
-                  bounds: LatLngBounds.fromPoints(
-                    stops
-                        .map((stop) => LatLng(stop.latitude, stop.longitude))
-                        .toList(),
-                  ),
-                  padding: const EdgeInsets.all(36),
-                )
-              : null,
-        ),
+      child: Stack(
         children: [
-          TileLayer(
-            urlTemplate: AppConfig.mapTileUrl,
-            userAgentPackageName: 'com.example.myapp',
-          ),
-          if (_route.isNotEmpty)
-            PolylineLayer(
-              polylines: _route
-                  .map(
-                    (leg) => Polyline(
-                      points: leg.points,
-                      color: _routeColor(leg.mode),
-                      strokeWidth: 5,
-                      pattern: _usesRoadRoute(leg.mode)
-                          ? const StrokePattern.solid()
-                          : StrokePattern.dashed(segments: const [12, 8]),
-                    ),
-                  )
-                  .toList(),
+          FlutterMap(
+            key: ValueKey('plan-map-day-${day?.day ?? 0}'),
+            mapController: _map,
+            options: MapOptions(
+              initialCenter: (mapPoints.isEmpty
+                  ? const LatLng(13.7563, 100.5018)
+                  : mapPoints.first),
+              initialZoom: 15,
+              initialCameraFit: mapPoints.length > 1
+                  ? CameraFit.bounds(
+                      bounds: LatLngBounds.fromPoints(mapPoints),
+                      padding: const EdgeInsets.all(36),
+                    )
+                  : null,
             ),
-          MarkerLayer(
-            markers: stops.indexed
-                .map(
-                  (e) => Marker(
-                    point: LatLng(e.$2.latitude, e.$2.longitude),
-                    width: 132,
-                    height: 88,
-                    child: _buildPlanStopMarker(e.$2, e.$1 + 1),
+            children: [
+              TileLayer(
+                urlTemplate: AppConfig.mapTileUrl,
+                userAgentPackageName: 'com.example.myapp',
+              ),
+              if (_route.isNotEmpty)
+                PolylineLayer(
+                  polylines: _route
+                      .map(
+                        (leg) => Polyline(
+                          points: leg.points,
+                          color: _routeColor(leg.mode),
+                          strokeWidth: 5,
+                          pattern: _usesRoadRoute(leg.mode)
+                              ? const StrokePattern.solid()
+                              : StrokePattern.dashed(segments: const [12, 8]),
+                        ),
+                      )
+                      .toList(),
+                ),
+              MarkerLayer(
+                markers: [
+                  if (_position != null)
+                    Marker(
+                      point: LatLng(_position!.latitude, _position!.longitude),
+                      width: 46,
+                      height: 46,
+                      child: Center(
+                        child: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: const Color(0xff1877f2),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 3),
+                            boxShadow: const [
+                              BoxShadow(color: Colors.black26, blurRadius: 5),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.my_location,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ...stops.indexed.map(
+                    (e) => Marker(
+                      point: LatLng(e.$2.latitude, e.$2.longitude),
+                      width: 132,
+                      height: 88,
+                      child: _buildPlanStopMarker(e.$2, e.$1 + 1),
+                    ),
                   ),
-                )
-                .toList(),
+                ],
+              ),
+            ],
+          ),
+          Positioned(
+            top: 16,
+            right: 16,
+            child: Material(
+              color: Colors.white,
+              elevation: 3,
+              shape: const CircleBorder(),
+              child: IconButton(
+                tooltip: context.l10n.currentGpsLocation,
+                onPressed: _position == null
+                    ? null
+                    : () => _map.move(
+                        LatLng(_position!.latitude, _position!.longitude),
+                        15,
+                      ),
+                icon: const Icon(Icons.my_location, color: Color(0xff1877f2)),
+              ),
+            ),
           ),
         ],
       ),
