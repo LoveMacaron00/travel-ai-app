@@ -207,10 +207,8 @@ extension _PlanComponents on _PlanScreenState {
           final filtered = _places
               .where(
                 (p) =>
-                    (_selectedProvince == null ||
-                        p.province == _selectedProvince) &&
-                    (query.isEmpty ||
-                        p.title.toLowerCase().contains(query.toLowerCase())),
+                    query.isEmpty ||
+                    p.title.toLowerCase().contains(query.toLowerCase()),
               )
               .take(30)
               .toList();

@@ -81,9 +81,6 @@ extension _PlanMainView on _PlanScreenState {
                 loadingHint: context.l10n.loadingProvinces,
                 onChanged: (value) => _updateState(() {
                   _selectedProvince = value;
-                  if (value != null) {
-                    _mustVisit.removeWhere((place) => place.province != value);
-                  }
                   _excluded.clear();
                   _error = null;
                 }),

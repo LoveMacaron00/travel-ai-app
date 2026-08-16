@@ -191,7 +191,6 @@ class _PlanScreenState extends State<PlanScreen> {
       _provinceOptions = options;
       if (!options.any((item) => item.value == _selectedProvince)) {
         _selectedProvince = null;
-        _mustVisit.clear();
       }
       _loadingProvinces = false;
     });
