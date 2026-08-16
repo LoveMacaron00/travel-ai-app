@@ -142,7 +142,6 @@ extension _PlanMainView on _PlanScreenState {
         _section(
           number: 3,
           title: context.l10n.howCanYouTravel,
-          subtitle: context.l10n.longTripsSegments,
           child: Wrap(
             spacing: 8,
             runSpacing: 8,

@@ -1304,12 +1304,6 @@ abstract class AppLocalizations {
   /// **'How can you travel?'**
   String get howCanYouTravel;
 
-  /// No description provided for @longTripsSegments.
-  ///
-  /// In en, this message translates to:
-  /// **'Long trips are split into road and transport segments.'**
-  String get longTripsSegments;
-
   /// No description provided for @mustVisitPlaces.
   ///
   /// In en, this message translates to:

@@ -654,10 +654,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get howCanYouTravel => 'How can you travel?';
 
   @override
-  String get longTripsSegments =>
-      'Long trips are split into road and transport segments.';
-
-  @override
   String get mustVisitPlaces => 'Must-visit places';
 
   @override

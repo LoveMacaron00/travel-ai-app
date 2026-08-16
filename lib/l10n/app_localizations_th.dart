@@ -642,9 +642,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get howCanYouTravel => 'คุณเดินทางแบบใดได้บ้าง';
 
   @override
-  String get longTripsSegments => 'การเดินทางไกลจะแบ่งเป็นช่วงถนนและขนส่ง';
-
-  @override
   String get mustVisitPlaces => 'สถานที่ที่ต้องไป';
 
   @override

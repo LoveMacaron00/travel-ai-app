@@ -64,7 +64,7 @@ extension _PlanComponents on _PlanScreenState {
   Widget _section({
     required int number,
     required String title,
-    required String subtitle,
+    String? subtitle,
     required Widget child,
   }) => Container(
     margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
@@ -98,10 +98,14 @@ extension _PlanComponents on _PlanScreenState {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(color: Colors.black45, fontSize: 12),
-                  ),
+                  if (subtitle != null)
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: Colors.black45,
+                        fontSize: 12,
+                      ),
+                    ),
                 ],
               ),
             ),
