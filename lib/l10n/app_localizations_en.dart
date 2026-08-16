@@ -661,7 +661,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mustVisitPlaces => 'Must-visit places';
 
   @override
-  String get mustVisitOptional => 'Optional';
+  String get mustVisitOptional => 'Selected places are always included';
 
   @override
   String get addAPlace => 'Add a place';

@@ -239,7 +239,7 @@
   "howCanYouTravel": "How can you travel?",
   "longTripsSegments": "Long trips are split into road and transport segments.",
   "mustVisitPlaces": "Must-visit places",
-  "mustVisitOptional": "Optional",
+  "mustVisitOptional": "Selected places are always included",
   "addAPlace": "Add a place",
   "mustVisitLimitReached": "You can add up to 5 must-visit places.",
   "designingTrip": "Designing your trip…",

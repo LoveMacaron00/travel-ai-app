@@ -648,7 +648,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get mustVisitPlaces => 'สถานที่ที่ต้องไป';
 
   @override
-  String get mustVisitOptional => 'ไม่บังคับ';
+  String get mustVisitOptional => 'เลือกแล้วจะถูกใส่ในทริปเสมอ';
 
   @override
   String get addAPlace => 'เพิ่มสถานที่';

@@ -239,7 +239,7 @@
   "howCanYouTravel": "คุณเดินทางแบบใดได้บ้าง",
   "longTripsSegments": "การเดินทางไกลจะแบ่งเป็นช่วงถนนและขนส่ง",
   "mustVisitPlaces": "สถานที่ที่ต้องไป",
-  "mustVisitOptional": "ไม่บังคับ",
+  "mustVisitOptional": "เลือกแล้วจะถูกใส่ในทริปเสมอ",
   "addAPlace": "เพิ่มสถานที่",
   "mustVisitLimitReached": "เพิ่มสถานที่ที่ต้องไปได้สูงสุด 5 แห่ง",
   "designingTrip": "กำลังออกแบบทริป…",

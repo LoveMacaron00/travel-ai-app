@@ -242,9 +242,8 @@ class _PlanScreenState extends State<PlanScreen> {
     if (result['success'] == true) {
       final trip = Map<String, dynamic>.from(result['data']);
       final raw = Map<String, dynamic>.from(trip['plan_data'] as Map? ?? {});
-      final next = TravelPlan.fromJson(
-        raw,
-        tripId: int.tryParse('${trip['id']}') ?? 0,
+      final next = _ensureMustVisitStops(
+        TravelPlan.fromJson(raw, tripId: int.tryParse('${trip['id']}') ?? 0),
       );
       setState(() {
         _plan = next;
@@ -260,6 +259,92 @@ class _PlanScreenState extends State<PlanScreen> {
       });
     }
   }
+
+  TravelPlan _ensureMustVisitStops(TravelPlan plan) {
+    if (_mustVisit.isEmpty) return plan;
+
+    final days = plan.days
+        .map(
+          (day) => TravelDay(
+            day: day.day,
+            theme: day.theme,
+            stops: List<TravelStop>.from(day.stops),
+          ),
+        )
+        .toList();
+
+    for (final place in _mustVisit) {
+      if (_planContainsPlace(days, place)) continue;
+      final day = _targetDayForMustVisit(days);
+      day.stops.add(_mustVisitStop(place, day.stops.length));
+    }
+
+    return TravelPlan(
+      tripId: plan.tripId,
+      summary: plan.summary,
+      totalEstimatedCost: plan.totalEstimatedCost,
+      budgetBreakdown: plan.budgetBreakdown,
+      days: days,
+      tips: plan.tips,
+    );
+  }
+
+  bool _planContainsPlace(List<TravelDay> days, PlaceMarker place) {
+    final id = place.id.trim();
+    final title = _placeKey(place.title);
+    for (final stop in days.expand((day) => day.stops)) {
+      if (id.isNotEmpty && stop.destinationId.trim() == id) return true;
+      if (title.isNotEmpty && _placeKey(stop.place) == title) return true;
+    }
+    return false;
+  }
+
+  TravelDay _targetDayForMustVisit(List<TravelDay> days) {
+    if (days.isEmpty) {
+      final day = TravelDay(
+        day: 1,
+        theme: context.l10n.mustVisitPlaces,
+        stops: <TravelStop>[],
+      );
+      days.add(day);
+      return day;
+    }
+
+    return days.reduce(
+      (leastBusy, day) =>
+          day.stops.length < leastBusy.stops.length ? day : leastBusy,
+    );
+  }
+
+  TravelStop _mustVisitStop(PlaceMarker place, int stopIndex) {
+    final activity = stripHtmlText(place.description).trim();
+    return TravelStop(
+      destinationId: place.id,
+      place: place.title,
+      activity: activity.isEmpty ? 'แวะชม ${place.title}' : activity,
+      latitude: place.latitude,
+      longitude: place.longitude,
+      imageUrl: place.imageUrl,
+      arrivalTime: _arrivalTimeForStopIndex(stopIndex),
+      durationMinutes: 90,
+      entryCost: 0,
+      foodCost: 0,
+      transportMode: _modes.firstOrNull ?? 'car',
+      transportCost: 0,
+      tip:
+          'สถานที่นี้ถูกเพิ่มเพราะคุณเลือกไว้โดยตรง โปรดตรวจสอบเวลาเปิด-ปิดและวิธีเดินทางจริงก่อนออกเดินทาง',
+      segments: const [],
+    );
+  }
+
+  String _arrivalTimeForStopIndex(int stopIndex) {
+    const slots = ['09:00', '11:00', '13:30', '15:30', '17:00'];
+    final index = stopIndex.clamp(0, slots.length - 1).toInt();
+    return slots[index];
+  }
+
+  String _placeKey(String value) =>
+      value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '');
 
   Future<void> _buildRoute(TravelPlan plan) async {
     final requestId = ++_routeRequestId;
