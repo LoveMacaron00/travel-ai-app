@@ -103,4 +103,17 @@ class TripService {
       return const [];
     }
   }
+
+  Future<Map<String, dynamic>> getPlanOptions() async {
+    try {
+      final response = await _client.get('/mobile/plan-options');
+      if (response.statusCode != 200) {
+        return {'success': false, 'message': 'Unable to load plan options'};
+      }
+      final decoded = jsonDecode(response.body);
+      return {'success': true, 'data': decoded['data']};
+    } catch (error) {
+      return {'success': false, 'message': 'Network error: $error'};
+    }
+  }
 }

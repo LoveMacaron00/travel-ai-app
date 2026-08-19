@@ -134,33 +134,12 @@ extension _PlanMainView on _PlanScreenState {
           number: 2,
           title: context.l10n.whatDoYouEnjoy,
           subtitle: context.l10n.aiFitsBudget,
-          child: _chips(_PlanScreenState._interestOptions, _interests),
+          child: _interestChips(_interests),
         ),
         _section(
           number: 3,
           title: context.l10n.howCanYouTravel,
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _PlanScreenState._modeOptions.entries
-                .map(
-                  (e) => FilterChip(
-                    avatar: Icon(e.value, size: 17),
-                    label: Text(_modeLabel(e.key)),
-                    selected: _modes.contains(e.key),
-                    selectedColor: const Color(0xffffe7a0),
-                    showCheckmark: false,
-                    onSelected: (v) => _updateState(() {
-                      if (v) {
-                        _modes.add(e.key);
-                      } else if (_modes.length > 1) {
-                        _modes.remove(e.key);
-                      }
-                    }),
-                  ),
-                )
-                .toList(),
-          ),
+          child: _transportChips(_modes),
         ),
         _section(
           number: 4,

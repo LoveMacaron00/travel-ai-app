@@ -37,6 +37,18 @@ class PlanScreen extends StatefulWidget {
   State<PlanScreen> createState() => _PlanScreenState();
 }
 
+class _PreferenceOptionItem {
+  const _PreferenceOptionItem({
+    required this.key,
+    required this.label,
+    this.iconUrl,
+  });
+
+  final String key;
+  final String label;
+  final String? iconUrl;
+}
+
 class _PlanScreenState extends State<PlanScreen> {
   static const _maxMustVisitPlaces = 5;
 
@@ -54,6 +66,8 @@ class _PlanScreenState extends State<PlanScreen> {
   TravelPlan? _plan;
   List<PlaceMarker> _places = [];
   List<ProvinceOption> _provinceOptions = [];
+  List<_PreferenceOptionItem> _dynamicInterests = [];
+  List<_PreferenceOptionItem> _dynamicModes = [];
   String? _selectedProvince;
   final Set<String> _interests = {};
   final Set<String> _modes = {'car'};
@@ -96,7 +110,46 @@ class _PlanScreenState extends State<PlanScreen> {
     _locationService.addListener(_onSharedLocationChanged);
     _loadPlaces();
     _loadProvinces();
+    _loadPlanOptions();
     if (_position == null) _getLocation();
+  }
+
+  Future<void> _loadPlanOptions() async {
+    final res = await AppServices.trips.getPlanOptions();
+    if (!mounted || res['success'] != true || res['data'] is! Map) return;
+
+    final data = Map<String, dynamic>.from(res['data'] as Map);
+    final rawInterests = (data['interests'] as List? ?? []);
+    final rawModes = (data['transportModes'] as List? ?? []);
+
+    setState(() {
+      if (rawInterests.isNotEmpty) {
+        _dynamicInterests = rawInterests
+            .whereType<Map>()
+            .map(
+              (m) => _PreferenceOptionItem(
+                key: '${m['key'] ?? ''}',
+                label: '${m['label'] ?? m['key'] ?? ''}',
+                iconUrl: m['icon_url'] != null ? '${m['icon_url']}' : null,
+              ),
+            )
+            .where((item) => item.key.isNotEmpty)
+            .toList();
+      }
+      if (rawModes.isNotEmpty) {
+        _dynamicModes = rawModes
+            .whereType<Map>()
+            .map(
+              (m) => _PreferenceOptionItem(
+                key: '${m['key'] ?? ''}',
+                label: '${m['label'] ?? m['key'] ?? ''}',
+                iconUrl: m['icon_url'] != null ? '${m['icon_url']}' : null,
+              ),
+            )
+            .where((item) => item.key.isNotEmpty)
+            .toList();
+      }
+    });
   }
 
   void _loadProfileInterests() {
@@ -122,6 +175,7 @@ class _PlanScreenState extends State<PlanScreen> {
       _loadedLanguage = language;
       _loadPlaces();
       _loadProvinces();
+      _loadPlanOptions();
     }
   }
 

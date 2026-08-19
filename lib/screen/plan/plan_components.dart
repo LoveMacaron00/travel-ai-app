@@ -151,27 +151,87 @@ extension _PlanComponents on _PlanScreenState {
     ),
   );
 
-  Widget _chips(List<String> options, Set<String> selected) => Wrap(
-    spacing: 8,
-    runSpacing: 8,
-    children: options
-        .map(
-          (v) => FilterChip(
-            label: Text(_interestLabel(v)),
-            selected: selected.contains(v),
-            selectedColor: const Color(0xffffe7a0),
-            checkmarkColor: const Color(0xff986b00),
-            onSelected: (on) => _updateState(() {
-              if (on) {
-                selected.add(v);
-              } else {
-                selected.remove(v);
-              }
-            }),
+  Widget _optionIcon(String? iconUrl, IconData fallbackIcon) {
+    if (iconUrl != null && iconUrl.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: mediaNetworkImage(
+            iconUrl,
+            width: 18,
+            height: 18,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => Icon(fallbackIcon, size: 17),
           ),
-        )
-        .toList(),
-  );
+        ),
+      );
+    }
+    return Icon(fallbackIcon, size: 17);
+  }
+
+  Widget _interestChips(Set<String> selected) {
+    final items = _dynamicInterests.isNotEmpty
+        ? _dynamicInterests
+        : _PlanScreenState._interestOptions
+            .map((k) => _PreferenceOptionItem(key: k, label: _interestLabel(k)))
+            .toList();
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: items.map((item) {
+        final keyLower = item.key.toLowerCase();
+        final isSelected = selected.any((s) => s.toLowerCase() == keyLower);
+        return FilterChip(
+          label: Text(item.label),
+          selected: isSelected,
+          selectedColor: const Color(0xffffe7a0),
+          checkmarkColor: const Color(0xff986b00),
+          onSelected: (on) => _updateState(() {
+            if (on) {
+              selected.add(item.key);
+            } else {
+              selected.removeWhere((s) => s.toLowerCase() == keyLower);
+            }
+          }),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _transportChips(Set<String> selected) {
+    final items = _dynamicModes.isNotEmpty
+        ? _dynamicModes
+        : _PlanScreenState._modeOptions.entries
+            .map((e) => _PreferenceOptionItem(key: e.key, label: _modeLabel(e.key)))
+            .toList();
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: items.map((item) {
+        final keyLower = item.key.toLowerCase();
+        final fallbackIcon = _PlanScreenState._modeOptions[keyLower] ?? Icons.directions_car;
+        final isSelected = selected.any((s) => s.toLowerCase() == keyLower);
+        return FilterChip(
+          avatar: _optionIcon(item.iconUrl, fallbackIcon),
+          label: Text(item.label),
+          selected: isSelected,
+          selectedColor: const Color(0xffffe7a0),
+          showCheckmark: false,
+          onSelected: (v) => _updateState(() {
+            if (v) {
+              selected.add(item.key);
+            } else if (selected.length > 1) {
+              selected.removeWhere((s) => s.toLowerCase() == keyLower);
+            }
+          }),
+        );
+      }).toList(),
+    );
+  }
 
   Future<void> _pickDates() async {
     final now = DateTime.now();
