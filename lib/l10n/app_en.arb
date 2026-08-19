@@ -292,5 +292,6 @@
   "viewsCount": "{count} views",
   "@viewsCount": {
     "placeholders": {"count": {"type": "String"}}
-  }
+  },
+  "noResults": "No results found"
 }

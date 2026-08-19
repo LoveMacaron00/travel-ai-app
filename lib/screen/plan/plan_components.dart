@@ -208,7 +208,8 @@ extension _PlanComponents on _PlanScreenState {
               .where(
                 (p) =>
                     query.isEmpty ||
-                    p.title.toLowerCase().contains(query.toLowerCase()),
+                    p.title.toLowerCase().contains(query.toLowerCase()) ||
+                    p.province.toLowerCase().contains(query.toLowerCase()),
               )
               .take(30)
               .toList();
@@ -239,7 +240,21 @@ extension _PlanComponents on _PlanScreenState {
                   ),
                 ),
                 Expanded(
-                  child: ListView.builder(
+                  child: filtered.isEmpty
+                      ? ListView(
+                          controller: controller,
+                          children: [
+                            const SizedBox(height: 60),
+                            Icon(Icons.search_off, size: 48, color: Colors.black26),
+                            const SizedBox(height: 12),
+                            Text(
+                              context.l10n.noResults,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.black38, fontSize: 15),
+                            ),
+                          ],
+                        )
+                      : ListView.builder(
                     controller: controller,
                     itemCount: filtered.length,
                     itemBuilder: (_, i) {
@@ -264,13 +279,37 @@ extension _PlanComponents on _PlanScreenState {
                           p.title,
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
-                        subtitle: description.isEmpty
-                            ? null
-                            : Text(
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (p.province.isNotEmpty)
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xffffe7a0),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  p.province,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xff986b00),
+                                  ),
+                                ),
+                              ),
+                            if (description.isNotEmpty)
+                              Text(
                                 description,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
+                          ],
+                        ),
                         trailing: const Icon(Icons.add_circle, color: _gold),
                         onTap: () {
                           if (!_mustVisit.any((x) => x.id == p.id)) {

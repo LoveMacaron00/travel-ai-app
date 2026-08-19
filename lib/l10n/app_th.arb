@@ -292,5 +292,6 @@
   "viewsCount": "{count} ครั้ง",
   "@viewsCount": {
     "placeholders": {"count": {"type": "String"}}
-  }
+  },
+  "noResults": "ไม่พบผลลัพธ์"
 }

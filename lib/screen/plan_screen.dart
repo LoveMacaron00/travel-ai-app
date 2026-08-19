@@ -159,7 +159,7 @@ class _PlanScreenState extends State<PlanScreen> {
           longitude: double.tryParse('${j['longitude']}') ?? 0,
           imageUrl: AppServices.media.fullUrl('${j['image'] ?? ''}'),
           category: '${j['category'] ?? 'other'}',
-          province: '${j['provinceValue'] ?? j['province'] ?? ''}',
+          province: '${j['province'] ?? ''}',
         );
       }).toList(),
     );

@@ -1603,6 +1603,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} views'**
   String viewsCount(String count);
+
+  /// No description provided for @noResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get noResults;
 }
 
 class _AppLocalizationsDelegate

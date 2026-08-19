@@ -797,4 +797,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String viewsCount(String count) {
     return '$count ครั้ง';
   }
+
+  @override
+  String get noResults => 'ไม่พบผลลัพธ์';
 }

@@ -810,4 +810,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String viewsCount(String count) {
     return '$count views';
   }
+
+  @override
+  String get noResults => 'No results found';
 }
