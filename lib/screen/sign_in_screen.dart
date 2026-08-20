@@ -51,9 +51,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (mounted) {
         unawaited(AppServices.activity.resume());
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+          (route) => false,
         );
       }
     } catch (e) {

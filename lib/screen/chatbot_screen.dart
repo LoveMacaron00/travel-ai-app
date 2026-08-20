@@ -149,6 +149,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       for (final raw in historyResult['data'] as List) {
         if (raw is! Map) continue;
         final item = Map<String, dynamic>.from(raw);
+        final rawSources = item['sources'] is List
+            ? item['sources'] as List
+            : [];
         loaded.add(
           ChatMessage(
             id: int.tryParse('${item['id'] ?? ''}'),
@@ -161,6 +164,10 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             imageCaption: '${item['image_caption'] ?? ''}',
             isEdited: item['edited_at'] != null,
             sessionId: _sessionId,
+            sources: rawSources
+                .whereType<Map>()
+                .map((s) => Map<String, dynamic>.from(s))
+                .toList(),
           ),
         );
       }

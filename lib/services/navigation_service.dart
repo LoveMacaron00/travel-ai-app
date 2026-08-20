@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 /// Service for handling navigation between screens and showing destinations on map
 class NavigationService {
   NavigationService._();
