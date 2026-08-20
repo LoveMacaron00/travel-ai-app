@@ -7,6 +7,7 @@ import 'package:myapp/screen/plan_screen.dart';
 import 'package:myapp/screen/travel_diary_screen.dart';
 import 'package:myapp/services/location_service.dart';
 import 'package:myapp/services/app_services.dart';
+import 'package:myapp/services/navigation_service.dart';
 
 /// Shell หลังเข้าสู่ระบบ เก็บแต่ละ tab ไว้ใน IndexedStack เพื่อรักษา state
 /// เช่น ตำแหน่งแผนที่และรายการแผน เมื่อผู้ใช้สลับแท็บไปมา
@@ -28,6 +29,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     super.initState();
     _screens = List<Widget?>.filled(4, null);
     _screens[0] = _createScreen(0);
+    
+    // Register navigation callback for showing destinations on map
+    AppServices.navigator.registerShowDestinationCallback(_showDestinationOnMap);
+    
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       if (LocationService.instance.currentPosition == null) {
@@ -42,6 +47,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void dispose() {
     AppServices.diaryAutomation.stop();
     LocationService.instance.stopTracking();
+    AppServices.navigator.clearCallback();
     super.dispose();
   }
 
@@ -83,11 +89,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   void _showDestinationOnMap(int destinationId) {
-    Navigator.of(context).popUntil((route) => route.isFirst);
-    _selectTab(1);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (_selectedIndex != 1) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      _selectTab(1);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _mapScreenKey.currentState?.showDestination(destinationId);
+      });
+    } else {
       _mapScreenKey.currentState?.showDestination(destinationId);
-    });
+    }
   }
 
   @override

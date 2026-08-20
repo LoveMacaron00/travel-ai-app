@@ -5,6 +5,7 @@ import 'package:myapp/services/chat_service.dart';
 import 'package:myapp/services/destination_service.dart';
 import 'package:myapp/services/media_service.dart';
 import 'package:myapp/services/locale_controller.dart';
+import 'package:myapp/services/navigation_service.dart';
 import 'package:myapp/services/session_store.dart';
 import 'package:myapp/services/trip_service.dart';
 import 'package:myapp/services/travel_diary_automation_service.dart';
@@ -43,4 +44,5 @@ class AppServices {
         diary: diary,
         currentUser: () => session.currentUser,
       );
+  static final NavigationService navigator = NavigationService.instance;
 }

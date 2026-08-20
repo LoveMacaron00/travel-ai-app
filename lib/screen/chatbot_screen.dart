@@ -44,6 +44,7 @@ class ChatMessage {
   final String imageCaption;
   final ScanResult? scanResult;
   final bool isEdited;
+  final int? sessionId;
 
   const ChatMessage({
     this.id,
@@ -56,6 +57,7 @@ class ChatMessage {
     this.imageCaption = '',
     this.scanResult,
     this.isEdited = false,
+    this.sessionId,
   });
 
   ChatMessage copyWith({
@@ -65,6 +67,7 @@ class ChatMessage {
     String? imageUrl,
     String? imageCaption,
     bool? isEdited,
+    int? sessionId,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -77,6 +80,7 @@ class ChatMessage {
       imageCaption: imageCaption ?? this.imageCaption,
       scanResult: scanResult,
       isEdited: isEdited ?? this.isEdited,
+      sessionId: sessionId ?? this.sessionId,
     );
   }
 }
@@ -156,6 +160,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             imageUrl: AppServices.media.fullUrl(item['image_url']?.toString()),
             imageCaption: '${item['image_caption'] ?? ''}',
             isEdited: item['edited_at'] != null,
+            sessionId: _sessionId,
           ),
         );
       }
@@ -189,7 +194,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
     final userMessageIndex = _messages.length;
     setState(() {
-      _messages.add(ChatMessage(text: text, isUser: true));
+      _messages.add(ChatMessage(text: text, isUser: true, sessionId: _sessionId));
       _controller.clear();
       _isSending = true;
       _activeScanMode = null;
@@ -265,6 +270,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           isUser: true,
           imageBytes: imageBytes,
           imageCaption: _scanModeCaption(context, mode),
+          sessionId: _sessionId,
         ),
       );
       _isSending = true;
@@ -314,6 +320,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               data['assistant_image_url']?.toString(),
             ),
             scanResult: completedScanResult,
+            sessionId: _sessionId,
           ),
         );
       } else {
@@ -321,6 +328,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           ChatMessage(
             text: result['message'] ?? context.l10n.photoAnalysisFailed,
             isUser: false,
+            sessionId: _sessionId,
           ),
         );
       }
@@ -401,6 +409,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 .whereType<Map>()
                 .map((item) => Map<String, dynamic>.from(item))
                 .toList(),
+            sessionId: _sessionId,
           ),
         );
       } else {
@@ -408,6 +417,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           ChatMessage(
             text: result['message'] ?? context.l10n.travelAssistantUnavailable,
             isUser: false,
+            sessionId: _sessionId,
           ),
         );
       }
@@ -503,6 +513,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               .whereType<Map>()
               .map((item) => Map<String, dynamic>.from(item))
               .toList(),
+          sessionId: _sessionId,
         ),
       );
       _isSending = false;
@@ -618,6 +629,10 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                           onDelete: message.isUser && message.id != null
                               ? () => _deleteMessage(message)
                               : null,
+                          onShowDestinationOnMap: (destinationId) {
+                            // Use navigation service to show destination on map
+                            AppServices.navigator.showDestinationOnMap(destinationId);
+                          },
                         );
                       },
                     ),

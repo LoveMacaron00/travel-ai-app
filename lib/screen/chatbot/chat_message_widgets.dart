@@ -5,8 +5,9 @@ class _ChatBubble extends StatelessWidget {
   final ChatMessage message;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final Function(int)? onShowDestinationOnMap;
 
-  const _ChatBubble({required this.message, this.onEdit, this.onDelete});
+  const _ChatBubble({required this.message, this.onEdit, this.onDelete, this.onShowDestinationOnMap});
 
   @override
   Widget build(BuildContext context) {
@@ -143,7 +144,12 @@ class _ChatBubble extends StatelessWidget {
                 const SizedBox(height: 8),
                 ...message.sources
                     .take(2)
-                    .map((source) => _SourcePill(source: source)),
+                    .map((source) => _SourcePill(
+                          source: source,
+                          onShowDestinationOnMap: onShowDestinationOnMap,
+                          messageId: message.id,
+                          sessionId: message.sessionId,
+                        )),
               ],
             ],
           ),
@@ -155,8 +161,16 @@ class _ChatBubble extends StatelessWidget {
 
 class _SourcePill extends StatelessWidget {
   final Map<String, dynamic> source;
+  final Function(int)? onShowDestinationOnMap;
+  final int? messageId;
+  final int? sessionId;
 
-  const _SourcePill({required this.source});
+  const _SourcePill({
+    required this.source,
+    this.onShowDestinationOnMap,
+    this.messageId,
+    this.sessionId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -215,10 +229,31 @@ class _SourcePill extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(
-            Icons.map_outlined,
-            color: _ChatbotScreenState.brandGold,
-            size: 20,
+          GestureDetector(
+            onTap: () async {
+              final destinationId = source['id']?.toString();
+              if (destinationId != null && onShowDestinationOnMap != null) {
+                // Log navigation event to server
+                if (messageId != null && sessionId != null) {
+                  try {
+                    await AppServices.chat.logNavigation(
+                      messageId: messageId!,
+                      destinationId: int.tryParse(destinationId) ?? -1,
+                      sessionId: sessionId!,
+                    );
+                  } catch (e) {
+                    debugPrint('Failed to log navigation: $e');
+                  }
+                }
+                // Navigate to map
+                onShowDestinationOnMap!(int.tryParse(destinationId) ?? -1);
+              }
+            },
+            child: const Icon(
+              Icons.map_outlined,
+              color: _ChatbotScreenState.brandGold,
+              size: 20,
+            ),
           ),
         ],
       ),

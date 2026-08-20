@@ -148,6 +148,33 @@ class ChatService {
     }
   }
 
+  Future<Map<String, dynamic>> logNavigation({
+    required int messageId,
+    required int destinationId,
+    required int sessionId,
+  }) async {
+    try {
+      final response = await _client.post(
+        '/chat/navigation',
+        body: {
+          'messageId': messageId,
+          'destinationId': destinationId,
+          'sessionId': sessionId,
+        },
+      );
+      final payload = ApiClient.decodeMap(response.body);
+      if (response.statusCode == 201 && payload != null) {
+        return {'success': true, 'data': payload};
+      }
+      return {
+        'success': false,
+        'message': payload?['message'] ?? 'Unable to log navigation',
+      };
+    } catch (error) {
+      return {'success': false, 'message': 'Network error: $error'};
+    }
+  }
+
   Future<Map<String, dynamic>> sendImage({
     required int sessionId,
     required ImageUpload image,
