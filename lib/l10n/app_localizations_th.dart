@@ -120,7 +120,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get travelDiary => 'ไดอารี่';
 
   @override
-  String get smartTravelDiary => 'Smart Travel Diary';
+  String get smartTravelDiary => 'ไดอารี่การเดินทาง';
 
   @override
   String get travelDiarySubtitle => 'เก็บรูป พิกัด และความทรงจำในแต่ละวัน';
@@ -206,7 +206,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get memorySaved => 'บันทึกความทรงจำแล้ว';
 
   @override
-  String get travelFootprint => 'Travel Footprint';
+  String get travelFootprint => 'บันทึกการเดินทาง';
 
   @override
   String get travelFootprintSubtitle => 'ดูจังหวัดและสถานที่ที่คุณเคยเดินทางไป';

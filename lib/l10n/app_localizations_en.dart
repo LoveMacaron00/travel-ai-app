@@ -121,7 +121,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get travelDiary => 'Diary';
 
   @override
-  String get smartTravelDiary => 'Smart Travel Diary';
+  String get smartTravelDiary => 'Travel Diary';
 
   @override
   String get travelDiarySubtitle =>
@@ -209,7 +209,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get memorySaved => 'Memory saved';
 
   @override
-  String get travelFootprint => 'Travel Footprint';
+  String get travelFootprint => 'Travel Log';
 
   @override
   String get travelFootprintSubtitle =>

@@ -323,7 +323,7 @@ abstract class AppLocalizations {
   /// No description provided for @smartTravelDiary.
   ///
   /// In en, this message translates to:
-  /// **'Smart Travel Diary'**
+  /// **'Travel Diary'**
   String get smartTravelDiary;
 
   /// No description provided for @travelDiarySubtitle.
@@ -473,7 +473,7 @@ abstract class AppLocalizations {
   /// No description provided for @travelFootprint.
   ///
   /// In en, this message translates to:
-  /// **'Travel Footprint'**
+  /// **'Travel Log'**
   String get travelFootprint;
 
   /// No description provided for @travelFootprintSubtitle.
