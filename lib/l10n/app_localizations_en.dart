@@ -239,6 +239,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openTravelDiary => 'Open diary';
 
   @override
+  String get timeline => 'TimeLine';
+
+  @override
+  String get homeBase => 'Home Base';
+
+  @override
+  String get visitedToday => 'Visited today';
+
+  @override
+  String visitedHoursAgo(int count) {
+    return 'Visited $count hr ago';
+  }
+
+  @override
+  String visitedDaysAgo(int count) {
+    return 'Visited $count days ago';
+  }
+
+  @override
+  String visitedMonthsAgo(int count) {
+    return 'Visited $count months ago';
+  }
+
+  @override
   String get destinations => 'Destinations';
 
   @override

@@ -235,6 +235,30 @@ class AppLocalizationsTh extends AppLocalizations {
   String get openTravelDiary => 'เปิดไดอารี่';
 
   @override
+  String get timeline => 'ไทม์ไลน์';
+
+  @override
+  String get homeBase => 'ฐานหลัก';
+
+  @override
+  String get visitedToday => 'มาวันนี้';
+
+  @override
+  String visitedHoursAgo(int count) {
+    return 'มา $count ชม.ที่แล้ว';
+  }
+
+  @override
+  String visitedDaysAgo(int count) {
+    return 'มา $count วันที่แล้ว';
+  }
+
+  @override
+  String visitedMonthsAgo(int count) {
+    return 'มา $count เดือนที่แล้ว';
+  }
+
+  @override
   String get destinations => 'สถานที่ท่องเที่ยว';
 
   @override

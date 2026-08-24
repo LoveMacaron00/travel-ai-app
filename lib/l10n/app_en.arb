@@ -94,6 +94,21 @@
     "placeholders": {"count": {"type": "int"}}
   },
   "openTravelDiary": "Open diary",
+  "timeline": "TimeLine",
+  "homeBase": "Home Base",
+  "visitedToday": "Visited today",
+  "visitedHoursAgo": "Visited {count} hr ago",
+  "@visitedHoursAgo": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "visitedDaysAgo": "Visited {count} days ago",
+  "@visitedDaysAgo": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "visitedMonthsAgo": "Visited {count} months ago",
+  "@visitedMonthsAgo": {
+    "placeholders": {"count": {"type": "int"}}
+  },
   "destinations": "Destinations",
   "seeAll": "See all",
   "couldNotLoadTatDestinations": "Could not load TAT destinations",

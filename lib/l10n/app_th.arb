@@ -94,6 +94,21 @@
     "placeholders": {"count": {"type": "int"}}
   },
   "openTravelDiary": "เปิดไดอารี่",
+  "timeline": "ไทม์ไลน์",
+  "homeBase": "ฐานหลัก",
+  "visitedToday": "มาวันนี้",
+  "visitedHoursAgo": "มา {count} ชม.ที่แล้ว",
+  "@visitedHoursAgo": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "visitedDaysAgo": "มา {count} วันที่แล้ว",
+  "@visitedDaysAgo": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "visitedMonthsAgo": "มา {count} เดือนที่แล้ว",
+  "@visitedMonthsAgo": {
+    "placeholders": {"count": {"type": "int"}}
+  },
   "destinations": "สถานที่ท่องเที่ยว",
   "seeAll": "ดูทั้งหมด",
   "couldNotLoadTatDestinations": "ไม่สามารถโหลดสถานที่จาก TAT ได้",

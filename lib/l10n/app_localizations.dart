@@ -518,6 +518,42 @@ abstract class AppLocalizations {
   /// **'Open diary'**
   String get openTravelDiary;
 
+  /// No description provided for @timeline.
+  ///
+  /// In en, this message translates to:
+  /// **'TimeLine'**
+  String get timeline;
+
+  /// No description provided for @homeBase.
+  ///
+  /// In en, this message translates to:
+  /// **'Home Base'**
+  String get homeBase;
+
+  /// No description provided for @visitedToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Visited today'**
+  String get visitedToday;
+
+  /// No description provided for @visitedHoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Visited {count} hr ago'**
+  String visitedHoursAgo(int count);
+
+  /// No description provided for @visitedDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Visited {count} days ago'**
+  String visitedDaysAgo(int count);
+
+  /// No description provided for @visitedMonthsAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Visited {count} months ago'**
+  String visitedMonthsAgo(int count);
+
   /// No description provided for @destinations.
   ///
   /// In en, this message translates to:
