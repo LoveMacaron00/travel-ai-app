@@ -133,7 +133,6 @@ extension _PlanMainView on _PlanScreenState {
         _section(
           number: 2,
           title: context.l10n.whatDoYouEnjoy,
-          subtitle: context.l10n.aiFitsBudget,
           child: _interestChips(_interests),
         ),
         _section(

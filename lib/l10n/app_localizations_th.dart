@@ -206,7 +206,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get memorySaved => 'บันทึกความทรงจำแล้ว';
 
   @override
-  String get travelFootprint => 'บันทึกการเดินทาง';
+  String get travelFootprint => 'ร่องรอยการเดินทาง';
 
   @override
   String get travelFootprintSubtitle => 'ดูจังหวัดและสถานที่ที่คุณเคยเดินทางไป';
@@ -657,10 +657,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get estimatedBudget => 'งบประมาณ';
 
   @override
-  String get whatDoYouEnjoy => 'คุณชอบอะไร';
-
-  @override
-  String get aiFitsBudget => 'AI จะเลือกสถานที่ที่เหมาะกับงบประมาณของคุณ';
+  String get whatDoYouEnjoy => 'เลือกสิ่งที่คุณสนใจ';
 
   @override
   String get howCanYouTravel => 'คุณเดินทางแบบใดได้บ้าง';

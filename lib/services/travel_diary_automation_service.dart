@@ -77,6 +77,8 @@ class TravelDiaryAutomationService {
     if (_destinations.isEmpty) await _loadDestinations();
 
     final now = DateTime.now();
+    // สแกนป้ายไม่มีชื่อสถานที่ จึงใช้ข้อความ OCR บรรทัดแรกเป็นชื่อ entry แทนหัวข้อ generic
+    final scanTitle = _scanTitle(result);
     final nearestCandidate = position == null
         ? null
         : _nearestDestination(position);
@@ -89,7 +91,7 @@ class TravelDiaryAutomationService {
     for (final entry in entries) {
       final closeInTime =
           now.difference(entry.date).abs() < const Duration(hours: 4);
-      final resultTitle = result.title.trim().toLowerCase();
+      final resultTitle = scanTitle.trim().toLowerCase();
       final samePlace =
           resultTitle.isNotEmpty &&
           entry.title.trim().toLowerCase() == resultTitle;
@@ -118,8 +120,8 @@ class TravelDiaryAutomationService {
     final insight = _scanInsight(result);
     final title = matching?.title.isNotEmpty == true
         ? matching!.title
-        : result.title.trim().isNotEmpty
-        ? result.title.trim()
+        : scanTitle.isNotEmpty
+        ? scanTitle
         : nearest?.title ?? '';
     final updated = TravelDiaryEntry(
       id: matching?.id ?? 'camera_${now.microsecondsSinceEpoch}',
@@ -225,6 +227,16 @@ class TravelDiaryAutomationService {
       }
     }
     return nearest;
+  }
+
+  // สแกนป้ายไม่มีชื่อสถานที่ จึงใช้ข้อความ OCR บรรทัดแรกเป็นชื่อ entry แทนหัวข้อ generic
+  String _scanTitle(ScanResult result) {
+    if (result.mode != ScanMode.sign) return result.title.trim();
+    final ocrLine = result.originalText
+        .split('\n')
+        .map((line) => line.trim())
+        .firstWhere((line) => line.isNotEmpty, orElse: () => '');
+    return ocrLine.isNotEmpty ? ocrLine : result.title.trim();
   }
 
   String _scanInsight(ScanResult result) {

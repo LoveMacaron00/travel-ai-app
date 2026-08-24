@@ -1325,14 +1325,8 @@ abstract class AppLocalizations {
   /// No description provided for @whatDoYouEnjoy.
   ///
   /// In en, this message translates to:
-  /// **'What do you enjoy?'**
+  /// **'What are you interested in?'**
   String get whatDoYouEnjoy;
-
-  /// No description provided for @aiFitsBudget.
-  ///
-  /// In en, this message translates to:
-  /// **'AI will choose places that fit your budget.'**
-  String get aiFitsBudget;
 
   /// No description provided for @howCanYouTravel.
   ///

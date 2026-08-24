@@ -669,10 +669,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get estimatedBudget => 'Budget';
 
   @override
-  String get whatDoYouEnjoy => 'What do you enjoy?';
-
-  @override
-  String get aiFitsBudget => 'AI will choose places that fit your budget.';
+  String get whatDoYouEnjoy => 'What are you interested in?';
 
   @override
   String get howCanYouTravel => 'How can you travel?';
