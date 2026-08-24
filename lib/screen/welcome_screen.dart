@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/screen/sign_in_screen.dart';
 import 'package:myapp/screen/sign_up_screen.dart';
 
@@ -31,7 +30,7 @@ class WelcomeScreen extends StatelessWidget {
                       left: 35,
                       top: 143,
                       child: Text(
-                        context.l10n.welcomeToApplication,
+                        'Welcome to Application',
                         style: const TextStyle(
                           color: brandGold,
                           fontSize: 32,
@@ -73,7 +72,7 @@ class WelcomeScreen extends StatelessWidget {
                             ),
                           );
                         },
-                        child: Text(context.l10n.signIn),
+                        child: const Text('Sign In'),
                       ),
                     ),
                     Positioned(
@@ -102,7 +101,7 @@ class WelcomeScreen extends StatelessWidget {
                             ),
                           );
                         },
-                        child: Text(context.l10n.signUp),
+                        child: const Text('Sign Up'),
                       ),
                     ),
                   ],

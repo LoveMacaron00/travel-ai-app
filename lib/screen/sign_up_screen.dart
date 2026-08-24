@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:form_field_validator/form_field_validator.dart';
-import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/model/profile.dart';
 import 'package:myapp/screen/main_navigation_screen.dart';
 import 'package:myapp/services/app_services.dart';
@@ -38,7 +37,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         if (mounted) {
           unawaited(AppServices.activity.resume());
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.l10n.registrationSuccessful)),
+            SnackBar(content: Text('Registration successful!')),
           );
           Navigator.pushAndRemoveUntil(
             context,
@@ -53,8 +52,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                registerResult['message']?.toString() ??
-                    context.l10n.registrationFailed,
+                registerResult['message']?.toString() ?? 'Registration failed',
               ),
             ),
           );
@@ -67,7 +65,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              context.l10n.registrationFailedWithError(e.toString()),
+              'Registration failed: $e',
             ),
           ),
         );
@@ -124,7 +122,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     const Color brandGold = Color(0xFFF4C025);
     const Color bgGray = Color(0xFFFFFFFF);
     const Color borderGray = Color(0xFF747474);
-    final l10n = context.l10n;
 
     return Scaffold(
       backgroundColor: bgGray,
@@ -151,7 +148,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 34),
                 Text(
-                  l10n.createAccount,
+                  'Create an\naccount',
                   style: const TextStyle(
                     color: brandGold,
                     fontSize: 32,
@@ -161,7 +158,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 44),
                 Text(
-                  l10n.email,
+                  'Email',
                   style: const TextStyle(
                     fontSize: 15,
                     color: Colors.black,
@@ -171,20 +168,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 10),
                 TextFormField(
                   validator: MultiValidator([
-                    RequiredValidator(errorText: l10n.emailRequired),
-                    EmailValidator(errorText: l10n.emailInvalid),
+                    RequiredValidator(errorText: 'Email is required'),
+                    EmailValidator(errorText: 'Email is invalid'),
                   ]).call,
                   keyboardType: TextInputType.emailAddress,
                   onSaved: (value) => profile.email = value,
                   style: const TextStyle(fontSize: 15, color: borderGray),
                   decoration: _buildInputDecoration(
-                    hintText: l10n.emailHint,
+                    hintText: 'Enter your email.',
                     prefixIcon: Icons.mail_outline,
                   ),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  l10n.password,
+                  'Password',
                   style: const TextStyle(
                     fontSize: 15,
                     color: Colors.black,
@@ -194,14 +191,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 10),
                 TextFormField(
                   validator: MultiValidator([
-                    RequiredValidator(errorText: l10n.passwordRequired),
-                    MinLengthValidator(8, errorText: l10n.passwordMinLength),
+                    RequiredValidator(errorText: 'Password is required'),
+                    MinLengthValidator(
+                      8,
+                      errorText: 'Password must be at least 8 characters',
+                    ),
                   ]).call,
                   obscureText: _obscurePassword,
                   onSaved: (value) => profile.password = value,
                   style: const TextStyle(fontSize: 15, color: borderGray),
                   decoration: _buildInputDecoration(
-                    hintText: l10n.passwordHint,
+                    hintText: 'Enter your password.',
                     prefixIcon: Icons.lock_outline,
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -221,7 +221,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  l10n.passwordRequirement,
+                  'Must contain at least 8 characters.',
                   style: const TextStyle(
                     fontSize: 13,
                     color: borderGray,
@@ -257,7 +257,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ),
                           )
-                        : Text(l10n.signUp),
+                        : const Text('Sign Up'),
                   ),
                 ),
               ],

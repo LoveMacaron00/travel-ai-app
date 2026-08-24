@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:form_field_validator/form_field_validator.dart';
-import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/model/profile.dart';
 import 'package:myapp/screen/sign_up_screen.dart';
 import 'package:myapp/screen/main_navigation_screen.dart';
@@ -43,7 +42,8 @@ class _LoginScreenState extends State<LoginScreen> {
         if (mounted) {
           setState(() {
             _errorMessage =
-                loginResult['message']?.toString() ?? context.l10n.loginFailed;
+                loginResult['message']?.toString() ??
+                'Login failed. Please try again.';
           });
         }
         return;
@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = context.l10n.networkError(e.toString());
+          _errorMessage = 'Network error: $e';
         });
       }
     } finally {
@@ -115,7 +115,6 @@ class _LoginScreenState extends State<LoginScreen> {
     const Color brandGold = Color(0xFFF4C025);
     const Color bgGray = Color(0xFFFFFFFF);
     const Color borderGray = Color(0xFF747474);
-    final l10n = context.l10n;
 
     return Scaffold(
       backgroundColor: bgGray,
@@ -142,7 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 34),
                 Text(
-                  l10n.loginAccount,
+                  'Login to your\naccount',
                   style: const TextStyle(
                     color: brandGold,
                     fontSize: 32,
@@ -154,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Padding(
                   padding: const EdgeInsets.only(left: 4),
                   child: Text(
-                    l10n.welcomeBack,
+                    'Welcome back! Please enter your details.',
                     style: const TextStyle(
                       fontSize: 14,
                       color: borderGray,
@@ -164,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 44),
                 Text(
-                  l10n.email,
+                  'Email',
                   style: const TextStyle(
                     fontSize: 15,
                     color: Colors.black,
@@ -174,20 +173,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 10),
                 TextFormField(
                   validator: MultiValidator([
-                    RequiredValidator(errorText: l10n.emailRequired),
-                    EmailValidator(errorText: l10n.emailInvalid),
+                    RequiredValidator(errorText: 'Email is required'),
+                    EmailValidator(errorText: 'Email is invalid'),
                   ]).call,
                   keyboardType: TextInputType.emailAddress,
                   onSaved: (value) => profile.email = value,
                   style: const TextStyle(fontSize: 15, color: borderGray),
                   decoration: _buildInputDecoration(
-                    hintText: l10n.emailHint,
+                    hintText: 'Enter your email.',
                     prefixIcon: Icons.mail_outline,
                   ),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  l10n.password,
+                  'Password',
                   style: const TextStyle(
                     fontSize: 15,
                     color: Colors.black,
@@ -197,13 +196,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 10),
                 TextFormField(
                   validator: RequiredValidator(
-                    errorText: l10n.passwordRequired,
+                    errorText: 'Password is required',
                   ).call,
                   obscureText: _obscurePassword,
                   onSaved: (value) => profile.password = value,
                   style: const TextStyle(fontSize: 15, color: borderGray),
                   decoration: _buildInputDecoration(
-                    hintText: l10n.passwordHint,
+                    hintText: 'Enter your password.',
                     prefixIcon: Icons.lock_outline,
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -287,7 +286,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                           )
-                        : Text(l10n.signIn),
+                        : const Text('Sign In'),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -309,7 +308,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     child: Text.rich(
                       TextSpan(
-                        text: l10n.dontHaveAccount,
+                        text: "Don't have an account? ",
                         style: const TextStyle(
                           color: borderGray,
                           fontSize: 14,
@@ -317,7 +316,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         children: [
                           TextSpan(
-                            text: l10n.signUp,
+                            text: 'Sign Up',
                             style: const TextStyle(
                               color: brandGold,
                               fontWeight: FontWeight.w600,
