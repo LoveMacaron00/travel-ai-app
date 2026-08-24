@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/screen/all_destinations_screen.dart';
 import 'package:myapp/screen/chatbot_screen.dart';
 import 'package:myapp/screen/destination_detail_screen.dart';
 import 'package:myapp/services/app_services.dart';
+import 'package:myapp/services/location_service.dart';
 import 'package:myapp/widgets/home_feature_item.dart';
 import 'package:myapp/widgets/media_image.dart';
 
@@ -28,12 +30,31 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late Future<List<Map<String, dynamic>>> _destinationsFuture;
   late String _loadedLanguage;
+  LatLng? _position;
 
   @override
   void initState() {
     super.initState();
     _loadedLanguage = AppServices.locale.languageCode;
+    _position = LocationService.instance.currentPosition;
+    LocationService.instance.addListener(_onLocationChanged);
+    if (_position == null) {
+      LocationService.instance.refresh(openSettingsWhenDenied: false);
+    }
     _destinationsFuture = _loadDestinations();
+  }
+
+  void _onLocationChanged() {
+    final next = LocationService.instance.currentPosition;
+    if (next == null) return;
+    final previous = _position;
+    _position = next;
+    if (!mounted) return;
+    if (previous == null || const Distance().distance(previous, next) > 100) {
+      setState(() => _destinationsFuture = _loadDestinations());
+    } else {
+      setState(() {});
+    }
   }
 
   @override
@@ -46,14 +67,39 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    LocationService.instance.removeListener(_onLocationChanged);
+    super.dispose();
+  }
+
+  double _distanceKm(Map<String, dynamic> dest) {
+    final origin = _position;
+    if (origin == null) return double.infinity;
+    final lat = double.tryParse('${dest['latitude']}');
+    final lng = double.tryParse('${dest['longitude']}');
+    if (lat == null || lng == null) return double.infinity;
+    return const Distance().as(LengthUnit.Kilometer, origin, LatLng(lat, lng));
+  }
+
+  String? _distanceLabel(Map<String, dynamic> dest) {
+    if (_position == null) return null;
+    final km = _distanceKm(dest);
+    if (km == double.infinity) return null;
+    if (km < 1) return '${(km * 1000).round()} m';
+    return '${km.toStringAsFixed(1)} km';
+  }
+
   Future<List<Map<String, dynamic>>> _loadDestinations() async {
-    final result = await AppServices.destinations.getDestinations(limit: 3);
+    final result = await AppServices.destinations.getDestinations();
     if (result['success'] == true && result['data'] is List) {
-      return List<Map<String, dynamic>>.from(
-        (result['data'] as List).whereType<Map>().map(
-          (item) => Map<String, dynamic>.from(item),
-        ),
-      );
+      final destinations =
+          (result['data'] as List)
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList()
+            ..sort((a, b) => _distanceKm(a).compareTo(_distanceKm(b)));
+      return destinations.take(3).toList();
     }
     throw Exception(result['message'] ?? 'Failed to load destinations');
   }
@@ -406,6 +452,44 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 14,
+                    left: 14,
+                    child: Builder(
+                      builder: (_) {
+                        final distance = _distanceLabel(dest);
+                        if (distance == null) return const SizedBox.shrink();
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.55),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.near_me,
+                                color: Colors.white,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                distance,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ),
                   Positioned(

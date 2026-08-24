@@ -78,6 +78,7 @@ class LocationService extends ChangeNotifier {
         throw Exception('Unable to get current location: $lastError');
       }
       _currentPosition = LatLng(position.latitude, position.longitude);
+      notifyListeners();
       return _currentPosition;
     } catch (e) {
       _error = e.toString();

@@ -175,8 +175,10 @@ extension _PlanComponents on _PlanScreenState {
     final items = _dynamicInterests.isNotEmpty
         ? _dynamicInterests
         : _PlanScreenState._interestOptions
-            .map((k) => _PreferenceOptionItem(key: k, label: _interestLabel(k)))
-            .toList();
+              .map(
+                (k) => _PreferenceOptionItem(key: k, label: _interestLabel(k)),
+              )
+              .toList();
 
     return Wrap(
       spacing: 8,
@@ -205,15 +207,19 @@ extension _PlanComponents on _PlanScreenState {
     final items = _dynamicModes.isNotEmpty
         ? _dynamicModes
         : _PlanScreenState._modeOptions.entries
-            .map((e) => _PreferenceOptionItem(key: e.key, label: _modeLabel(e.key)))
-            .toList();
+              .map(
+                (e) =>
+                    _PreferenceOptionItem(key: e.key, label: _modeLabel(e.key)),
+              )
+              .toList();
 
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: items.map((item) {
         final keyLower = item.key.toLowerCase();
-        final fallbackIcon = _PlanScreenState._modeOptions[keyLower] ?? Icons.directions_car;
+        final fallbackIcon =
+            _PlanScreenState._modeOptions[keyLower] ?? Icons.directions_car;
         final isSelected = selected.any((s) => s.toLowerCase() == keyLower);
         return FilterChip(
           avatar: _optionIcon(item.iconUrl, fallbackIcon),
@@ -263,188 +269,237 @@ extension _PlanComponents on _PlanScreenState {
       isScrollControlled: true,
       backgroundColor: _canvas,
       builder: (sheetContext) => StatefulBuilder(
-        builder: (context, setSheet) {
-          final origin = _position;
-          final queryLower = query.toLowerCase();
-          final matches = _places
-              .where(
-                (p) =>
-                    query.isEmpty ||
-                    p.title.toLowerCase().contains(queryLower) ||
-                    p.province.toLowerCase().contains(queryLower),
-              )
-              .toList();
-          if (origin != null) {
-            matches.sort(
-              (a, b) => const Distance()
-                  .as(LengthUnit.Kilometer, origin, LatLng(a.latitude, a.longitude))
-                  .compareTo(
-                    const Distance().as(
+        builder: (context, setSheet) => AnimatedBuilder(
+          animation: _locationService,
+          builder: (context, _) {
+            final origin = _position;
+            final queryLower = query.toLowerCase();
+            final matches = _places
+                .where(
+                  (p) =>
+                      query.isEmpty ||
+                      p.title.toLowerCase().contains(queryLower) ||
+                      p.province.toLowerCase().contains(queryLower),
+                )
+                .toList();
+            if (origin != null) {
+              matches.sort(
+                (a, b) => const Distance()
+                    .as(
                       LengthUnit.Kilometer,
                       origin,
-                      LatLng(b.latitude, b.longitude),
+                      LatLng(a.latitude, a.longitude),
+                    )
+                    .compareTo(
+                      const Distance().as(
+                        LengthUnit.Kilometer,
+                        origin,
+                        LatLng(b.latitude, b.longitude),
+                      ),
+                    ),
+              );
+            }
+            final filtered = matches.take(30).toList();
+            return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: .78,
+              maxChildSize: .92,
+              builder: (_, controller) => Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 14),
+                    child: Text(
+                      context.l10n.addAPlace,
+                      style: const TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
-            );
-          }
-          final filtered = matches.take(30).toList();
-          return DraggableScrollableSheet(
-            expand: false,
-            initialChildSize: .78,
-            maxChildSize: .92,
-            builder: (_, controller) => Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 14),
-                  child: Text(
-                    context.l10n.addAPlace,
-                    style: const TextStyle(
-                      fontSize: 21,
-                      fontWeight: FontWeight.w900,
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: TextField(
+                      onChanged: (v) => setSheet(() => query = v),
+                      decoration: _inputDecoration(
+                        context.l10n.searchPlacesThailand,
+                        Icons.search,
+                      ),
                     ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: TextField(
-                    onChanged: (v) => setSheet(() => query = v),
-                    decoration: _inputDecoration(
-                      context.l10n.searchPlacesThailand,
-                      Icons.search,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: filtered.isEmpty
-                      ? ListView(
-                          controller: controller,
-                          children: [
-                            const SizedBox(height: 60),
-                            Icon(Icons.search_off, size: 48, color: Colors.black26),
-                            const SizedBox(height: 12),
-                            Text(
-                              context.l10n.noResults,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.black38, fontSize: 15),
-                            ),
-                          ],
-                        )
-                      : ListView.builder(
-                    controller: controller,
-                    itemCount: filtered.length,
-                    itemBuilder: (_, i) {
-                      final p = filtered[i];
-                      final description = stripHtmlText(p.description);
-                      final distanceLabel = origin == null
-                          ? null
-                          : _distanceLabel(origin, p);
-                      return ListTile(
-                        leading: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: p.imageUrl.isEmpty
-                              ? const SizedBox(
-                                  width: 52,
-                                  child: Icon(Icons.place),
-                                )
-                              : mediaNetworkImage(
-                                  p.imageUrl,
-                                  width: 52,
-                                  height: 52,
-                                  fit: BoxFit.cover,
-                                ),
-                        ),
-                        title: Text(
-                          p.title,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (p.province.isNotEmpty)
-                              Container(
-                                margin: const EdgeInsets.only(bottom: 4),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xffffe7a0),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  p.province,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xff986b00),
-                                  ),
-                                ),
+                  Expanded(
+                    child: filtered.isEmpty
+                        ? ListView(
+                            controller: controller,
+                            children: [
+                              const SizedBox(height: 60),
+                              Icon(
+                                Icons.search_off,
+                                size: 48,
+                                color: Colors.black26,
                               ),
-                            if (description.isNotEmpty)
+                              const SizedBox(height: 12),
                               Text(
-                                description,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                context.l10n.noResults,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.black38,
+                                  fontSize: 15,
+                                ),
                               ),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (distanceLabel != null)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 3,
+                            ],
+                          )
+                        : ListView.builder(
+                            controller: controller,
+                            itemCount: filtered.length,
+                            itemBuilder: (_, i) {
+                              final p = filtered[i];
+                              final description = stripHtmlText(p.description);
+                              final distanceLabel = origin == null
+                                  ? null
+                                  : _distanceLabel(origin, p);
+                              return ListTile(
+                                leading: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: p.imageUrl.isEmpty
+                                      ? const SizedBox(
+                                          width: 52,
+                                          child: Icon(Icons.place),
+                                        )
+                                      : mediaNetworkImage(
+                                          p.imageUrl,
+                                          width: 52,
+                                          height: 52,
+                                          fit: BoxFit.cover,
+                                        ),
                                 ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xfff4f0e8),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  distanceLabel,
+                                title: Text(
+                                  p.title,
                                   style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black54,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
-                              ),
-                            const SizedBox(width: 6),
-                            const Icon(Icons.add_circle, color: _gold),
-                          ],
-                        ),
-                        onTap: () {
-                          if (!_mustVisit.any((x) => x.id == p.id)) {
-                            if (_mustVisit.length >=
-                                _PlanScreenState._maxMustVisitPlaces) {
-                              Navigator.pop(sheetContext);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    context.l10n.mustVisitLimitReached,
-                                  ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (p.province.isNotEmpty)
+                                      Container(
+                                        margin: const EdgeInsets.only(
+                                          bottom: 4,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xffffe7a0),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          p.province,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xff986b00),
+                                          ),
+                                        ),
+                                      ),
+                                    if (description.isNotEmpty)
+                                      Text(
+                                        description,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                  ],
                                 ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (distanceLabel != null)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xfff4f0e8),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          distanceLabel,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+                                      ),
+                                    const SizedBox(width: 6),
+                                    GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () {
+                                        if (!_mustVisit.any(
+                                          (x) => x.id == p.id,
+                                        )) {
+                                          if (_mustVisit.length >=
+                                              _PlanScreenState
+                                                  ._maxMustVisitPlaces) {
+                                            Navigator.pop(sheetContext);
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  context
+                                                      .l10n
+                                                      .mustVisitLimitReached,
+                                                ),
+                                              ),
+                                            );
+                                            return;
+                                          }
+                                          _mustVisit.add(p);
+                                        }
+                                        Navigator.pop(sheetContext);
+                                        if (_plan != null) {
+                                          _addStopToSelectedDay(p);
+                                        } else if (mounted) {
+                                          _updateState(() {});
+                                        }
+                                      },
+                                      child: const Icon(
+                                        Icons.add_circle,
+                                        color: _gold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                onTap: () {
+                                  final detailId = int.tryParse(p.id);
+                                  if (detailId == null) return;
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => DestinationDetailScreen(
+                                        destinationId: detailId,
+                                        fallbackName: p.title,
+                                        fallbackImageUrl: p.imageUrl,
+                                      ),
+                                    ),
+                                  );
+                                },
                               );
-                              return;
-                            }
-                            _mustVisit.add(p);
-                          }
-                          Navigator.pop(sheetContext);
-                          if (_plan != null) {
-                            _addStopToSelectedDay(p);
-                          } else if (mounted) {
-                            _updateState(() {});
-                          }
-                        },
-                      );
-                    },
+                            },
+                          ),
                   ),
-                ),
-              ],
-            ),
-          );
-        },
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

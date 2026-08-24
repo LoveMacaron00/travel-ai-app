@@ -7,6 +7,7 @@ import 'package:myapp/config/app_config.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/model/place_marker.dart';
 import 'package:myapp/model/travel_plan.dart';
+import 'package:myapp/screen/destination_detail_screen.dart';
 import 'package:myapp/screen/plan_navigation_screen.dart';
 import 'package:myapp/services/app_services.dart';
 import 'package:myapp/services/location_service.dart';
