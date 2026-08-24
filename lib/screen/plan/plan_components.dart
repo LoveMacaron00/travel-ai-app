@@ -264,15 +264,30 @@ extension _PlanComponents on _PlanScreenState {
       backgroundColor: _canvas,
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheet) {
-          final filtered = _places
+          final origin = _position;
+          final queryLower = query.toLowerCase();
+          final matches = _places
               .where(
                 (p) =>
                     query.isEmpty ||
-                    p.title.toLowerCase().contains(query.toLowerCase()) ||
-                    p.province.toLowerCase().contains(query.toLowerCase()),
+                    p.title.toLowerCase().contains(queryLower) ||
+                    p.province.toLowerCase().contains(queryLower),
               )
-              .take(30)
               .toList();
+          if (origin != null) {
+            matches.sort(
+              (a, b) => const Distance()
+                  .as(LengthUnit.Kilometer, origin, LatLng(a.latitude, a.longitude))
+                  .compareTo(
+                    const Distance().as(
+                      LengthUnit.Kilometer,
+                      origin,
+                      LatLng(b.latitude, b.longitude),
+                    ),
+                  ),
+            );
+          }
+          final filtered = matches.take(30).toList();
           return DraggableScrollableSheet(
             expand: false,
             initialChildSize: .78,
@@ -320,6 +335,9 @@ extension _PlanComponents on _PlanScreenState {
                     itemBuilder: (_, i) {
                       final p = filtered[i];
                       final description = stripHtmlText(p.description);
+                      final distanceLabel = origin == null
+                          ? null
+                          : _distanceLabel(origin, p);
                       return ListTile(
                         leading: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
@@ -370,7 +388,32 @@ extension _PlanComponents on _PlanScreenState {
                               ),
                           ],
                         ),
-                        trailing: const Icon(Icons.add_circle, color: _gold),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (distanceLabel != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xfff4f0e8),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  distanceLabel,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(width: 6),
+                            const Icon(Icons.add_circle, color: _gold),
+                          ],
+                        ),
                         onTap: () {
                           if (!_mustVisit.any((x) => x.id == p.id)) {
                             if (_mustVisit.length >=
@@ -404,6 +447,15 @@ extension _PlanComponents on _PlanScreenState {
         },
       ),
     );
+  }
+
+  String _distanceLabel(LatLng origin, PlaceMarker place) {
+    final meters = const Distance().distance(
+      origin,
+      LatLng(place.latitude, place.longitude),
+    );
+    if (meters < 1000) return '${meters.round()} m';
+    return '${(meters / 1000).toStringAsFixed(1)} km';
   }
 
   InputDecoration _inputDecoration(String? label, IconData icon) =>
