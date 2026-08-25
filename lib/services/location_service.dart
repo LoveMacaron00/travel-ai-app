@@ -19,6 +19,19 @@ class LocationService extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  // เกลี่ยตำแหน่งด้วยค่าเฉลี่ยถ่วงน้ำหนัก (exponential smoothing) เพื่อลดอาการ
+  // ระยะทางบนหน้าจอเด้ง/ไม่ตรงกันระหว่างหน้า จากความคลาดเคลื่อนรายครั้งของ GPS
+  // fix แรกใช้ค่าดิบทันที หลังจากนั้นผสมกับค่าเดิม 50/50 ต่อการอัปเดตแต่ละครั้ง
+  LatLng _smoothPosition(LatLng raw) {
+    final current = _currentPosition;
+    if (current == null) return raw;
+    const alpha = 0.5;
+    return LatLng(
+      current.latitude + (raw.latitude - current.latitude) * alpha,
+      current.longitude + (raw.longitude - current.longitude) * alpha,
+    );
+  }
+
   Future<LatLng?> refresh({bool openSettingsWhenDenied = false}) async {
     if (_isLoading) return _currentPosition;
     _isLoading = true;
@@ -77,7 +90,7 @@ class LocationService extends ChangeNotifier {
         if (_currentPosition != null) return _currentPosition;
         throw Exception('Unable to get current location: $lastError');
       }
-      _currentPosition = LatLng(position.latitude, position.longitude);
+      _currentPosition = _smoothPosition(LatLng(position.latitude, position.longitude));
       notifyListeners();
       return _currentPosition;
     } catch (e) {
@@ -104,7 +117,9 @@ class LocationService extends ChangeNotifier {
           ),
         ).listen(
           (position) {
-            _currentPosition = LatLng(position.latitude, position.longitude);
+            _currentPosition = _smoothPosition(
+              LatLng(position.latitude, position.longitude),
+            );
             _error = null;
             notifyListeners();
           },
