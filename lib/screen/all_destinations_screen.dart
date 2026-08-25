@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/screen/destination_detail_screen.dart';
 import 'package:myapp/services/app_services.dart';
+import 'package:myapp/services/location_service.dart';
 import 'package:myapp/widgets/media_image.dart';
 
 class AllDestinationsScreen extends StatefulWidget {
@@ -18,12 +20,23 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
   late String _loadedLanguage;
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
+  LatLng? _position;
 
   @override
   void initState() {
     super.initState();
     _loadedLanguage = AppServices.locale.languageCode;
+    _position = LocationService.instance.currentPosition;
+    LocationService.instance.addListener(_onLocationChanged);
+    if (_position == null) {
+      LocationService.instance.refresh(openSettingsWhenDenied: false);
+    }
     _destinationsFuture = _loadDestinations();
+  }
+
+  void _onLocationChanged() {
+    if (!mounted) return;
+    setState(() => _position = LocationService.instance.currentPosition);
   }
 
   @override
@@ -56,8 +69,26 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
 
   @override
   void dispose() {
+    LocationService.instance.removeListener(_onLocationChanged);
     _searchController.dispose();
     super.dispose();
+  }
+
+  double _distanceKm(Map<String, dynamic> dest) {
+    final origin = _position;
+    if (origin == null) return double.infinity;
+    final lat = double.tryParse('${dest['latitude']}');
+    final lng = double.tryParse('${dest['longitude']}');
+    if (lat == null || lng == null) return double.infinity;
+    return const Distance().as(LengthUnit.Kilometer, origin, LatLng(lat, lng));
+  }
+
+  String? _distanceLabel(Map<String, dynamic> dest) {
+    if (_position == null) return null;
+    final km = _distanceKm(dest);
+    if (km == double.infinity) return null;
+    if (km < 1) return '${(km * 1000).round()} m';
+    return '${km.toStringAsFixed(1)} km';
   }
 
   @override
@@ -128,7 +159,9 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
                     title: l10n.noDestinationsYet,
                   );
                 }
-                final matches = destinations.where(_matchesSearch).toList();
+                final matches =
+                    destinations.where(_matchesSearch).toList()
+                      ..sort((a, b) => _distanceKm(a).compareTo(_distanceKm(b)));
                 if (matches.isEmpty) {
                   return _message(
                     icon: Icons.search_off_rounded,
@@ -211,25 +244,69 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
                   ),
                 ),
               ),
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  width: 92,
-                  height: 92,
-                  child: mediaNetworkImage(
-                    image,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: const Color(0xffeee8df),
-                      child: const Icon(Icons.image_outlined),
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              children: [
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: SizedBox(
+                        width: 92,
+                        height: 92,
+                        child: mediaNetworkImage(
+                          image,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: const Color(0xffeee8df),
+                            child: const Icon(Icons.image_outlined),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    Positioned(
+                      left: 0,
+                      bottom: 0,
+                      child: Builder(
+                        builder: (_) {
+                          final distance = _distanceLabel(destination);
+                          if (distance == null) return const SizedBox.shrink();
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.55),
+                              borderRadius: const BorderRadius.only(
+                                topRight: Radius.circular(10),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.near_me,
+                                  color: Colors.white,
+                                  size: 11,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  distance,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
