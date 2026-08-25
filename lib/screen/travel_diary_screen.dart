@@ -319,10 +319,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
                   children: [
                     _entryHeader(entry),
                     const SizedBox(height: 10),
-                    GestureDetector(
-                      onLongPress: () => _deleteEntry(entry),
-                      child: _entryCard(entry),
-                    ),
+                    _entryCard(entry),
                   ],
                 ),
               ),
@@ -380,9 +377,32 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
         ),
       ),
       const SizedBox(width: 8),
-      Text(
-        _formatTime(entry.date),
-        style: const TextStyle(color: Colors.black45, fontSize: 13),
+      Padding(
+        padding: const EdgeInsets.only(top: 2),
+        child: Text(
+          _formatTime(entry.date),
+          style: const TextStyle(color: Colors.black45, fontSize: 13),
+        ),
+      ),
+      SizedBox(
+        width: 32,
+        height: 24,
+        child: PopupMenuButton<String>(
+          padding: EdgeInsets.zero,
+          icon: const Icon(Icons.more_vert, size: 18, color: Colors.black45),
+          onSelected: (val) {
+            if (val == 'delete') _deleteEntry(entry);
+          },
+          itemBuilder: (_) => [
+            PopupMenuItem(
+              value: 'delete',
+              child: Text(
+                context.l10n.deleteMemory,
+                style: const TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        ),
       ),
     ],
   );

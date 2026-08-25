@@ -65,6 +65,33 @@ class TripService {
     }
   }
 
+  /// ดึงประวัติแผนเที่ยวที่ผู้ใช้เคยสร้าง (GET /trips)
+  Future<Map<String, dynamic>> listMyPlans() async {
+    try {
+      final response = await _client.get('/trips');
+      if (response.statusCode != 200) {
+        return {'success': false, 'message': 'Unable to load saved plans'};
+      }
+      final decoded = jsonDecode(response.body);
+      return {'success': true, 'data': decoded is List ? decoded : const []};
+    } catch (error) {
+      return {'success': false, 'message': 'Network error: $error'};
+    }
+  }
+
+  /// ลบประวัติแผนเที่ยว (DELETE /trips/:id)
+  Future<Map<String, dynamic>> deletePlan(int tripId) async {
+    try {
+      final response = await _client.delete('/trips/$tripId');
+      if (response.statusCode != 200) {
+        return {'success': false, 'message': 'Unable to delete plan'};
+      }
+      return {'success': true};
+    } catch (error) {
+      return {'success': false, 'message': 'Network error: $error'};
+    }
+  }
+
   Future<List<List<double>>> getRoadRoute({
     required double fromLat,
     required double fromLng,

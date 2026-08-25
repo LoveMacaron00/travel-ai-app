@@ -821,4 +821,22 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get noResults => 'ไม่พบผลลัพธ์';
+
+  @override
+  String get savedPlans => 'แผนที่บันทึกไว้';
+
+  @override
+  String get noSavedPlans => 'ยังไม่มีแผนที่บันทึกไว้';
+
+  @override
+  String planDaysCount(int count) {
+    return '$count วัน';
+  }
+
+  @override
+  String get deletePlan => 'ลบแผนที่บันทึกไว้';
+
+  @override
+  String get deletePlanConfirmation =>
+      'คุณแน่ใจหรือไม่ว่าต้องการลบแผนที่บันทึกไว้นี้?';
 }

@@ -1,17 +1,20 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/services/app_services.dart';
 import 'package:myapp/widgets/media_image.dart';
 import 'package:myapp/screen/welcome_screen.dart';
 import 'package:myapp/screen/account_settings_screen.dart';
 import 'package:myapp/screen/travel_footprint_screen.dart';
+import 'package:myapp/screen/plan_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final VoidCallback onBackTap;
+  final void Function(int tripId)? onViewPlan;
 
-  const ProfileScreen({super.key, required this.onBackTap});
+  const ProfileScreen({super.key, required this.onBackTap, this.onViewPlan});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -22,11 +25,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _username = '';
   List<String> _interests = [];
   String _profileImageUrl = '';
+  
+  bool _loadingPlans = false;
+  List<Map<String, dynamic>> _savedPlans = [];
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadSavedPlans();
+  }
+
+  Future<void> _loadSavedPlans() async {
+    if (mounted) setState(() => _loadingPlans = true);
+    final result = await AppServices.trips.listMyPlans();
+    if (!mounted) return;
+    
+    if (result['success'] == true) {
+      final allPlans = List<Map<String, dynamic>>.from(result['data'] ?? []);
+      // Filter out trips that don't have plan_data (e.g. generation failed or incomplete)
+      setState(() {
+        _savedPlans = allPlans.where((plan) => plan['plan_data'] != null).toList();
+        _loadingPlans = false;
+      });
+    } else {
+      setState(() => _loadingPlans = false);
+    }
   }
 
   void _loadUserData() {
@@ -253,6 +277,121 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _deletePlan(int tripId, AppLocalizations l10n) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(l10n.deletePlan),
+          content: Text(l10n.deletePlanConfirmation),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: Text(l10n.deletePlan),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
+    if (mounted) setState(() => _loadingPlans = true);
+    final result = await AppServices.trips.deletePlan(tripId);
+    if (result['success'] == true) {
+      _loadSavedPlans();
+    } else {
+      if (mounted) {
+        setState(() => _loadingPlans = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Failed to delete plan'),
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _savedPlanCard(Map<String, dynamic> plan, AppLocalizations l10n, Color brandGold) {
+    final int id = plan['id'];
+    final String destination = plan['destination'] ?? 'Unknown';
+    final String province = plan['province'] ?? '';
+    final int days = plan['days'] ?? 1;
+    final String title = province.isNotEmpty && destination != province 
+        ? '$destination, $province' 
+        : destination;
+        
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        leading: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: brandGold.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(Icons.map_outlined, color: brandGold),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            l10n.planDaysCount(days),
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+        ),
+        trailing: PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, color: Colors.grey),
+          onSelected: (value) {
+            if (value == 'delete') {
+              _deletePlan(id, l10n);
+            }
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'delete',
+              child: Text(l10n.deletePlan, style: const TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+        onTap: () {
+          if (widget.onViewPlan != null) {
+            widget.onViewPlan!(id);
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => PlanScreen(initialTripId: id)),
+            ).then((_) => _loadSavedPlans());
+          }
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const Color brandGold = Color(0xFFF4C025);
@@ -445,6 +584,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
+            ),
+            const Divider(height: 40, thickness: 1),
+
+            // Saved Plans Section
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      l10n.savedPlans,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    if (_loadingPlans)
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: brandGold,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (!_loadingPlans && _savedPlans.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      l10n.noSavedPlans,
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 13,
+                      ),
+                    ),
+                  )
+                else
+        ..._savedPlans.map((plan) => _savedPlanCard(plan, l10n, brandGold)),
+              ],
             ),
             const Divider(height: 40, thickness: 1),
 

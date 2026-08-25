@@ -1639,6 +1639,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No results found'**
   String get noResults;
+
+  /// No description provided for @savedPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved plans'**
+  String get savedPlans;
+
+  /// No description provided for @noSavedPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved plans yet'**
+  String get noSavedPlans;
+
+  /// No description provided for @planDaysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days'**
+  String planDaysCount(int count);
+
+  /// No description provided for @deletePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Plan'**
+  String get deletePlan;
+
+  /// No description provided for @deletePlanConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this plan?'**
+  String get deletePlanConfirmation;
 }
 
 class _AppLocalizationsDelegate

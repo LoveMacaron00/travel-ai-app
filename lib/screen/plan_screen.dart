@@ -33,7 +33,11 @@ class _PlanRouteLeg {
 
 /// สร้างและแสดงแผนเที่ยวจาก AI ก่อนส่งจุดแวะไปยังหน้าจอนำทาง
 class PlanScreen extends StatefulWidget {
-  const PlanScreen({super.key});
+  const PlanScreen({super.key, this.initialTripId});
+
+  /// เปิดด้วยแผนที่บันทึกไว้แล้ว (โหลดจาก GET /trips/:id)
+  final int? initialTripId;
+
   @override
   State<PlanScreen> createState() => _PlanScreenState();
 }
@@ -63,6 +67,7 @@ class _PlanScreenState extends State<PlanScreen> {
   bool _locating = false;
   bool _loadingProvinces = false;
   bool _generating = false;
+  bool _loadingExistingPlan = false;
   String? _error;
   TravelPlan? _plan;
   List<PlaceMarker> _places = [];
@@ -113,6 +118,38 @@ class _PlanScreenState extends State<PlanScreen> {
     _loadProvinces();
     _loadPlanOptions();
     if (_position == null) _getLocation();
+    if (widget.initialTripId != null) {
+      _loadExistingPlan(widget.initialTripId!);
+    }
+  }
+
+  Future<void> _loadExistingPlan(int tripId) async {
+    setState(() {
+      _loadingExistingPlan = true;
+      _error = null;
+    });
+    
+    final result = await AppServices.trips.getTravelPlan(tripId);
+    if (!mounted) return;
+    
+    if (result['success'] == true) {
+      final trip = Map<String, dynamic>.from(result['data']);
+      final raw = Map<String, dynamic>.from(trip['plan_data'] as Map? ?? {});
+      final plan = TravelPlan.fromJson(raw, tripId: tripId);
+      
+      setState(() {
+        _plan = plan;
+        _selectedDayIndex = 0;
+        _route = [];
+        _loadingExistingPlan = false;
+      });
+      await _buildRoute(plan);
+    } else {
+      setState(() {
+        _loadingExistingPlan = false;
+        _error = '${result['message'] ?? context.l10n.couldNotCreatePlan}';
+      });
+    }
   }
 
   Future<void> _loadPlanOptions() async {
@@ -548,6 +585,11 @@ class _PlanScreenState extends State<PlanScreen> {
   }
 
   void _reset() {
+    if (widget.initialTripId != null && Navigator.canPop(context)) {
+      Navigator.pop(context);
+      return;
+    }
+    
     _routeRequestId++;
     setState(() {
       _dates = null;

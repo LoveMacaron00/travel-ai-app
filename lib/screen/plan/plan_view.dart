@@ -7,7 +7,9 @@ extension _PlanMainView on _PlanScreenState {
     body: SafeArea(
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 350),
-        child: _plan == null ? _buildForm() : _buildResult(_plan!),
+        child: _loadingExistingPlan 
+            ? const Center(child: CircularProgressIndicator(color: _gold))
+            : _plan == null ? _buildForm() : _buildResult(_plan!),
       ),
     ),
   );
@@ -59,7 +61,11 @@ extension _PlanMainView on _PlanScreenState {
     padding: const EdgeInsets.only(bottom: 28),
     child: Column(
       children: [
-        _header(context.l10n.aiPlanTravel, context.l10n.buildYourTrip),
+        _header(
+          context.l10n.aiPlanTravel,
+          context.l10n.buildYourTrip,
+          back: Navigator.canPop(context) ? () => Navigator.pop(context) : null,
+        ),
         _hero(),
         _section(
           number: 1,

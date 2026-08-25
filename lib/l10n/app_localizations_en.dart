@@ -834,4 +834,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noResults => 'No results found';
+
+  @override
+  String get savedPlans => 'Saved plans';
+
+  @override
+  String get noSavedPlans => 'No saved plans yet';
+
+  @override
+  String planDaysCount(int count) {
+    return '$count days';
+  }
+
+  @override
+  String get deletePlan => 'Delete Plan';
+
+  @override
+  String get deletePlanConfirmation =>
+      'Are you sure you want to delete this plan?';
 }

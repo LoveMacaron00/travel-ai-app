@@ -50,6 +50,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     super.dispose();
   }
 
+  void _viewPlan(int tripId) {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    setState(() {
+      _showingDiary = false;
+      _selectedIndex = 2;
+      _screens[2] = PlanScreen(
+        key: ValueKey('plan_$tripId'),
+        initialTripId: tripId,
+      );
+    });
+  }
+
   Widget _createScreen(int index) {
     // สร้างหน้าจอเมื่อเปิดแท็บครั้งแรก เพื่อลดงานตอนเริ่มแอป
     switch (index) {
@@ -65,7 +77,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       case 2:
         return const PlanScreen();
       case 3:
-        return ProfileScreen(onBackTap: () => _selectTab(0));
+        return ProfileScreen(
+          onBackTap: () => _selectTab(0),
+          onViewPlan: _viewPlan,
+        );
       default:
         return const SizedBox.shrink();
     }

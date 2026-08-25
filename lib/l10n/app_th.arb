@@ -307,5 +307,13 @@
   "@viewsCount": {
     "placeholders": {"count": {"type": "String"}}
   },
-  "noResults": "ไม่พบผลลัพธ์"
+  "noResults": "ไม่พบผลลัพธ์",
+  "savedPlans": "แผนที่บันทึกไว้",
+  "noSavedPlans": "ยังไม่มีแผนที่บันทึกไว้",
+  "planDaysCount": "{count} วัน",
+  "@planDaysCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "deletePlan": "ลบแผนที่บันทึกไว้",
+  "deletePlanConfirmation": "คุณแน่ใจหรือไม่ว่าต้องการลบแผนที่บันทึกไว้นี้?"
 }
