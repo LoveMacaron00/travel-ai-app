@@ -869,4 +869,46 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get autoDiaryDisabled => 'ปิดไดอารี่อัตโนมัติแล้ว';
+
+  @override
+  String get selectLocation => 'เลือกตำแหน่ง';
+
+  @override
+  String get selectLocationOnMap => 'แตะเพื่อเลือกตำแหน่งบนแผนที่';
+
+  @override
+  String get selectedLocation => 'เลือกแล้ว';
+
+  @override
+  String get latitude => 'ละติจูด';
+
+  @override
+  String get longitude => 'ลองจิจูด';
+
+  @override
+  String get confirmLocation => 'ยืนยันตำแหน่ง';
+
+  @override
+  String get currentLocation => 'ตำแหน่งปัจจุบัน';
+
+  @override
+  String get send => 'ส่ง';
+
+  @override
+  String get sendFeedback => 'ส่งความคิดเห็น';
+
+  @override
+  String get sendFeedbackSubtitle => 'แบ่งปันความคิดเห็นเพื่อช่วยพัฒนาแอป';
+
+  @override
+  String get feedbackHint => 'บอกเราว่าคิดอย่างไรกับแอป...';
+
+  @override
+  String get feedbackRequired => 'กรุณากรอกความคิดเห็น';
+
+  @override
+  String get feedbackFailed => 'ไม่สามารถส่งความคิดเห็นได้';
+
+  @override
+  String get feedbackSuccess => 'ขอบคุณสำหรับความคิดเห็น!';
 }

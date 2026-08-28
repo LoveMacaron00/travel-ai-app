@@ -4,9 +4,11 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/model/travel_diary_entry.dart';
 import 'package:myapp/screen/chatbot_screen.dart';
+import 'package:myapp/screen/map_picker_screen.dart';
 import 'package:myapp/services/app_services.dart';
 import 'package:myapp/services/image_upload.dart';
 import 'package:myapp/services/location_service.dart';
@@ -129,6 +131,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     final provinceCtrl = TextEditingController();
     final noteCtrl = TextEditingController();
     XFile? pickedImage;
+    LatLng? selectedLocation;
 
     final saved = await showModalBottomSheet<bool>(
       context: context,
@@ -328,6 +331,71 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
                     ),
                   ),
                   const SizedBox(height: 14),
+                  InkWell(
+                    onTap: () async {
+                      final result = await Navigator.push<LatLng>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => MapPickerScreen(
+                            initialLocation: selectedLocation,
+                          ),
+                        ),
+                      );
+                      if (result != null) {
+                        setSheetState(() => selectedLocation = result);
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 18,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: selectedLocation != null
+                              ? const Color(0xfff4b400)
+                              : Colors.grey,
+                          width: selectedLocation != null ? 2 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        color: selectedLocation != null
+                            ? const Color(0xffffefbd)
+                            : Colors.white,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.map_outlined,
+                            color: selectedLocation != null
+                                ? const Color(0xfff4b400)
+                                : Colors.grey,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              selectedLocation != null
+                                  ? '${context.l10n.selectedLocation}: ${selectedLocation!.latitude.toStringAsFixed(4)}, ${selectedLocation!.longitude.toStringAsFixed(4)}'
+                                  : context.l10n.selectLocationOnMap,
+                              style: TextStyle(
+                                color: selectedLocation != null
+                                    ? Colors.black87
+                                    : Colors.grey,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            color: selectedLocation != null
+                                ? const Color(0xfff4b400)
+                                : Colors.grey,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
                   TextField(
                     controller: noteCtrl,
                     minLines: 3,
@@ -401,8 +469,8 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       note: note,
       province: province,
       imageUrls: uploadedUrl != null ? [uploadedUrl] : const [],
-      latitude: position?.latitude,
-      longitude: position?.longitude,
+      latitude: selectedLocation?.latitude ?? position?.latitude,
+      longitude: selectedLocation?.longitude ?? position?.longitude,
       source: 'manual',
     );
     final ok = await _diary.upsert(entry);

@@ -5,6 +5,7 @@ import 'package:myapp/screen/profile_screen.dart';
 import 'package:myapp/screen/map_screen.dart';
 import 'package:myapp/screen/plan_screen.dart';
 import 'package:myapp/screen/travel_diary_screen.dart';
+import 'package:myapp/screen/feedback_history_screen.dart';
 import 'package:myapp/services/location_service.dart';
 import 'package:myapp/services/app_services.dart';
 
@@ -20,6 +21,7 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
   bool _showingDiary = false;
+  bool _showingFeedback = false;
   late final List<Widget?> _screens;
   final GlobalKey<MapScreenState> _mapScreenKey = GlobalKey<MapScreenState>();
 
@@ -54,6 +56,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     Navigator.of(context).popUntil((route) => route.isFirst);
     setState(() {
       _showingDiary = false;
+      _showingFeedback = false;
       _selectedIndex = 2;
       _screens[2] = PlanScreen(
         key: ValueKey('plan_$tripId'),
@@ -80,6 +83,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         return ProfileScreen(
           onBackTap: () => _selectTab(0),
           onViewPlan: _viewPlan,
+          onFeedbackTap: _showFeedback,
         );
       default:
         return const SizedBox.shrink();
@@ -89,13 +93,24 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void _selectTab(int index) {
     setState(() {
       _showingDiary = false;
+      _showingFeedback = false;
       _screens[index] ??= _createScreen(index);
       _selectedIndex = index;
     });
   }
 
   void _showDiary() {
-    setState(() => _showingDiary = true);
+    setState(() {
+      _showingFeedback = false;
+      _showingDiary = true;
+    });
+  }
+
+  void _showFeedback() {
+    setState(() {
+      _showingDiary = false;
+      _showingFeedback = true;
+    });
   }
 
   void _onItemTapped(int index) {
@@ -118,9 +133,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final l10n = context.l10n;
 
     return PopScope(
-      canPop: !_showingDiary,
+      canPop: !_showingDiary && !_showingFeedback,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && _showingDiary) {
+        if (didPop) return;
+        if (_showingFeedback) {
+          setState(() => _showingFeedback = false);
+        } else if (_showingDiary) {
           setState(() => _showingDiary = false);
         }
       },
@@ -128,6 +146,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         body: _showingDiary
             ? TravelDiaryScreen(
                 onBack: () => setState(() => _showingDiary = false),
+              )
+            : _showingFeedback
+            ? FeedbackHistoryScreen(
+                onBack: () => setState(() => _showingFeedback = false),
               )
             : IndexedStack(
                 index: _selectedIndex,

@@ -325,5 +325,19 @@
   "autoDiary": "Auto Diary",
   "autoDiarySubtitle": "Automatically record places you visit via GPS",
   "autoDiaryEnabled": "Auto Diary is on",
-  "autoDiaryDisabled": "Auto Diary is off"
+  "autoDiaryDisabled": "Auto Diary is off",
+  "selectLocation": "Select Location",
+  "selectLocationOnMap": "Tap to select location on map",
+  "selectedLocation": "Selected",
+  "latitude": "Latitude",
+  "longitude": "Longitude",
+  "confirmLocation": "Confirm Location",
+  "currentLocation": "Current Location",
+  "send": "Send",
+  "sendFeedback": "Send Feedback",
+  "sendFeedbackSubtitle": "Share your thoughts and help us improve",
+  "feedbackHint": "Tell us what you think about the app...",
+  "feedbackRequired": "Please enter your feedback",
+  "feedbackFailed": "Failed to send feedback",
+  "feedbackSuccess": "Thank you for your feedback!"
 }

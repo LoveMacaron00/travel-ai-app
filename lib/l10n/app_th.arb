@@ -325,5 +325,19 @@
   "autoDiary": "ไดอารี่อัตโนมัติ",
   "autoDiarySubtitle": "บันทึกสถานที่ที่คุณไปอัตโนมัติผ่าน GPS",
   "autoDiaryEnabled": "เปิดไดอารี่อัตโนมัติแล้ว",
-  "autoDiaryDisabled": "ปิดไดอารี่อัตโนมัติแล้ว"
+  "autoDiaryDisabled": "ปิดไดอารี่อัตโนมัติแล้ว",
+  "selectLocation": "เลือกตำแหน่ง",
+  "selectLocationOnMap": "แตะเพื่อเลือกตำแหน่งบนแผนที่",
+  "selectedLocation": "เลือกแล้ว",
+  "latitude": "ละติจูด",
+  "longitude": "ลองจิจูด",
+  "confirmLocation": "ยืนยันตำแหน่ง",
+  "currentLocation": "ตำแหน่งปัจจุบัน",
+  "send": "ส่ง",
+  "sendFeedback": "ส่งความคิดเห็น",
+  "sendFeedbackSubtitle": "แบ่งปันความคิดเห็นเพื่อช่วยพัฒนาแอป",
+  "feedbackHint": "บอกเราว่าคิดอย่างไรกับแอป...",
+  "feedbackRequired": "กรุณากรอกความคิดเห็น",
+  "feedbackFailed": "ไม่สามารถส่งความคิดเห็นได้",
+  "feedbackSuccess": "ขอบคุณสำหรับความคิดเห็น!"
 }

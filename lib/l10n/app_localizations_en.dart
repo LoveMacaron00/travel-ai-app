@@ -883,4 +883,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get autoDiaryDisabled => 'Auto Diary is off';
+
+  @override
+  String get selectLocation => 'Select Location';
+
+  @override
+  String get selectLocationOnMap => 'Tap to select location on map';
+
+  @override
+  String get selectedLocation => 'Selected';
+
+  @override
+  String get latitude => 'Latitude';
+
+  @override
+  String get longitude => 'Longitude';
+
+  @override
+  String get confirmLocation => 'Confirm Location';
+
+  @override
+  String get currentLocation => 'Current Location';
+
+  @override
+  String get send => 'Send';
+
+  @override
+  String get sendFeedback => 'Send Feedback';
+
+  @override
+  String get sendFeedbackSubtitle => 'Share your thoughts and help us improve';
+
+  @override
+  String get feedbackHint => 'Tell us what you think about the app...';
+
+  @override
+  String get feedbackRequired => 'Please enter your feedback';
+
+  @override
+  String get feedbackFailed => 'Failed to send feedback';
+
+  @override
+  String get feedbackSuccess => 'Thank you for your feedback!';
 }
