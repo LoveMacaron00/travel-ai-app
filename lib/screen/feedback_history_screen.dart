@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/services/app_services.dart';
+import 'package:myapp/widgets/feedback_dialog.dart';
 
 class FeedbackHistoryScreen extends StatefulWidget {
   const FeedbackHistoryScreen({super.key, this.onBack});
@@ -50,84 +51,7 @@ class _FeedbackHistoryScreenState extends State<FeedbackHistoryScreen> {
   }
 
   Future<void> _showFeedbackDialog() async {
-    final feedbackController = TextEditingController();
-    final isSubmitting = ValueNotifier<bool>(false);
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(context.l10n.sendFeedback),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: feedbackController,
-                maxLines: 5,
-                minLines: 3,
-                decoration: InputDecoration(
-                  hintText: context.l10n.feedbackHint,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(context.l10n.cancel),
-            ),
-            ValueListenableBuilder<bool>(
-              valueListenable: isSubmitting,
-              builder: (context, submitting, child) {
-                return ElevatedButton(
-                  onPressed: submitting
-                      ? null
-                      : () async {
-                          if (feedbackController.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(dialogContext).showSnackBar(
-                              SnackBar(content: Text(context.l10n.feedbackRequired)),
-                            );
-                            return;
-                          }
-
-                          isSubmitting.value = true;
-                          final result = await AppServices.feedback.submitFeedback(
-                            message: feedbackController.text.trim(),
-                          );
-
-                          if (dialogContext.mounted) {
-                            isSubmitting.value = false;
-                            if (result['success'] == true) {
-                              Navigator.pop(dialogContext, true);
-                            } else {
-                              ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    result['message'] ?? context.l10n.feedbackFailed,
-                                  ),
-                                ),
-                              );
-                            }
-                          }
-                        },
-                  child: submitting
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(context.l10n.send),
-                );
-              },
-            ),
-          ],
-        );
-      },
-    );
-
+    final result = await showFeedbackDialog(context);
     if (result == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.feedbackSuccess)),

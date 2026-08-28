@@ -291,92 +291,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _showFeedbackDialog() async {
-    final feedbackController = TextEditingController();
-    final isSubmitting = ValueNotifier<bool>(false);
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(context.l10n.sendFeedback),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: feedbackController,
-                maxLines: 5,
-                minLines: 3,
-                decoration: InputDecoration(
-                  hintText: context.l10n.feedbackHint,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(context.l10n.cancel),
-            ),
-            ValueListenableBuilder<bool>(
-              valueListenable: isSubmitting,
-              builder: (context, submitting, child) {
-                return ElevatedButton(
-                  onPressed: submitting
-                      ? null
-                      : () async {
-                          if (feedbackController.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(dialogContext).showSnackBar(
-                              SnackBar(content: Text(context.l10n.feedbackRequired)),
-                            );
-                            return;
-                          }
-
-                          isSubmitting.value = true;
-                          final result = await AppServices.feedback.submitFeedback(
-                            message: feedbackController.text.trim(),
-                          );
-
-                          if (dialogContext.mounted) {
-                            isSubmitting.value = false;
-                            if (result['success'] == true) {
-                              Navigator.pop(dialogContext, true);
-                            } else {
-                              ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    result['message'] ?? context.l10n.feedbackFailed,
-                                  ),
-                                ),
-                              );
-                            }
-                          }
-                        },
-                  child: submitting
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(context.l10n.send),
-                );
-              },
-            ),
-          ],
-        );
-      },
-    );
-
-    if (result == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.feedbackSuccess)),
-      );
-    }
-  }
-
   Future<void> _deletePlan(int tripId, AppLocalizations l10n) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -824,65 +738,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     }
                   },
                 ),
+                // Feedback — plain like Account Settings / Language / Auto Diary (no yellow)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(
+                    Icons.feedback_outlined,
+                    color: Colors.black54,
+                  ),
+                  title: Text(l10n.sendFeedback),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () {
+                    if (widget.onFeedbackTap != null) {
+                      widget.onFeedbackTap!();
+                      return;
+                    }
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const FeedbackHistoryScreen(),
+                      ),
+                    );
+                  },
+                ),
               ],
-            ),
-            const SizedBox(height: 24),
-
-            // Feedback Section
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xfffff8e4),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                leading: Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: brandGold.withValues(alpha: 0.18),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.feedback_outlined, color: brandGold),
-                ),
-                title: Text(
-                  l10n.sendFeedback,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 3),
-                  child: Text(
-                    l10n.sendFeedbackSubtitle,
-                    style: const TextStyle(fontSize: 12, height: 1.3),
-                  ),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.add, color: brandGold, size: 20),
-                      onPressed: _showFeedbackDialog,
-                      tooltip: 'Send new feedback',
-                    ),
-                    const Icon(Icons.chevron_right, color: brandGold),
-                  ],
-                ),
-                onTap: () {
-                  if (widget.onFeedbackTap != null) {
-                    widget.onFeedbackTap!();
-                    return;
-                  }
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const FeedbackHistoryScreen(),
-                    ),
-                  );
-                },
-              ),
             ),
             const SizedBox(height: 40),
 
