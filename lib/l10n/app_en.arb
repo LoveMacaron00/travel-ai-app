@@ -339,5 +339,11 @@
   "feedbackHint": "Tell us what you think about the app...",
   "feedbackRequired": "Please enter your feedback",
   "feedbackFailed": "Failed to send feedback",
-  "feedbackSuccess": "Thank you for your feedback!"
+  "feedbackSuccess": "Thank you for your feedback!",
+  "noFeedbackYet": "No feedback yet",
+  "feedbackPending": "Pending",
+  "feedbackReplied": "Replied",
+  "yourFeedback": "Your feedback:",
+  "adminReply": "Admin reply:",
+  "feedbackHistory": "Feedback History"
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/services/app_services.dart';
 
@@ -37,11 +38,13 @@ class _FeedbackHistoryScreenState extends State<FeedbackHistoryScreen> {
     }
   }
 
-  String _formatDate(String dateString) {
+  String _formatDate(BuildContext context, String dateString) {
     try {
-      final date = DateTime.parse(dateString);
-      return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-    } catch (e) {
+      final date = DateTime.parse(dateString).toLocal();
+      final locale = Localizations.localeOf(context).languageCode;
+      // ใช้รูปแบบตาม locale: ไทย/อังกฤษ ใช้ d/M/yyyy HH:mm ให้อ่านง่ายและคงความสอดคล้องกับ travel_diary
+      return DateFormat('d/M/yyyy HH:mm', locale).format(date);
+    } catch (_) {
       return dateString;
     }
   }
@@ -147,7 +150,7 @@ class _FeedbackHistoryScreenState extends State<FeedbackHistoryScreen> {
           onPressed: widget.onBack ?? () => Navigator.maybePop(context),
         ),
         title: Text(
-          l10n.sendFeedback,
+          l10n.feedbackHistory,
           style: const TextStyle(
             color: Colors.black87,
             fontWeight: FontWeight.bold,
@@ -177,7 +180,7 @@ class _FeedbackHistoryScreenState extends State<FeedbackHistoryScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'No feedback yet',
+                        l10n.noFeedbackYet,
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey.shade600,
@@ -198,6 +201,7 @@ class _FeedbackHistoryScreenState extends State<FeedbackHistoryScreen> {
   }
 
   Widget _buildFeedbackCard(Map<String, dynamic> feedback) {
+    final l10n = context.l10n;
     final message = feedback['message'] ?? '';
     final adminReply = feedback['admin_reply'];
     final status = '${feedback['status'] ?? 'pending'}';
@@ -222,7 +226,7 @@ class _FeedbackHistoryScreenState extends State<FeedbackHistoryScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  _formatDate(createdAt),
+                  _formatDate(context, createdAt),
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade600,
@@ -240,7 +244,7 @@ class _FeedbackHistoryScreenState extends State<FeedbackHistoryScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    isReplied ? 'Replied' : 'Pending',
+                    isReplied ? l10n.feedbackReplied : l10n.feedbackPending,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -256,7 +260,7 @@ class _FeedbackHistoryScreenState extends State<FeedbackHistoryScreen> {
             
             // User message
             Text(
-              'Your feedback:',
+              l10n.yourFeedback,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -285,7 +289,7 @@ class _FeedbackHistoryScreenState extends State<FeedbackHistoryScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Admin reply:',
+                      l10n.adminReply,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,

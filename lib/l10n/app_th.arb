@@ -339,5 +339,11 @@
   "feedbackHint": "บอกเราว่าคิดอย่างไรกับแอป...",
   "feedbackRequired": "กรุณากรอกความคิดเห็น",
   "feedbackFailed": "ไม่สามารถส่งความคิดเห็นได้",
-  "feedbackSuccess": "ขอบคุณสำหรับความคิดเห็น!"
+  "feedbackSuccess": "ขอบคุณสำหรับความคิดเห็น!",
+  "noFeedbackYet": "ยังไม่มีความคิดเห็น",
+  "feedbackPending": "รอดำเนินการ",
+  "feedbackReplied": "ตอบกลับแล้ว",
+  "yourFeedback": "ความคิดเห็นของคุณ:",
+  "adminReply": "การตอบกลับจากแอดมิน:",
+  "feedbackHistory": "ประวัติความคิดเห็น"
 }

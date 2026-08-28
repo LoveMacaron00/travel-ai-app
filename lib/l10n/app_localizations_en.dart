@@ -925,4 +925,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedbackSuccess => 'Thank you for your feedback!';
+
+  @override
+  String get noFeedbackYet => 'No feedback yet';
+
+  @override
+  String get feedbackPending => 'Pending';
+
+  @override
+  String get feedbackReplied => 'Replied';
+
+  @override
+  String get yourFeedback => 'Your feedback:';
+
+  @override
+  String get adminReply => 'Admin reply:';
+
+  @override
+  String get feedbackHistory => 'Feedback History';
 }

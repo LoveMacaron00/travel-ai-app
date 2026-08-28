@@ -1813,6 +1813,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Thank you for your feedback!'**
   String get feedbackSuccess;
+
+  /// No description provided for @noFeedbackYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No feedback yet'**
+  String get noFeedbackYet;
+
+  /// No description provided for @feedbackPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get feedbackPending;
+
+  /// No description provided for @feedbackReplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Replied'**
+  String get feedbackReplied;
+
+  /// No description provided for @yourFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Your feedback:'**
+  String get yourFeedback;
+
+  /// No description provided for @adminReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin reply:'**
+  String get adminReply;
+
+  /// No description provided for @feedbackHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback History'**
+  String get feedbackHistory;
 }
 
 class _AppLocalizationsDelegate

@@ -911,4 +911,22 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get feedbackSuccess => 'ขอบคุณสำหรับความคิดเห็น!';
+
+  @override
+  String get noFeedbackYet => 'ยังไม่มีความคิดเห็น';
+
+  @override
+  String get feedbackPending => 'รอดำเนินการ';
+
+  @override
+  String get feedbackReplied => 'ตอบกลับแล้ว';
+
+  @override
+  String get yourFeedback => 'ความคิดเห็นของคุณ:';
+
+  @override
+  String get adminReply => 'การตอบกลับจากแอดมิน:';
+
+  @override
+  String get feedbackHistory => 'ประวัติความคิดเห็น';
 }
