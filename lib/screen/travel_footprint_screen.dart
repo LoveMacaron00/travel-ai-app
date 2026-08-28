@@ -27,6 +27,7 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
   late final TravelDiaryService _diary;
   List<TravelDiaryEntry> _entries = [];
   bool _loading = true;
+  String? _selectedEntryId;
 
   @override
   void initState() {
@@ -44,7 +45,18 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
     setState(() {
       _entries = entries;
       _loading = false;
+      // ถ้า entry ที่เลือกไว้ถูกลบไป ให้ล้างฟิลเตอร์
+      if (_selectedEntryId != null && !_entries.any((e) => e.id == _selectedEntryId)) {
+        _selectedEntryId = null;
+      }
     });
+  }
+
+  List<TravelDiaryEntry> get _filteredEntries {
+    if (_selectedEntryId == null) return _entries;
+    final filtered = _entries.where((e) => e.id == _selectedEntryId).toList();
+    // ถ้าฟิลเตอร์แล้วไม่เจอ (ข้อมูลเปลี่ยน) ให้กลับมาแสดงทั้งหมด
+    return filtered.isEmpty ? _entries : filtered;
   }
 
   List<String> get _visitedProvinces {
@@ -155,13 +167,33 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
                         color: _footprintGold,
                       ),
                     ),
+                    const Spacer(),
+                    if (_selectedEntryId != null)
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: _footprintGold,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        onPressed: () => setState(() => _selectedEntryId = null),
+                        icon: const Icon(Icons.clear, size: 16),
+                        label: Text(context.l10n.clearSearch),
+                      ),
                   ],
                 ),
+                if (_selectedEntryId != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    context.l10n.memoriesCount(_filteredEntries.length),
+                    style: const TextStyle(color: Colors.black45, fontSize: 12),
+                  ),
+                ],
                 const SizedBox(height: 12),
-                if (_entries.isEmpty)
+                if (_filteredEntries.isEmpty)
                   _emptyProvinces()
                 else
-                  ..._entries.map(_timelineCard),
+                  ..._filteredEntries.map(_timelineCard),
               ],
             ),
           ),
@@ -226,55 +258,61 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
     );
   }
 
-  Widget _timelineCard(TravelDiaryEntry entry) => Container(
-    margin: const EdgeInsets.only(bottom: 10),
-    child: Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
+  Widget _timelineCard(TravelDiaryEntry entry) {
+    final isSelected = entry.id == _selectedEntryId;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: isSelected ? const Color(0xfffff7dc) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        onTap: _openDiary,
-        child: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xffeadfca)),
-          ),
-          child: Row(
-            children: [
-              _timelineThumb(entry),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _timelineTitle(entry),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      _visitedLabel(entry),
-                      style: const TextStyle(
-                        color: Colors.black45,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: _openDiary,
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected ? _footprintGold : const Color(0xffeadfca),
+                width: isSelected ? 2 : 1,
               ),
-              const Icon(Icons.chevron_right, color: Colors.black26),
-            ],
+            ),
+            child: Row(
+              children: [
+                _timelineThumb(entry),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _timelineTitle(entry),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        _visitedLabel(entry),
+                        style: const TextStyle(
+                          color: Colors.black45,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: Colors.black26),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 
   Widget _summaryCard() => Container(
     padding: const EdgeInsets.all(18),
@@ -354,6 +392,11 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
             options: MapOptions(
               initialCenter: center,
               initialZoom: locatedEntries.isEmpty ? 5.3 : 7,
+              onTap: (_, __) {
+                if (_selectedEntryId != null) {
+                  setState(() => _selectedEntryId = null);
+                }
+              },
             ),
             children: [
               TileLayer(
@@ -364,13 +407,16 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
                 CircleLayer(
                   circles: locatedEntries
                       .map(
-                        (entry) => CircleMarker(
-                          point: LatLng(entry.latitude!, entry.longitude!),
-                          radius: 34,
-                          color: _footprintGold.withValues(alpha: 0.22),
-                          borderColor: _footprintGold,
-                          borderStrokeWidth: 2,
-                        ),
+                        (entry) {
+                          final isSelected = entry.id == _selectedEntryId;
+                          return CircleMarker(
+                            point: LatLng(entry.latitude!, entry.longitude!),
+                            radius: isSelected ? 40 : 34,
+                            color: _footprintGold.withValues(alpha: isSelected ? 0.32 : 0.22),
+                            borderColor: _footprintGold,
+                            borderStrokeWidth: isSelected ? 3 : 2,
+                          );
+                        },
                       )
                       .toList(),
                 ),
@@ -378,30 +424,36 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
                 MarkerLayer(
                   markers: locatedEntries
                       .map(
-                        (entry) => Marker(
-                          point: LatLng(entry.latitude!, entry.longitude!),
-                          width: 38,
-                          height: 38,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: _footprintGold,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 3),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 7,
-                                  offset: Offset(0, 3),
+                        (entry) {
+                          final isSelected = entry.id == _selectedEntryId;
+                          return Marker(
+                            point: LatLng(entry.latitude!, entry.longitude!),
+                            width: isSelected ? 46 : 38,
+                            height: isSelected ? 46 : 38,
+                            child: GestureDetector(
+                              onTap: () => setState(() => _selectedEntryId = entry.id),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isSelected ? Colors.black87 : _footprintGold,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: isSelected ? 4 : 3),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 7,
+                                      offset: Offset(0, 3),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                                child: Icon(
+                                  isSelected ? Icons.check : Icons.flag,
+                                  color: Colors.white,
+                                  size: isSelected ? 22 : 19,
+                                ),
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.flag,
-                              color: Colors.white,
-                              size: 19,
-                            ),
-                          ),
-                        ),
+                          );
+                        },
                       )
                       .toList(),
                 ),
