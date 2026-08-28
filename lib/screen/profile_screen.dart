@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/services/app_services.dart';
+import 'package:myapp/services/travel_diary_automation_service.dart';
 import 'package:myapp/widgets/media_image.dart';
 import 'package:myapp/screen/welcome_screen.dart';
 import 'package:myapp/screen/account_settings_screen.dart';
@@ -28,12 +29,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   
   bool _loadingPlans = false;
   List<Map<String, dynamic>> _savedPlans = [];
+  bool _autoDiaryEnabled = true;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
     _loadSavedPlans();
+    TravelDiaryAutomationService.isEnabled().then((enabled) {
+      if (mounted) setState(() => _autoDiaryEnabled = enabled);
+    });
   }
 
   Future<void> _loadSavedPlans() async {
@@ -684,6 +689,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   onTap: _showLanguagePicker,
+                ),
+
+                // Auto Diary
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  activeThumbColor: brandGold,
+                  secondary: const Icon(
+                    Icons.location_on_outlined,
+                    color: Colors.black54,
+                  ),
+                  title: Text(l10n.autoDiary),
+                  subtitle: Text(
+                    l10n.autoDiarySubtitle,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  value: _autoDiaryEnabled,
+                  onChanged: (value) async {
+                    setState(() => _autoDiaryEnabled = value);
+                    final messenger = ScaffoldMessenger.of(context);
+                    await AppServices.diaryAutomation.toggle(value);
+                    if (mounted) {
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            value
+                                ? l10n.autoDiaryEnabled
+                                : l10n.autoDiaryDisabled,
+                          ),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  },
                 ),
               ],
             ),

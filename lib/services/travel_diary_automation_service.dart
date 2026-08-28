@@ -8,6 +8,7 @@ import 'package:myapp/services/destination_service.dart';
 import 'package:myapp/services/location_service.dart';
 import 'package:myapp/services/travel_diary_service.dart';
 import 'package:myapp/utils/destination_display.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TravelDiaryAutomationService {
   TravelDiaryAutomationService({
@@ -31,9 +32,34 @@ class TravelDiaryAutomationService {
   Timer? _heartbeat;
   Future<void>? _startFuture;
 
+  static const _prefKey = 'auto_diary_enabled';
+
+  static Future<bool> isEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_prefKey) ?? true;
+  }
+
+  static Future<void> setEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefKey, enabled);
+  }
+
+  Future<void> toggle(bool enabled) async {
+    await setEnabled(enabled);
+    if (enabled) {
+      await start();
+    } else {
+      stop();
+    }
+  }
+
   Future<void> start() async {
     final user = _currentUser();
     if (user == null) return;
+    if (!await isEnabled()) {
+      stop();
+      return;
+    }
     final userKey = '${user['id'] ?? user['email'] ?? ''}';
     if (_started && _activeUserKey == userKey) {
       await _startFuture;

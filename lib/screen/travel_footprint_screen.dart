@@ -6,6 +6,7 @@ import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/model/travel_diary_entry.dart';
 import 'package:myapp/screen/travel_diary_screen.dart';
 import 'package:myapp/services/app_services.dart';
+import 'package:myapp/services/travel_diary_automation_service.dart';
 import 'package:myapp/services/travel_diary_service.dart';
 import 'package:myapp/widgets/media_image.dart';
 
@@ -32,7 +33,9 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
   }
 
   Future<void> _loadEntries() async {
-    await AppServices.diaryAutomation.start();
+    if (await TravelDiaryAutomationService.isEnabled()) {
+      await AppServices.diaryAutomation.start();
+    }
     final entries = await _diary.load();
     if (!mounted) return;
     setState(() {

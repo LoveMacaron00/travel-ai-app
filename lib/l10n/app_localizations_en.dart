@@ -294,6 +294,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get takePhoto => 'Take photo';
 
   @override
+  String get uploadImage => 'Upload Image';
+
+  @override
+  String get selectImageSource => 'Select image source';
+
+  @override
   String get enterImageUrl => 'Enter image URL';
 
   @override
@@ -852,4 +858,29 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deletePlanConfirmation =>
       'Are you sure you want to delete this plan?';
+
+  @override
+  String get addManualDiary => 'Add Memory';
+
+  @override
+  String get manualDiaryTitle => 'New Memory';
+
+  @override
+  String get placeName => 'Place name';
+
+  @override
+  String get placeNameHint => 'e.g. Doi Suthep, Grand Palace';
+
+  @override
+  String get autoDiary => 'Auto Diary';
+
+  @override
+  String get autoDiarySubtitle =>
+      'Automatically record places you visit via GPS';
+
+  @override
+  String get autoDiaryEnabled => 'Auto Diary is on';
+
+  @override
+  String get autoDiaryDisabled => 'Auto Diary is off';
 }

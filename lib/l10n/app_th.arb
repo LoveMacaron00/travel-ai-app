@@ -119,6 +119,8 @@
   "changeProfilePhoto": "เปลี่ยนรูปโปรไฟล์",
   "chooseFromGallery": "เลือกจากคลังภาพ",
   "takePhoto": "ถ่ายรูป",
+  "uploadImage": "อัปโหลดรูปภาพ",
+  "selectImageSource": "เลือกแหล่งที่มาของรูปภาพ",
   "enterImageUrl": "ใส่ URL รูปภาพ",
   "editProfileImageUrl": "แก้ไข URL รูปโปรไฟล์",
   "imageUrlHint": "กรอก URL ของรูปภาพ",
@@ -315,5 +317,13 @@
     "placeholders": {"count": {"type": "int"}}
   },
   "deletePlan": "ลบแผนที่บันทึกไว้",
-  "deletePlanConfirmation": "คุณแน่ใจหรือไม่ว่าต้องการลบแผนที่บันทึกไว้นี้?"
+  "deletePlanConfirmation": "คุณแน่ใจหรือไม่ว่าต้องการลบแผนที่บันทึกไว้นี้?",
+  "addManualDiary": "เพิ่มความทรงจำ",
+  "manualDiaryTitle": "ความทรงจำใหม่",
+  "placeName": "ชื่อสถานที่",
+  "placeNameHint": "เช่น ดอยสุเทพ, วัดพระแก้ว",
+  "autoDiary": "ไดอารี่อัตโนมัติ",
+  "autoDiarySubtitle": "บันทึกสถานที่ที่คุณไปอัตโนมัติผ่าน GPS",
+  "autoDiaryEnabled": "เปิดไดอารี่อัตโนมัติแล้ว",
+  "autoDiaryDisabled": "ปิดไดอารี่อัตโนมัติแล้ว"
 }

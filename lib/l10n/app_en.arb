@@ -119,6 +119,8 @@
   "changeProfilePhoto": "Change profile photo",
   "chooseFromGallery": "Choose from gallery",
   "takePhoto": "Take photo",
+  "uploadImage": "Upload Image",
+  "selectImageSource": "Select image source",
   "enterImageUrl": "Enter image URL",
   "editProfileImageUrl": "Edit profile image URL",
   "imageUrlHint": "Enter the image URL",
@@ -315,5 +317,13 @@
     "placeholders": {"count": {"type": "int"}}
   },
   "deletePlan": "Delete Plan",
-  "deletePlanConfirmation": "Are you sure you want to delete this plan?"
+  "deletePlanConfirmation": "Are you sure you want to delete this plan?",
+  "addManualDiary": "Add Memory",
+  "manualDiaryTitle": "New Memory",
+  "placeName": "Place name",
+  "placeNameHint": "e.g. Doi Suthep, Grand Palace",
+  "autoDiary": "Auto Diary",
+  "autoDiarySubtitle": "Automatically record places you visit via GPS",
+  "autoDiaryEnabled": "Auto Diary is on",
+  "autoDiaryDisabled": "Auto Diary is off"
 }

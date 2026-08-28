@@ -289,6 +289,12 @@ class AppLocalizationsTh extends AppLocalizations {
   String get takePhoto => 'ถ่ายรูป';
 
   @override
+  String get uploadImage => 'อัปโหลดรูปภาพ';
+
+  @override
+  String get selectImageSource => 'เลือกแหล่งที่มาของรูปภาพ';
+
+  @override
   String get enterImageUrl => 'ใส่ URL รูปภาพ';
 
   @override
@@ -839,4 +845,28 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get deletePlanConfirmation =>
       'คุณแน่ใจหรือไม่ว่าต้องการลบแผนที่บันทึกไว้นี้?';
+
+  @override
+  String get addManualDiary => 'เพิ่มความทรงจำ';
+
+  @override
+  String get manualDiaryTitle => 'ความทรงจำใหม่';
+
+  @override
+  String get placeName => 'ชื่อสถานที่';
+
+  @override
+  String get placeNameHint => 'เช่น ดอยสุเทพ, วัดพระแก้ว';
+
+  @override
+  String get autoDiary => 'ไดอารี่อัตโนมัติ';
+
+  @override
+  String get autoDiarySubtitle => 'บันทึกสถานที่ที่คุณไปอัตโนมัติผ่าน GPS';
+
+  @override
+  String get autoDiaryEnabled => 'เปิดไดอารี่อัตโนมัติแล้ว';
+
+  @override
+  String get autoDiaryDisabled => 'ปิดไดอารี่อัตโนมัติแล้ว';
 }

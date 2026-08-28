@@ -614,6 +614,18 @@ abstract class AppLocalizations {
   /// **'Take photo'**
   String get takePhoto;
 
+  /// No description provided for @uploadImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Image'**
+  String get uploadImage;
+
+  /// No description provided for @selectImageSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Select image source'**
+  String get selectImageSource;
+
   /// No description provided for @enterImageUrl.
   ///
   /// In en, this message translates to:
@@ -1669,6 +1681,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Are you sure you want to delete this plan?'**
   String get deletePlanConfirmation;
+
+  /// No description provided for @addManualDiary.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Memory'**
+  String get addManualDiary;
+
+  /// No description provided for @manualDiaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New Memory'**
+  String get manualDiaryTitle;
+
+  /// No description provided for @placeName.
+  ///
+  /// In en, this message translates to:
+  /// **'Place name'**
+  String get placeName;
+
+  /// No description provided for @placeNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Doi Suthep, Grand Palace'**
+  String get placeNameHint;
+
+  /// No description provided for @autoDiary.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Diary'**
+  String get autoDiary;
+
+  /// No description provided for @autoDiarySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically record places you visit via GPS'**
+  String get autoDiarySubtitle;
+
+  /// No description provided for @autoDiaryEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Diary is on'**
+  String get autoDiaryEnabled;
+
+  /// No description provided for @autoDiaryDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Diary is off'**
+  String get autoDiaryDisabled;
 }
 
 class _AppLocalizationsDelegate

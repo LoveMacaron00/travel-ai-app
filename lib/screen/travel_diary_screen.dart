@@ -1,12 +1,16 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/model/travel_diary_entry.dart';
 import 'package:myapp/screen/chatbot_screen.dart';
 import 'package:myapp/services/app_services.dart';
+import 'package:myapp/services/image_upload.dart';
 import 'package:myapp/services/location_service.dart';
+import 'package:myapp/services/travel_diary_automation_service.dart';
 import 'package:myapp/services/travel_diary_service.dart';
 import 'package:myapp/widgets/media_image.dart';
 
@@ -39,7 +43,9 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
   }
 
   Future<void> _initializeDiary() async {
-    await AppServices.diaryAutomation.start();
+    if (await TravelDiaryAutomationService.isEnabled()) {
+      await AppServices.diaryAutomation.start();
+    }
     await _loadEntries();
   }
 
@@ -118,6 +124,330 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _addManualDiary() async {
+    final titleCtrl = TextEditingController();
+    final provinceCtrl = TextEditingController();
+    final noteCtrl = TextEditingController();
+    XFile? pickedImage;
+
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          Future<void> pickImage(ImageSource source) async {
+            final picker = ImagePicker();
+            final file = await picker.pickImage(
+              source: source,
+              imageQuality: 84,
+              maxWidth: 1600,
+            );
+            if (file != null) setSheetState(() => pickedImage = file);
+          }
+
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              24, 0, 24,
+              MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    context.l10n.manualDiaryTitle,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+
+                  if (pickedImage == null) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _imageSourceCard(
+                            icon: Icons.photo_camera_outlined,
+                            label: context.l10n.takePhoto,
+                            onTap: () => pickImage(ImageSource.camera),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _imageSourceCard(
+                            icon: Icons.photo_library_outlined,
+                            label: context.l10n.chooseFromGallery,
+                            onTap: () => pickImage(ImageSource.gallery),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: FutureBuilder<Uint8List>(
+                            future: pickedImage!.readAsBytes(),
+                            builder: (_, snap) {
+                              if (!snap.hasData) {
+                                return const SizedBox(
+                                  height: 180,
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                );
+                              }
+                              return Image.memory(
+                                snap.data!,
+                                height: 180,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              );
+                            },
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: GestureDetector(
+                            onTap: () => setSheetState(() => pickedImage = null),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 8,
+                          right: 8,
+                          child: GestureDetector(
+                            onTap: () => pickImage(ImageSource.camera),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.camera_alt_outlined,
+                                      color: Colors.white, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    context.l10n.capturePhoto,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 8,
+                          left: 8,
+                          child: GestureDetector(
+                            onTap: () => pickImage(ImageSource.gallery),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.photo_library_outlined,
+                                      color: Colors.white, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    context.l10n.choosePhoto,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: titleCtrl,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      labelText: context.l10n.placeName,
+                      hintText: context.l10n.placeNameHint,
+                      prefixIcon: const Icon(Icons.place_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: provinceCtrl,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      labelText: context.l10n.provinceVisited,
+                      hintText: context.l10n.provinceHint,
+                      prefixIcon: const Icon(Icons.flag_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: noteCtrl,
+                    minLines: 3,
+                    maxLines: 5,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      labelText: context.l10n.memoryNote,
+                      hintText: context.l10n.memoryNoteHint,
+                      prefixIcon: const Padding(
+                        padding: EdgeInsets.only(bottom: 48),
+                        child: Icon(Icons.edit_outlined),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  FilledButton.icon(
+                    onPressed: () => Navigator.pop(sheetContext, true),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _diaryGold,
+                      foregroundColor: Colors.black,
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    icon: const Icon(Icons.save_outlined),
+                    label: Text(context.l10n.saveMemory),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    if (saved != true) return;
+
+    final title = titleCtrl.text.trim();
+    final province = provinceCtrl.text.trim();
+    final note = noteCtrl.text.trim();
+    if (title.isEmpty && province.isEmpty && note.isEmpty && pickedImage == null) return;
+
+    // Show uploading indicator
+    String? uploadedUrl;
+    if (pickedImage != null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${context.l10n.memorySaved}...'),
+            duration: const Duration(seconds: 10),
+          ),
+        );
+      }
+      final bytes = await pickedImage!.readAsBytes();
+      uploadedUrl = await _diary.uploadImage(
+        ImageUpload(bytes: bytes, filename: pickedImage!.name),
+      );
+    }
+    if (mounted) ScaffoldMessenger.of(context).clearSnackBars();
+
+    final now = DateTime.now();
+    final position = LocationService.instance.currentPosition;
+    final entry = TravelDiaryEntry(
+      id: 'manual_${now.microsecondsSinceEpoch}',
+      date: now,
+      title: title,
+      note: note,
+      province: province,
+      imageUrls: uploadedUrl != null ? [uploadedUrl] : const [],
+      latitude: position?.latitude,
+      longitude: position?.longitude,
+      source: 'manual',
+    );
+    final ok = await _diary.upsert(entry);
+    if (ok) {
+      await _loadEntries();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.memorySaved)),
+        );
+      }
+    }
+  }
+
+  Widget _imageSourceCard({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) => InkWell(
+    borderRadius: BorderRadius.circular(18),
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F8FA),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE1E4EA)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: const Color(0xFF202636), size: 27),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFF202636),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+
   List<_DiaryDay> get _days {
     final grouped = <DateTime, List<TravelDiaryEntry>>{};
     for (final entry in _entries) {
@@ -188,6 +518,11 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       centerTitle: true,
       actions: [
         IconButton(
+          tooltip: context.l10n.addManualDiary,
+          onPressed: _addManualDiary,
+          icon: const Icon(Icons.add_circle_outline, color: _diaryGold),
+        ),
+        IconButton(
           tooltip: context.l10n.openAiCamera,
           onPressed: _openAiCamera,
           icon: const Icon(Icons.photo_camera_outlined, color: _diaryGold),
@@ -254,6 +589,20 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
             ),
             icon: const Icon(Icons.photo_camera_outlined),
             label: Text(context.l10n.openAiCamera),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: _addManualDiary,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.black87,
+              minimumSize: const Size(190, 48),
+              side: const BorderSide(color: _diaryGold),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            icon: const Icon(Icons.edit_note, color: _diaryGold),
+            label: Text(context.l10n.addManualDiary),
           ),
         ],
       ),
@@ -329,23 +678,28 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       );
 
   Widget _timelineNode(TravelDiaryEntry entry) {
-    final fromCamera = entry.source == 'aiCamera';
+    final IconData icon;
+    final Color color;
+    switch (entry.source) {
+      case 'aiCamera':
+        icon = Icons.photo_camera;
+        color = const Color(0xff9e9e9e);
+      case 'manual':
+        icon = Icons.edit_note;
+        color = const Color(0xff6d9eeb);
+      default: // gps
+        icon = Icons.location_on;
+        color = _diaryGold;
+    }
     return Container(
       width: 36,
       height: 36,
       decoration: BoxDecoration(
         color: Colors.white,
         shape: BoxShape.circle,
-        border: Border.all(
-          color: fromCamera ? const Color(0xff9e9e9e) : _diaryGold,
-          width: 2,
-        ),
+        border: Border.all(color: color, width: 2),
       ),
-      child: Icon(
-        fromCamera ? Icons.photo_camera : Icons.location_on,
-        color: fromCamera ? const Color(0xff777777) : _diaryGold,
-        size: 20,
-      ),
+      child: Icon(icon, color: color, size: 20),
     );
   }
 
