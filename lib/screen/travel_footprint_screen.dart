@@ -14,7 +14,10 @@ const _footprintGold = Color(0xfff4b400);
 const _footprintCanvas = Color(0xfff8f9fa);
 
 class TravelFootprintScreen extends StatefulWidget {
-  const TravelFootprintScreen({super.key});
+  const TravelFootprintScreen({super.key, this.onBack, this.onOpenDiary});
+
+  final VoidCallback? onBack;
+  final VoidCallback? onOpenDiary;
 
   @override
   State<TravelFootprintScreen> createState() => _TravelFootprintScreenState();
@@ -60,6 +63,10 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
       _entries.where((entry) => entry.hasLocation).toList();
 
   Future<void> _openDiary() async {
+    if (widget.onOpenDiary != null) {
+      widget.onOpenDiary!.call();
+      return;
+    }
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const TravelDiaryScreen()),
@@ -73,6 +80,10 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
     appBar: AppBar(
       backgroundColor: _footprintCanvas,
       surfaceTintColor: Colors.transparent,
+      leading: BackButton(
+        color: Colors.black87,
+        onPressed: widget.onBack ?? () => Navigator.maybePop(context),
+      ),
       title: Text(
         context.l10n.travelFootprint,
         style: const TextStyle(fontWeight: FontWeight.w800),

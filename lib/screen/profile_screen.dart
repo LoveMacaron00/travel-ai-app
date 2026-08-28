@@ -15,12 +15,14 @@ import 'package:myapp/screen/plan_screen.dart';
 class ProfileScreen extends StatefulWidget {
   final VoidCallback onBackTap;
   final VoidCallback? onFeedbackTap;
+  final VoidCallback? onFootprintTap;
   final void Function(int tripId)? onViewPlan;
 
   const ProfileScreen({
     super.key,
     required this.onBackTap,
     this.onFeedbackTap,
+    this.onFootprintTap,
     this.onViewPlan,
   });
 
@@ -675,12 +677,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 trailing: const Icon(Icons.chevron_right, color: brandGold),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const TravelFootprintScreen(),
-                  ),
-                ),
+                onTap: () {
+                  if (widget.onFootprintTap != null) {
+                    widget.onFootprintTap!.call();
+                    return;
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TravelFootprintScreen(),
+                    ),
+                  );
+                },
               ),
             ),
             const Divider(height: 40, thickness: 1),

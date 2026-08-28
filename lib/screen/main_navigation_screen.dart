@@ -5,6 +5,7 @@ import 'package:myapp/screen/profile_screen.dart';
 import 'package:myapp/screen/map_screen.dart';
 import 'package:myapp/screen/plan_screen.dart';
 import 'package:myapp/screen/travel_diary_screen.dart';
+import 'package:myapp/screen/travel_footprint_screen.dart';
 import 'package:myapp/screen/feedback_history_screen.dart';
 import 'package:myapp/services/location_service.dart';
 import 'package:myapp/services/app_services.dart';
@@ -22,6 +23,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
   bool _showingDiary = false;
   bool _showingFeedback = false;
+  bool _showingFootprint = false;
   late final List<Widget?> _screens;
   final GlobalKey<MapScreenState> _mapScreenKey = GlobalKey<MapScreenState>();
 
@@ -57,6 +59,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     setState(() {
       _showingDiary = false;
       _showingFeedback = false;
+      _showingFootprint = false;
       _selectedIndex = 2;
       _screens[2] = PlanScreen(
         key: ValueKey('plan_$tripId'),
@@ -84,6 +87,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           onBackTap: () => _selectTab(0),
           onViewPlan: _viewPlan,
           onFeedbackTap: _showFeedback,
+          onFootprintTap: _showFootprint,
         );
       default:
         return const SizedBox.shrink();
@@ -94,6 +98,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     setState(() {
       _showingDiary = false;
       _showingFeedback = false;
+      _showingFootprint = false;
       _screens[index] ??= _createScreen(index);
       _selectedIndex = index;
     });
@@ -109,7 +114,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void _showFeedback() {
     setState(() {
       _showingDiary = false;
+      _showingFootprint = false;
       _showingFeedback = true;
+    });
+  }
+
+  void _showFootprint() {
+    setState(() {
+      _showingDiary = false;
+      _showingFeedback = false;
+      _showingFootprint = true;
     });
   }
 
@@ -119,6 +133,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   void _showDestinationOnMap(int destinationId) {
     Navigator.of(context).popUntil((route) => route.isFirst);
+    setState(() {
+      _showingDiary = false;
+      _showingFeedback = false;
+      _showingFootprint = false;
+    });
     if (_selectedIndex != 1) {
       _selectTab(1);
     }
@@ -133,13 +152,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final l10n = context.l10n;
 
     return PopScope(
-      canPop: !_showingDiary && !_showingFeedback,
+      canPop: !_showingDiary && !_showingFeedback && !_showingFootprint,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        if (_showingFeedback) {
-          setState(() => _showingFeedback = false);
-        } else if (_showingDiary) {
+        if (_showingDiary) {
           setState(() => _showingDiary = false);
+        } else if (_showingFeedback) {
+          setState(() => _showingFeedback = false);
+        } else if (_showingFootprint) {
+          setState(() => _showingFootprint = false);
         }
       },
       child: Scaffold(
@@ -150,6 +171,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             : _showingFeedback
             ? FeedbackHistoryScreen(
                 onBack: () => setState(() => _showingFeedback = false),
+              )
+            : _showingFootprint
+            ? TravelFootprintScreen(
+                onBack: () => setState(() => _showingFootprint = false),
+                onOpenDiary: _showDiary,
               )
             : IndexedStack(
                 index: _selectedIndex,

@@ -484,6 +484,425 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     }
   }
 
+  Future<void> _editManualDiary(TravelDiaryEntry entry) async {
+    final titleCtrl = TextEditingController(text: entry.title);
+    final provinceCtrl = TextEditingController(text: entry.province);
+    final noteCtrl = TextEditingController(text: entry.note);
+    XFile? pickedImage;
+    LatLng? selectedLocation =
+        entry.hasLocation ? LatLng(entry.latitude!, entry.longitude!) : null;
+    bool removeExistingImage = false;
+    final existingImageUrls = List<String>.from(entry.imageUrls);
+
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          Future<void> pickImage(ImageSource source) async {
+            final picker = ImagePicker();
+            final file = await picker.pickImage(
+              source: source,
+              imageQuality: 84,
+              maxWidth: 1600,
+            );
+            if (file != null) setSheetState(() => pickedImage = file);
+          }
+
+          final bool hasPreview = pickedImage != null ||
+              (existingImageUrls.isNotEmpty && !removeExistingImage);
+
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              24, 0, 24,
+              MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    context.l10n.editMemory,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+
+                  if (!hasPreview) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _imageSourceCard(
+                            icon: Icons.photo_camera_outlined,
+                            label: context.l10n.takePhoto,
+                            onTap: () => pickImage(ImageSource.camera),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _imageSourceCard(
+                            icon: Icons.photo_library_outlined,
+                            label: context.l10n.chooseFromGallery,
+                            onTap: () => pickImage(ImageSource.gallery),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: pickedImage != null
+                              ? FutureBuilder<Uint8List>(
+                                  future: pickedImage!.readAsBytes(),
+                                  builder: (_, snap) {
+                                    if (!snap.hasData) {
+                                      return const SizedBox(
+                                        height: 180,
+                                        child: Center(
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      );
+                                    }
+                                    return Image.memory(
+                                      snap.data!,
+                                      height: 180,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                    );
+                                  },
+                                )
+                              : SizedBox(
+                                  height: 180,
+                                  width: double.infinity,
+                                  child: mediaNetworkImage(
+                                    existingImageUrls.first,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => _imageFallback(),
+                                  ),
+                                ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: GestureDetector(
+                            onTap: () => setSheetState(() {
+                              if (pickedImage != null) {
+                                pickedImage = null;
+                              } else {
+                                removeExistingImage = true;
+                              }
+                            }),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 8,
+                          right: 8,
+                          child: GestureDetector(
+                            onTap: () => pickImage(ImageSource.camera),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.camera_alt_outlined,
+                                      color: Colors.white, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    context.l10n.capturePhoto,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 8,
+                          left: 8,
+                          child: GestureDetector(
+                            onTap: () => pickImage(ImageSource.gallery),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.photo_library_outlined,
+                                      color: Colors.white, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    context.l10n.choosePhoto,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: titleCtrl,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      labelText: context.l10n.placeName,
+                      hintText: context.l10n.placeNameHint,
+                      prefixIcon: const Icon(Icons.place_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: provinceCtrl,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      labelText: context.l10n.provinceVisited,
+                      hintText: context.l10n.provinceHint,
+                      prefixIcon: const Icon(Icons.flag_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  InkWell(
+                    onTap: () async {
+                      final result = await Navigator.push<LatLng>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => MapPickerScreen(
+                            initialLocation: selectedLocation,
+                          ),
+                        ),
+                      );
+                      if (result != null) {
+                        setSheetState(() => selectedLocation = result);
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 18,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: selectedLocation != null
+                              ? const Color(0xfff4b400)
+                              : Colors.grey,
+                          width: selectedLocation != null ? 2 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        color: selectedLocation != null
+                            ? const Color(0xffffefbd)
+                            : Colors.white,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.map_outlined,
+                            color: selectedLocation != null
+                                ? const Color(0xfff4b400)
+                                : Colors.grey,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              selectedLocation != null
+                                  ? '${context.l10n.selectedLocation}: ${selectedLocation!.latitude.toStringAsFixed(4)}, ${selectedLocation!.longitude.toStringAsFixed(4)}'
+                                  : context.l10n.selectLocationOnMap,
+                              style: TextStyle(
+                                color: selectedLocation != null
+                                    ? Colors.black87
+                                    : Colors.grey,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          if (selectedLocation != null)
+                            GestureDetector(
+                              onTap: () => setSheetState(() => selectedLocation = null),
+                              child: const Padding(
+                                padding: EdgeInsets.only(left: 8),
+                                child: Icon(Icons.clear, size: 18, color: Colors.black45),
+                              ),
+                            )
+                          else
+                            Icon(
+                              Icons.chevron_right,
+                              color: Colors.grey,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: noteCtrl,
+                    minLines: 3,
+                    maxLines: 5,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      labelText: context.l10n.memoryNote,
+                      hintText: context.l10n.memoryNoteHint,
+                      prefixIcon: const Padding(
+                        padding: EdgeInsets.only(bottom: 48),
+                        child: Icon(Icons.edit_outlined),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  FilledButton.icon(
+                    onPressed: () => Navigator.pop(sheetContext, true),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _diaryGold,
+                      foregroundColor: Colors.black,
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    icon: const Icon(Icons.save_outlined),
+                    label: Text(context.l10n.saveMemory),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    if (saved != true) {
+      titleCtrl.dispose();
+      provinceCtrl.dispose();
+      noteCtrl.dispose();
+      return;
+    }
+
+    final title = titleCtrl.text.trim();
+    final province = provinceCtrl.text.trim();
+    final note = noteCtrl.text.trim();
+    titleCtrl.dispose();
+    provinceCtrl.dispose();
+    noteCtrl.dispose();
+
+    String? uploadedUrl;
+    List<String> finalImageUrls = [];
+    if (pickedImage != null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${context.l10n.memorySaved}...'),
+            duration: const Duration(seconds: 10),
+          ),
+        );
+      }
+      final bytes = await pickedImage!.readAsBytes();
+      uploadedUrl = await _diary.uploadImage(
+        ImageUpload(bytes: bytes, filename: pickedImage!.name),
+      );
+      if (mounted) ScaffoldMessenger.of(context).clearSnackBars();
+      if (uploadedUrl != null) {
+        finalImageUrls = [uploadedUrl];
+      } else {
+        if (!removeExistingImage && existingImageUrls.isNotEmpty) {
+          finalImageUrls = existingImageUrls;
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.uploadFailed)),
+          );
+        }
+      }
+    } else if (!removeExistingImage && existingImageUrls.isNotEmpty) {
+      finalImageUrls = existingImageUrls;
+    }
+
+    if (title.isEmpty && province.isEmpty && note.isEmpty && finalImageUrls.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.memorySaved)),
+        );
+      }
+      return;
+    }
+
+    final updated = TravelDiaryEntry(
+      id: entry.id,
+      date: entry.date,
+      lastSeenAt: entry.lastSeenAt,
+      title: title,
+      note: note,
+      province: province,
+      insight: entry.insight,
+      imageUrls: finalImageUrls,
+      latitude: selectedLocation?.latitude,
+      longitude: selectedLocation?.longitude,
+      destinationId: entry.destinationId,
+      source: entry.source,
+    );
+
+    final ok = await _diary.upsert(updated);
+    if (ok) {
+      await _loadEntries();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.memorySaved)),
+        );
+      }
+    }
+  }
+
   Widget _imageSourceCard({
     required IconData icon,
     required String label,
@@ -813,9 +1232,21 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
           padding: EdgeInsets.zero,
           icon: const Icon(Icons.more_vert, size: 18, color: Colors.black45),
           onSelected: (val) {
+            if (val == 'edit') _editManualDiary(entry);
             if (val == 'delete') _deleteEntry(entry);
           },
           itemBuilder: (_) => [
+            if (entry.source == 'manual')
+              PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    const Icon(Icons.edit_outlined, size: 18),
+                    const SizedBox(width: 8),
+                    Text(context.l10n.editMemory),
+                  ],
+                ),
+              ),
             PopupMenuItem(
               value: 'delete',
               child: Text(
