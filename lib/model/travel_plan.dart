@@ -2,6 +2,7 @@
 class TravelStop {
   final String destinationId;
   final String place;
+  final String province;
   final String activity;
   final double latitude;
   final double longitude;
@@ -18,6 +19,7 @@ class TravelStop {
   const TravelStop({
     required this.destinationId,
     required this.place,
+    this.province = '',
     required this.activity,
     required this.latitude,
     required this.longitude,
@@ -35,6 +37,7 @@ class TravelStop {
   factory TravelStop.fromJson(Map<String, dynamic> j) => TravelStop(
     destinationId: '${j['destinationId'] ?? ''}',
     place: '${j['place'] ?? ''}',
+    province: '${j['province'] ?? j['provinceName'] ?? ''}',
     activity: '${j['activity'] ?? ''}',
     latitude: _number(j['latitude']),
     longitude: _number(j['longitude']),
@@ -50,6 +53,40 @@ class TravelStop {
         .whereType<Map>()
         .map((e) => TravelSegment.fromJson(Map<String, dynamic>.from(e)))
         .toList(),
+  );
+
+  TravelStop copyWith({
+    String? destinationId,
+    String? place,
+    String? province,
+    String? activity,
+    double? latitude,
+    double? longitude,
+    String? imageUrl,
+    String? arrivalTime,
+    int? durationMinutes,
+    double? entryCost,
+    double? foodCost,
+    String? transportMode,
+    double? transportCost,
+    String? tip,
+    List<TravelSegment>? segments,
+  }) => TravelStop(
+    destinationId: destinationId ?? this.destinationId,
+    place: place ?? this.place,
+    province: province ?? this.province,
+    activity: activity ?? this.activity,
+    latitude: latitude ?? this.latitude,
+    longitude: longitude ?? this.longitude,
+    imageUrl: imageUrl ?? this.imageUrl,
+    arrivalTime: arrivalTime ?? this.arrivalTime,
+    durationMinutes: durationMinutes ?? this.durationMinutes,
+    entryCost: entryCost ?? this.entryCost,
+    foodCost: foodCost ?? this.foodCost,
+    transportMode: transportMode ?? this.transportMode,
+    transportCost: transportCost ?? this.transportCost,
+    tip: tip ?? this.tip,
+    segments: segments ?? this.segments,
   );
 }
 

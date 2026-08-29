@@ -328,13 +328,15 @@ class _PlanScreenState extends State<PlanScreen> {
       _generating = true;
       _error = null;
     });
+    AppServices.tripGenerationStatus.startGenerating();
     final result = await AppServices.trips.createTravelPlan(_input());
     if (!mounted) return;
     if (result['success'] == true) {
       final trip = Map<String, dynamic>.from(result['data']);
       final raw = Map<String, dynamic>.from(trip['plan_data'] as Map? ?? {});
+      final tripId = int.tryParse('${trip['id']}') ?? 0;
       final next = _ensureMustVisitStops(
-        TravelPlan.fromJson(raw, tripId: int.tryParse('${trip['id']}') ?? 0),
+        TravelPlan.fromJson(raw, tripId: tripId),
       );
       setState(() {
         _plan = next;
@@ -342,12 +344,15 @@ class _PlanScreenState extends State<PlanScreen> {
         _route = [];
         _generating = false;
       });
+      AppServices.tripGenerationStatus.completeSuccess(tripId);
       await _buildRoute(next);
     } else {
+      final msg = '${result['message'] ?? context.l10n.couldNotCreatePlan}';
       setState(() {
         _generating = false;
-        _error = '${result['message'] ?? context.l10n.couldNotCreatePlan}';
+        _error = msg;
       });
+      AppServices.tripGenerationStatus.completeError(msg);
     }
   }
 
@@ -412,6 +417,7 @@ class _PlanScreenState extends State<PlanScreen> {
     return TravelStop(
       destinationId: place.id,
       place: place.title,
+      province: place.province,
       activity: activity.isEmpty ? 'แวะชม ${place.title}' : activity,
       latitude: place.latitude,
       longitude: place.longitude,
@@ -425,6 +431,100 @@ class _PlanScreenState extends State<PlanScreen> {
       tip:
           'สถานที่นี้ถูกเพิ่มเพราะคุณเลือกไว้โดยตรง โปรดตรวจสอบเวลาเปิด-ปิดและวิธีเดินทางจริงก่อนออกเดินทาง',
       segments: const [],
+    );
+  }
+
+  String _provinceForStop(TravelStop stop) {
+    if (stop.province.trim().isNotEmpty) return stop.province.trim();
+    final byId = _places.where((p) => p.id == stop.destinationId).firstOrNull;
+    if (byId != null && byId.province.isNotEmpty) return byId.province;
+    final key = _placeKey(stop.place);
+    if (key.isNotEmpty) {
+      for (final p in _places) {
+        if (_placeKey(p.title) == key && p.province.isNotEmpty) return p.province;
+      }
+    }
+    return '';
+  }
+
+  double _estimateTransportCost(LatLng from, LatLng to, String mode) {
+    final lower = mode.toLowerCase();
+    if (lower == 'walking') return 0;
+    final km = const Distance().as(LengthUnit.Kilometer, from, to);
+    // อัตราให้ใกล้เคียง AI เดิม (รูปตัวอย่าง car 10นาที≈100฿, 15นาที≈150฿) เพื่อเพิ่มแล้วไม่ลด
+    final rate = switch (lower) {
+      'car' => 20.0,
+      'bus' => 7.0,
+      'train' => 12.0,
+      'ferry' => 25.0,
+      'flight' => 35.0,
+      _ => 15.0,
+    };
+    if (km < 0.5) return 50;
+    final cost = km * rate;
+    return (cost < 50 ? 50 : cost).roundToDouble();
+  }
+
+  List<TravelStop> _withRecalculatedTransportCosts(List<TravelStop> stops) {
+    if (stops.length < 2) return stops;
+    final updated = <TravelStop>[];
+    for (var i = 0; i < stops.length; i++) {
+      final stop = stops[i];
+      if (i == 0) {
+        // จุดแรกไม่มีค่าเดินทางมาจากจุดก่อนหน้า
+        updated.add(stop.copyWith(transportCost: 0));
+        continue;
+      }
+      final prev = updated[i - 1];
+      final from = LatLng(prev.latitude, prev.longitude);
+      final to = LatLng(stop.latitude, stop.longitude);
+      final estimated = _estimateTransportCost(from, to, stop.transportMode);
+      // สร้าง segment สรุปให้สอดคล้องกับ transportCost ที่คำนวณใหม่
+      final segment = TravelSegment(
+        mode: stop.transportMode,
+        from: prev.place,
+        to: stop.place,
+        estimatedMinutes: stop.segments.isNotEmpty
+            ? stop.segments.first.estimatedMinutes
+            : (const Distance().as(LengthUnit.Kilometer, from, to) * 2).round(),
+        estimatedCost: estimated,
+      );
+      updated.add(stop.copyWith(
+        transportCost: estimated,
+        segments: [segment],
+      ));
+    }
+    return updated;
+  }
+
+  TravelPlan _withRecalculatedBudget(TravelPlan plan, List<TravelDay> newDays) {
+    double sumTransport = 0;
+    double sumFood = 0;
+    double sumActivities = 0;
+    for (final day in newDays) {
+      for (final stop in day.stops) {
+        sumTransport += stop.transportCost;
+        sumFood += stop.foodCost;
+        sumActivities += stop.entryCost;
+      }
+    }
+    final accommodation = plan.budgetBreakdown['accommodation'] ?? 0;
+    // รักษาโครงสร้างเดิมแต่ปรับ 3 หมวดที่ผูกกับ stops
+    final newBreakdown = Map<String, double>.from(plan.budgetBreakdown);
+    newBreakdown['transport'] = sumTransport;
+    newBreakdown['food'] = sumFood;
+    newBreakdown['activities'] = sumActivities;
+    // คำนวณยอดรวมใหม่ = ที่พัก + ค่าใช้จ่ายรวมของทุก stops
+    final newTotal = accommodation + sumFood + sumTransport + sumActivities;
+    // ถ้า breakdown เดิมไม่มี accommodation ให้ใช้ total เดิมเป็นฐาน + delta transport แทน
+    final fallbackTotal = newTotal > 0 ? newTotal : plan.totalEstimatedCost;
+    return TravelPlan(
+      tripId: plan.tripId,
+      summary: plan.summary,
+      totalEstimatedCost: fallbackTotal,
+      budgetBreakdown: newBreakdown,
+      days: newDays,
+      tips: plan.tips,
     );
   }
 
@@ -559,24 +659,84 @@ class _PlanScreenState extends State<PlanScreen> {
     if (plan == null) return;
 
     final selectedIndex = _selectedDayIndex.clamp(0, plan.days.length - 1);
-    final days = [
-      for (var index = 0; index < plan.days.length; index++)
-        TravelDay(
-          day: plan.days[index].day,
-          theme: plan.days[index].theme,
-          stops: index == selectedIndex
-              ? stops
-              : List<TravelStop>.from(plan.days[index].stops),
-        ),
-    ];
-    final updatedPlan = TravelPlan(
-      tripId: plan.tripId,
-      summary: plan.summary,
-      totalEstimatedCost: plan.totalEstimatedCost,
-      budgetBreakdown: plan.budgetBreakdown,
-      days: days,
-      tips: plan.tips,
-    );
+    final oldDay = plan.days[selectedIndex];
+    final oldStops = oldDay.stops;
+
+    // กรณีเพิ่มที่เดียวต่อท้าย → คิดเพิ่มแบบบวกเพิ่ม ไม่คำนวณใหม่ทั้งหมดเพื่อไม่ให้ยอดลด
+    final isAppendOne = stops.length == oldStops.length + 1 &&
+        List.generate(oldStops.length,
+                (i) => stops[i].destinationId == oldStops[i].destinationId)
+            .every((e) => e);
+    List<TravelStop> recalculatedStops;
+    TravelPlan updatedPlan;
+
+    if (isAppendOne) {
+      final prev = oldStops.isNotEmpty ? oldStops.last : null;
+      final rawNew = stops.last;
+      double estimated = 0;
+      List<TravelSegment> newSegments = const [];
+      if (prev != null) {
+        final from = LatLng(prev.latitude, prev.longitude);
+        final to = LatLng(rawNew.latitude, rawNew.longitude);
+        estimated = _estimateTransportCost(from, to, rawNew.transportMode);
+        newSegments = [
+          TravelSegment(
+            mode: rawNew.transportMode,
+            from: prev.place,
+            to: rawNew.place,
+            estimatedMinutes: rawNew.segments.isNotEmpty
+                ? rawNew.segments.first.estimatedMinutes
+                : (const Distance().as(LengthUnit.Kilometer, from, to) * 2).round(),
+            estimatedCost: estimated,
+          ),
+        ];
+      }
+      final newStop = rawNew.copyWith(
+        transportCost: estimated,
+        segments: newSegments.isEmpty ? rawNew.segments : newSegments,
+      );
+      recalculatedStops = [...oldStops, newStop];
+
+      final days = [
+        for (var index = 0; index < plan.days.length; index++)
+          TravelDay(
+            day: plan.days[index].day,
+            theme: plan.days[index].theme,
+            stops: index == selectedIndex
+                ? recalculatedStops
+                : List<TravelStop>.from(plan.days[index].stops),
+          ),
+      ];
+      // บวกเพิ่มเท่านั้น ยอดรวมต้องเพิ่ม ไม่ลด
+      final newBreakdown = Map<String, double>.from(plan.budgetBreakdown);
+      newBreakdown['transport'] = (newBreakdown['transport'] ?? 0) + estimated;
+      newBreakdown['food'] = (newBreakdown['food'] ?? 0) + newStop.foodCost;
+      newBreakdown['activities'] = (newBreakdown['activities'] ?? 0) + newStop.entryCost;
+      final newTotal = plan.totalEstimatedCost + estimated + newStop.foodCost + newStop.entryCost;
+      updatedPlan = TravelPlan(
+        tripId: plan.tripId,
+        summary: plan.summary,
+        totalEstimatedCost: newTotal,
+        budgetBreakdown: newBreakdown,
+        days: days,
+        tips: plan.tips,
+      );
+    } else {
+      // ลบ/สลับลำดับ → คำนวณใหม่ทั้งวัน
+      recalculatedStops = _withRecalculatedTransportCosts(stops);
+      final days = [
+        for (var index = 0; index < plan.days.length; index++)
+          TravelDay(
+            day: plan.days[index].day,
+            theme: plan.days[index].theme,
+            stops: index == selectedIndex
+                ? recalculatedStops
+                : List<TravelStop>.from(plan.days[index].stops),
+          ),
+      ];
+      updatedPlan = _withRecalculatedBudget(plan, days);
+    }
+
     setState(() {
       _plan = updatedPlan;
       _route = [];

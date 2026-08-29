@@ -11,6 +11,7 @@ import 'package:myapp/services/session_store.dart';
 import 'package:myapp/services/trip_service.dart';
 import 'package:myapp/services/travel_diary_automation_service.dart';
 import 'package:myapp/services/travel_diary_service.dart';
+import 'package:myapp/services/trip_generation_status_service.dart';
 
 /// Composition root: ประกอบ service จริงของแอปเพียงจุดเดียว
 /// domain service แต่ละตัวรับ dependency ทาง constructor จึงสร้างชุด mock แยกใน test ได้
@@ -47,4 +48,6 @@ class AppServices {
       );
   static final FeedbackService feedback = FeedbackService(client: client);
   static final NavigationService navigator = NavigationService.instance;
+  static final TripGenerationStatusService tripGenerationStatus =
+      TripGenerationStatusService();
 }

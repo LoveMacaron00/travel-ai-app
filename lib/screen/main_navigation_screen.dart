@@ -39,6 +39,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     
     // Register navigation callback for showing destinations on map
     AppServices.navigator.registerShowDestinationCallback(_showDestinationOnMap);
+    AppServices.tripGenerationStatus.addListener(_onTripStatusChanged);
     
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
@@ -50,8 +51,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     });
   }
 
+  void _onTripStatusChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
+    AppServices.tripGenerationStatus.removeListener(_onTripStatusChanged);
     AppServices.diaryAutomation.stop();
     LocationService.instance.stopTracking();
     AppServices.navigator.clearCallback();
@@ -176,6 +182,137 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     });
   }
 
+  Widget _buildTripBanner(BuildContext context) {
+    final status = AppServices.tripGenerationStatus;
+    if (!status.isActive) return const SizedBox.shrink();
+    // ถ้าอยู่หน้า Plan อยู่แล้ว ไม่ต้องโชว์ tap bar ซ้อนกับหน้ากำลังสร้าง
+    final isOnPlanTab = _selectedIndex == 2 &&
+        !_showingDiary &&
+        !_showingFeedback &&
+        !_showingFootprint &&
+        !_showingAccountSettings;
+    if (isOnPlanTab) return const SizedBox.shrink();
+
+    final isGenerating = status.isGenerating;
+    final isSuccess = status.isSuccess;
+    final isError = status.isError;
+
+    final Color bgColor;
+    final IconData icon;
+    final String title;
+    final String subtitle;
+    final Widget? trailing;
+
+    if (isGenerating) {
+      bgColor = const Color(0xFFF4C025);
+      icon = Icons.auto_awesome;
+      title = context.l10n.designingTrip;
+      subtitle = context.l10n.tripReadyTapHint;
+      trailing = const SizedBox(
+        width: 16,
+        height: 16,
+        child: CircularProgressIndicator(
+          strokeWidth: 2.2,
+          color: Colors.black87,
+        ),
+      );
+    } else if (isSuccess) {
+      bgColor = const Color(0xFF2E7D32);
+      icon = Icons.check_circle;
+      title = context.l10n.tripReady;
+      subtitle = context.l10n.tripReadyTapHint;
+      trailing = const Icon(Icons.chevron_right, color: Colors.white, size: 20);
+    } else {
+      bgColor = const Color(0xFFC62828);
+      icon = Icons.error_outline;
+      title = context.l10n.tripGenerationFailed;
+      subtitle = status.message ?? '';
+      trailing = const Icon(Icons.close, color: Colors.white70, size: 18);
+    }
+
+    return Material(
+      color: bgColor,
+      child: InkWell(
+        onTap: () {
+          if (isSuccess) {
+            _selectTab(2);
+          } else if (isGenerating) {
+            _selectTab(2);
+          } else if (isError) {
+            status.dismiss();
+          }
+        },
+        child: SafeArea(
+          top: false,
+          bottom: false,
+          child: Container(
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: isSuccess || isError ? Colors.white24 : Colors.black12,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 16,
+                    color: isSuccess || isError ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: isSuccess || isError ? Colors.white : Colors.black87,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                        ),
+                      ),
+                      if (subtitle.isNotEmpty)
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isSuccess || isError ? Colors.white70 : Colors.black54,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                trailing,
+                if (isSuccess || isError) ...[
+                  const SizedBox(width: 6),
+                  GestureDetector(
+                    onTap: () => status.dismiss(),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(Icons.close, color: Colors.white70, size: 18),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const Color brandGold = Color(0xFFF4C025);
@@ -221,34 +358,45 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   (index) => _screens[index] ?? const SizedBox.shrink(),
                 ),
               ),
-        bottomNavigationBar: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: brandGold,
-          unselectedItemColor: Colors.black38,
-          showUnselectedLabels: true,
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          items: [
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.home_outlined),
-              activeIcon: const Icon(Icons.home),
-              label: l10n.home,
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 280),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              child: _buildTripBanner(context),
             ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.map_outlined),
-              activeIcon: const Icon(Icons.map),
-              label: l10n.map,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.calendar_today_outlined),
-              activeIcon: const Icon(Icons.calendar_today),
-              label: l10n.plan,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.person_outline),
-              activeIcon: const Icon(Icons.person),
-              label: l10n.profile,
+            BottomNavigationBar(
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.white,
+              selectedItemColor: brandGold,
+              unselectedItemColor: Colors.black38,
+              showUnselectedLabels: true,
+              currentIndex: _selectedIndex,
+              onTap: _onItemTapped,
+              items: [
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.home_outlined),
+                  activeIcon: const Icon(Icons.home),
+                  label: l10n.home,
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.map_outlined),
+                  activeIcon: const Icon(Icons.map),
+                  label: l10n.map,
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.calendar_today_outlined),
+                  activeIcon: const Icon(Icons.calendar_today),
+                  label: l10n.plan,
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.person_outline),
+                  activeIcon: const Icon(Icons.person),
+                  label: l10n.profile,
+                ),
+              ],
             ),
           ],
         ),

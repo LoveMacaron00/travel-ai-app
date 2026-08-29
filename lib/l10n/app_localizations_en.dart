@@ -696,6 +696,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get designingTrip => 'Designing your trip…';
 
   @override
+  String get tripReady => 'Trip ready ✓';
+
+  @override
+  String get tripReadyTapHint => 'Tap to view';
+
+  @override
+  String get tripGenerationFailed => 'Failed to create trip';
+
+  @override
   String get createTravelPlan => 'Create my travel plan';
 
   @override

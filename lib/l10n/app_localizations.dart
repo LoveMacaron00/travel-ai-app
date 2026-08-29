@@ -1376,6 +1376,24 @@ abstract class AppLocalizations {
   /// **'Designing your trip…'**
   String get designingTrip;
 
+  /// No description provided for @tripReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip ready ✓'**
+  String get tripReady;
+
+  /// No description provided for @tripReadyTapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to view'**
+  String get tripReadyTapHint;
+
+  /// No description provided for @tripGenerationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create trip'**
+  String get tripGenerationFailed;
+
   /// No description provided for @createTravelPlan.
   ///
   /// In en, this message translates to:

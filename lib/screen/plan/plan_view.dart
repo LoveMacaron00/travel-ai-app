@@ -14,47 +14,53 @@ extension _PlanMainView on _PlanScreenState {
     ),
   );
 
-  Widget _header(String eyebrow, String title, {VoidCallback? back}) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-    child: Row(
-      children: [
-        if (back != null) _roundIcon(Icons.arrow_back, back),
-        if (back != null) const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: back == null
-                ? CrossAxisAlignment.center
-                : CrossAxisAlignment.start,
-            children: [
-              Text(
-                eyebrow,
-                style: const TextStyle(
-                  color: Color(0xff8c7b60),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+  Widget _header(String eyebrow, String title, {VoidCallback? back}) {
+    final isViewingSavedPlan = widget.initialTripId != null;
+    final showBack = back != null && !isViewingSavedPlan;
+    final showReset = !isViewingSavedPlan;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+      child: Row(
+        children: [
+          if (showBack) _roundIcon(Icons.arrow_back, back),
+          if (showBack) const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: showBack
+                  ? CrossAxisAlignment.start
+                  : CrossAxisAlignment.center,
+              children: [
+                Text(
+                  eyebrow,
+                  style: const TextStyle(
+                    color: Color(0xff8c7b60),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: _ink,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: _ink,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
+              ],
+            ),
+          ),
+          if (showReset)
+            TextButton(
+              onPressed: _reset,
+              child: Text(
+                context.l10n.reset,
+                style: const TextStyle(color: _gold, fontWeight: FontWeight.w700),
               ),
-            ],
-          ),
-        ),
-        TextButton(
-          onPressed: _reset,
-          child: Text(
-            context.l10n.reset,
-            style: const TextStyle(color: _gold, fontWeight: FontWeight.w700),
-          ),
-        ),
-      ],
-    ),
-  );
+            ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildForm() => SingleChildScrollView(
     key: const ValueKey('form'),
@@ -425,7 +431,7 @@ extension _PlanMainView on _PlanScreenState {
                     child: OutlinedButton.icon(
                       onPressed: _showPlacePicker,
                       icon: const Icon(Icons.add),
-                      label: Text(context.l10n.addAnotherPlace),
+                      label: Text(context.l10n.addAPlace),
                     ),
                   ),
                 ),
@@ -622,6 +628,40 @@ extension _PlanMainView on _PlanScreenState {
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
+                            if (_provinceForStop(stop).isNotEmpty)
+                              Container(
+                                margin: const EdgeInsets.only(top: 4, bottom: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xffffe7a0),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.location_on,
+                                      size: 11,
+                                      color: Color(0xff986b00),
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Flexible(
+                                      child: Text(
+                                        _provinceForStop(stop),
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xff986b00),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             Text(
                               '${stop.arrivalTime} · ${stop.durationMinutes} ${context.l10n.minutesShort}',
                               style: const TextStyle(

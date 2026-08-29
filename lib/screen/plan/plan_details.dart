@@ -81,6 +81,40 @@ extension _PlanDetailsView on _PlanScreenState {
                       fontWeight: FontWeight.w900,
                     ),
                   ),
+                  if (_provinceForStop(stop).isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xffffe7a0),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.location_on,
+                            size: 13,
+                            color: Color(0xff986b00),
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              _provinceForStop(stop),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xff986b00),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 4),
                   Text(
                     '${stop.arrivalTime} · ${stop.durationMinutes} ${context.l10n.minutesShort} · ${_modeLabel(stop.transportMode)}',

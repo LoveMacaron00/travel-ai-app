@@ -684,6 +684,15 @@ class AppLocalizationsTh extends AppLocalizations {
   String get designingTrip => 'กำลังออกแบบทริป…';
 
   @override
+  String get tripReady => 'ออกแบบทริปเสร็จแล้ว ✓';
+
+  @override
+  String get tripReadyTapHint => 'แตะเพื่อดู';
+
+  @override
+  String get tripGenerationFailed => 'สร้างทริปไม่สำเร็จ';
+
+  @override
   String get createTravelPlan => 'สร้างแผนการเดินทาง';
 
   @override
