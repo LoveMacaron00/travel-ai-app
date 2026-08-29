@@ -16,6 +16,7 @@ class ProfileScreen extends StatefulWidget {
   final VoidCallback onBackTap;
   final VoidCallback? onFeedbackTap;
   final VoidCallback? onFootprintTap;
+  final VoidCallback? onAccountSettingsTap;
   final void Function(int tripId)? onViewPlan;
 
   const ProfileScreen({
@@ -23,14 +24,15 @@ class ProfileScreen extends StatefulWidget {
     required this.onBackTap,
     this.onFeedbackTap,
     this.onFootprintTap,
+    this.onAccountSettingsTap,
     this.onViewPlan,
   });
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  State<ProfileScreen> createState() => ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
   String _username = '';
   List<String> _interests = [];
@@ -87,6 +89,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
         }
       }
+    }
+  }
+
+  /// เรียกจาก MainNavigationScreen เมื่อกลับจาก AccountSettings overlay เพื่อรีเฟรชข้อมูล
+  void refreshProfile() {
+    if (mounted) {
+      setState(() => _loadUserData());
+    } else {
+      _loadUserData();
     }
   }
 
@@ -675,6 +686,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   title: Text(l10n.accountSettings),
                   trailing: const Icon(Icons.chevron_right, size: 20),
                   onTap: () async {
+                    if (widget.onAccountSettingsTap != null) {
+                      widget.onAccountSettingsTap!.call();
+                      return;
+                    }
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -682,7 +697,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     );
                     // โหลดข้อมูลโปรไฟล์ใหม่เมื่อกลับจากหน้าตั้งค่าบัญชี
-                    setState(() => _loadUserData());
+                    if (mounted) setState(() => _loadUserData());
                   },
                 ),
 

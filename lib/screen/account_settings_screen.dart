@@ -6,7 +6,9 @@ import 'package:myapp/widgets/media_image.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AccountSettingsScreen extends StatefulWidget {
-  const AccountSettingsScreen({super.key});
+  const AccountSettingsScreen({super.key, this.onBack});
+
+  final VoidCallback? onBack;
 
   @override
   State<AccountSettingsScreen> createState() => _AccountSettingsScreenState();
@@ -307,7 +309,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
+          onPressed: widget.onBack ?? () => Navigator.maybePop(context),
         ),
         title: Text(
           l10n.accountSettings,

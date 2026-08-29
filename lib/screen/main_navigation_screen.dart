@@ -7,6 +7,7 @@ import 'package:myapp/screen/plan_screen.dart';
 import 'package:myapp/screen/travel_diary_screen.dart';
 import 'package:myapp/screen/travel_footprint_screen.dart';
 import 'package:myapp/screen/feedback_history_screen.dart';
+import 'package:myapp/screen/account_settings_screen.dart';
 import 'package:myapp/services/location_service.dart';
 import 'package:myapp/services/app_services.dart';
 
@@ -24,8 +25,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   bool _showingDiary = false;
   bool _showingFeedback = false;
   bool _showingFootprint = false;
+  bool _showingAccountSettings = false;
   late final List<Widget?> _screens;
   final GlobalKey<MapScreenState> _mapScreenKey = GlobalKey<MapScreenState>();
+  final GlobalKey<ProfileScreenState> _profileScreenKey =
+      GlobalKey<ProfileScreenState>();
 
   @override
   void initState() {
@@ -60,6 +64,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _showingDiary = false;
       _showingFeedback = false;
       _showingFootprint = false;
+      _showingAccountSettings = false;
       _selectedIndex = 2;
       _screens[2] = PlanScreen(
         key: ValueKey('plan_$tripId'),
@@ -84,10 +89,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         return const PlanScreen();
       case 3:
         return ProfileScreen(
+          key: _profileScreenKey,
           onBackTap: () => _selectTab(0),
           onViewPlan: _viewPlan,
           onFeedbackTap: _showFeedback,
           onFootprintTap: _showFootprint,
+          onAccountSettingsTap: _showAccountSettings,
         );
       default:
         return const SizedBox.shrink();
@@ -99,6 +106,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _showingDiary = false;
       _showingFeedback = false;
       _showingFootprint = false;
+      _showingAccountSettings = false;
       _screens[index] ??= _createScreen(index);
       _selectedIndex = index;
     });
@@ -107,6 +115,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void _showDiary() {
     setState(() {
       _showingFeedback = false;
+      _showingFootprint = false;
+      _showingAccountSettings = false;
       _showingDiary = true;
     });
   }
@@ -115,6 +125,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     setState(() {
       _showingDiary = false;
       _showingFootprint = false;
+      _showingAccountSettings = false;
       _showingFeedback = true;
     });
   }
@@ -123,7 +134,25 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     setState(() {
       _showingDiary = false;
       _showingFeedback = false;
+      _showingAccountSettings = false;
       _showingFootprint = true;
+    });
+  }
+
+  void _showAccountSettings() {
+    setState(() {
+      _showingDiary = false;
+      _showingFeedback = false;
+      _showingFootprint = false;
+      _showingAccountSettings = true;
+    });
+  }
+
+  void _hideAccountSettings() {
+    setState(() => _showingAccountSettings = false);
+    // รีเฟรชโปรไฟล์เมื่อกลับจากหน้าตั้งค่าบัญชี (รอให้ IndexedStack mount ก่อน)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _profileScreenKey.currentState?.refreshProfile();
     });
   }
 
@@ -137,6 +166,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _showingDiary = false;
       _showingFeedback = false;
       _showingFootprint = false;
+      _showingAccountSettings = false;
     });
     if (_selectedIndex != 1) {
       _selectTab(1);
@@ -152,7 +182,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final l10n = context.l10n;
 
     return PopScope(
-      canPop: !_showingDiary && !_showingFeedback && !_showingFootprint,
+      canPop: !_showingDiary &&
+          !_showingFeedback &&
+          !_showingFootprint &&
+          !_showingAccountSettings,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
         if (_showingDiary) {
@@ -161,6 +194,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           setState(() => _showingFeedback = false);
         } else if (_showingFootprint) {
           setState(() => _showingFootprint = false);
+        } else if (_showingAccountSettings) {
+          _hideAccountSettings();
         }
       },
       child: Scaffold(
@@ -177,7 +212,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 onBack: () => setState(() => _showingFootprint = false),
                 onOpenDiary: _showDiary,
               )
-            : IndexedStack(
+            : _showingAccountSettings
+                ? AccountSettingsScreen(onBack: _hideAccountSettings)
+                : IndexedStack(
                 index: _selectedIndex,
                 children: List.generate(
                   _screens.length,
