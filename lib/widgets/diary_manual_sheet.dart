@@ -62,7 +62,7 @@ Future<DiaryManualResult?> showDiaryManualSheet({
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (sheetContext) => StatefulBuilder(
-      builder: (sheetContext, setSheetState) {
+      builder: (BuildContext innerContext, StateSetter setSheetState) {
         Future<void> pickImage(ImageSource source) async {
           final picker = ImagePicker();
           final file = await picker.pickImage(
@@ -121,7 +121,7 @@ Future<DiaryManualResult?> showDiaryManualSheet({
             24,
             0,
             24,
-            MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+            MediaQuery.of(innerContext).viewInsets.bottom + 24,
           ),
           child: SingleChildScrollView(
             child: Column(
@@ -129,7 +129,7 @@ Future<DiaryManualResult?> showDiaryManualSheet({
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  isEdit ? context.l10n.editMemory : context.l10n.manualDiaryTitle,
+                  isEdit ? innerContext.l10n.editMemory : innerContext.l10n.manualDiaryTitle,
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 18),
@@ -139,7 +139,7 @@ Future<DiaryManualResult?> showDiaryManualSheet({
                       Expanded(
                         child: imageSourceCard(
                           icon: Icons.photo_camera_outlined,
-                          label: context.l10n.takePhoto,
+                          label: innerContext.l10n.takePhoto,
                           onTap: () => pickImage(ImageSource.camera),
                         ),
                       ),
@@ -147,7 +147,7 @@ Future<DiaryManualResult?> showDiaryManualSheet({
                       Expanded(
                         child: imageSourceCard(
                           icon: Icons.photo_library_outlined,
-                          label: context.l10n.chooseFromGallery,
+                          label: innerContext.l10n.chooseFromGallery,
                           onTap: () => pickImage(ImageSource.gallery),
                         ),
                       ),
@@ -223,7 +223,7 @@ Future<DiaryManualResult?> showDiaryManualSheet({
                               children: [
                                 const Icon(Icons.camera_alt_outlined, color: Colors.white, size: 14),
                                 const SizedBox(width: 4),
-                                Text(context.l10n.capturePhoto,
+                                Text(innerContext.l10n.capturePhoto,
                                     style: const TextStyle(color: Colors.white, fontSize: 12)),
                               ],
                             ),
@@ -246,7 +246,7 @@ Future<DiaryManualResult?> showDiaryManualSheet({
                               children: [
                                 const Icon(Icons.photo_library_outlined, color: Colors.white, size: 14),
                                 const SizedBox(width: 4),
-                                Text(context.l10n.choosePhoto,
+                                Text(innerContext.l10n.choosePhoto,
                                     style: const TextStyle(color: Colors.white, fontSize: 12)),
                               ],
                             ),
@@ -261,8 +261,8 @@ Future<DiaryManualResult?> showDiaryManualSheet({
                   controller: titleCtrl,
                   textCapitalization: TextCapitalization.sentences,
                   decoration: InputDecoration(
-                    labelText: context.l10n.placeName,
-                    hintText: context.l10n.placeNameHint,
+                    labelText: innerContext.l10n.placeName,
+                    hintText: innerContext.l10n.placeNameHint,
                     prefixIcon: const Icon(Icons.place_outlined),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   ),
@@ -272,8 +272,8 @@ Future<DiaryManualResult?> showDiaryManualSheet({
                   controller: provinceCtrl,
                   textCapitalization: TextCapitalization.sentences,
                   decoration: InputDecoration(
-                    labelText: context.l10n.provinceVisited,
-                    hintText: context.l10n.provinceHint,
+                    labelText: innerContext.l10n.provinceVisited,
+                    hintText: innerContext.l10n.provinceHint,
                     prefixIcon: const Icon(Icons.flag_outlined),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   ),
@@ -282,7 +282,7 @@ Future<DiaryManualResult?> showDiaryManualSheet({
                 InkWell(
                   onTap: () async {
                     final result = await Navigator.push<LatLng>(
-                      context,
+                      innerContext,
                       MaterialPageRoute(builder: (_) => MapPickerScreen(initialLocation: selectedLocation)),
                     );
                     if (result != null) setSheetState(() => selectedLocation = result);
@@ -306,8 +306,8 @@ Future<DiaryManualResult?> showDiaryManualSheet({
                         Expanded(
                           child: Text(
                             selectedLocation != null
-                                ? '${context.l10n.selectedLocation}: ${selectedLocation!.latitude.toStringAsFixed(4)}, ${selectedLocation!.longitude.toStringAsFixed(4)}'
-                                : context.l10n.selectLocationOnMap,
+                                ? '${innerContext.l10n.selectedLocation}: ${selectedLocation!.latitude.toStringAsFixed(4)}, ${selectedLocation!.longitude.toStringAsFixed(4)}'
+                                : innerContext.l10n.selectLocationOnMap,
                             style: TextStyle(
                               color: selectedLocation != null ? Colors.black87 : Colors.grey,
                               fontSize: 14,
@@ -335,8 +335,8 @@ Future<DiaryManualResult?> showDiaryManualSheet({
                   maxLines: 5,
                   textCapitalization: TextCapitalization.sentences,
                   decoration: InputDecoration(
-                    labelText: context.l10n.memoryNote,
-                    hintText: context.l10n.memoryNoteHint,
+                    labelText: innerContext.l10n.memoryNote,
+                    hintText: innerContext.l10n.memoryNoteHint,
                     prefixIcon: const Padding(
                       padding: EdgeInsets.only(bottom: 48),
                       child: Icon(Icons.edit_outlined),
@@ -357,7 +357,7 @@ Future<DiaryManualResult?> showDiaryManualSheet({
                       existingImageUrls: existingImageUrls,
                     );
                     // Dispose after pop via then
-                    Navigator.pop(sheetContext, result);
+                    Navigator.pop(innerContext, result);
                   },
                   style: FilledButton.styleFrom(
                     backgroundColor: _sheetGold,
@@ -366,7 +366,7 @@ Future<DiaryManualResult?> showDiaryManualSheet({
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   icon: const Icon(Icons.save_outlined),
-                  label: Text(context.l10n.saveMemory),
+                  label: Text(innerContext.l10n.saveMemory),
                 ),
               ],
             ),

@@ -126,15 +126,17 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
 
   Future<void> _addManualDiary() async {
     final result = await showDiaryManualSheet(context: context, isEdit: false);
+    if (!mounted) return;
     if (result == null) return;
     if (result.title.isEmpty && result.province.isEmpty && result.note.isEmpty && result.pickedImage == null) return;
 
     String? uploadedUrl;
     if (result.pickedImage != null) {
       if (mounted) {
+        final l10n = context.l10n;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${context.l10n.memorySaved}...'),
+            content: Text('${l10n.memorySaved}...'),
             duration: const Duration(seconds: 10),
           ),
         );
@@ -143,9 +145,11 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       uploadedUrl = await _diary.uploadImage(
         ImageUpload(bytes: bytes, filename: result.pickedImage!.name),
       );
+      if (!mounted) return;
       if (mounted) ScaffoldMessenger.of(context).clearSnackBars();
     }
 
+    if (!mounted) return;
     final now = DateTime.now();
     final position = LocationService.instance.currentPosition;
     final entry = TravelDiaryEntry(
@@ -160,11 +164,13 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       source: 'manual',
     );
     final ok = await _diary.upsert(entry);
+    if (!mounted) return;
     if (ok) {
       await _loadEntries();
       if (mounted) {
+        final l10n = context.l10n;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.memorySaved)),
+          SnackBar(content: Text(l10n.memorySaved)),
         );
       }
     }
@@ -180,15 +186,17 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       initialLocation: entry.hasLocation ? LatLng(entry.latitude!, entry.longitude!) : null,
       isEdit: true,
     );
+    if (!mounted) return;
     if (result == null) return;
 
     String? uploadedUrl;
     List<String> finalImageUrls = [];
     if (result.pickedImage != null) {
       if (mounted) {
+        final l10n = context.l10n;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${context.l10n.memorySaved}...'),
+            content: Text('${l10n.memorySaved}...'),
             duration: const Duration(seconds: 10),
           ),
         );
@@ -197,6 +205,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       uploadedUrl = await _diary.uploadImage(
         ImageUpload(bytes: bytes, filename: result.pickedImage!.name),
       );
+      if (!mounted) return;
       if (mounted) ScaffoldMessenger.of(context).clearSnackBars();
       if (uploadedUrl != null) {
         finalImageUrls = [uploadedUrl];
@@ -205,8 +214,9 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
           finalImageUrls = result.existingImageUrls;
         }
         if (mounted) {
+          final l10n = context.l10n;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.l10n.uploadFailed)),
+            SnackBar(content: Text(l10n.uploadFailed)),
           );
         }
       }
@@ -218,6 +228,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       return;
     }
 
+    if (!mounted) return;
     final updated = TravelDiaryEntry(
       id: entry.id,
       date: entry.date,
@@ -234,11 +245,13 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     );
 
     final ok = await _diary.upsert(updated);
+    if (!mounted) return;
     if (ok) {
       await _loadEntries();
       if (mounted) {
+        final l10n = context.l10n;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.memorySaved)),
+          SnackBar(content: Text(l10n.memorySaved)),
         );
       }
     }
