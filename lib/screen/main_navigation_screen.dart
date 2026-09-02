@@ -72,9 +72,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _showingFootprint = false;
       _showingAccountSettings = false;
       _selectedIndex = 2;
+      // ใช้ UniqueKey เพื่อให้กดดู trip เดิมซ้ำหลังกดย้อนกลับแล้วยังโหลดใหม่ได้ (ไม่ติด state เดิมที่ _plan==null)
       _screens[2] = PlanScreen(
-        key: ValueKey('plan_$tripId'),
+        key: ValueKey('plan_${tripId}_${DateTime.now().millisecondsSinceEpoch}'),
         initialTripId: tripId,
+        onBackFromSavedView: () {
+          setState(() {
+            _screens[2] = const PlanScreen();
+            _selectedIndex = 3;
+          });
+        },
       );
     });
   }

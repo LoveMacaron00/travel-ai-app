@@ -2,65 +2,60 @@ part of '../plan_screen.dart';
 
 // Form, result list และ map preview ของแผน
 extension _PlanMainView on _PlanScreenState {
-  Widget _buildScaffold(BuildContext context) => Scaffold(
-    backgroundColor: _canvas,
-    body: SafeArea(
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 350),
-        child: _loadingExistingPlan 
-            ? const Center(child: CircularProgressIndicator(color: _gold))
-            : _plan == null ? _buildForm() : _buildResult(_plan!),
+  Widget _buildScaffold(BuildContext context) => PopScope(
+    canPop: _plan == null &&
+        !_loadingExistingPlan &&
+        !(widget.initialTripId != null && widget.onBackFromSavedView != null),
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop) _backToForm();
+    },
+    child: Scaffold(
+      backgroundColor: _canvas,
+      body: SafeArea(
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 350),
+          child: _loadingExistingPlan 
+              ? const Center(child: CircularProgressIndicator(color: _gold))
+              : _plan == null ? _buildForm() : _buildResult(_plan!),
+        ),
       ),
     ),
   );
 
-  Widget _header(String eyebrow, String title, {VoidCallback? back}) {
-    final isViewingSavedPlan = widget.initialTripId != null;
-    final showBack = back != null && !isViewingSavedPlan;
-    final showReset = !isViewingSavedPlan;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-      child: Row(
-        children: [
-          if (showBack) _roundIcon(Icons.arrow_back, back),
-          if (showBack) const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: showBack
-                  ? CrossAxisAlignment.start
-                  : CrossAxisAlignment.center,
-              children: [
-                Text(
-                  eyebrow,
-                  style: const TextStyle(
-                    color: Color(0xff8c7b60),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+  Widget _header(String eyebrow, String title, {VoidCallback? back}) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+    child: Row(
+      children: [
+        if (back != null) _roundIcon(Icons.arrow_back, back),
+        if (back != null) const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: back == null
+                ? CrossAxisAlignment.center
+                : CrossAxisAlignment.start,
+            children: [
+              Text(
+                eyebrow,
+                style: const TextStyle(
+                  color: Color(0xff8c7b60),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                 ),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: _ink,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (showReset)
-            TextButton(
-              onPressed: _reset,
-              child: Text(
-                context.l10n.reset,
-                style: const TextStyle(color: _gold, fontWeight: FontWeight.w700),
               ),
-            ),
-        ],
-      ),
-    );
-  }
+              Text(
+                title,
+                style: const TextStyle(
+                  color: _ink,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildForm() => SingleChildScrollView(
     key: const ValueKey('form'),
@@ -310,7 +305,7 @@ extension _PlanMainView on _PlanScreenState {
                   child: _header(
                     context.l10n.aiGeneratedPlan,
                     context.l10n.yourRoute,
-                    back: _reset,
+                    back: _backToForm,
                   ),
                 ),
                 if (plan.days.isNotEmpty)

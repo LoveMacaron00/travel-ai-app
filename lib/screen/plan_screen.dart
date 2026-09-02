@@ -33,10 +33,13 @@ class _PlanRouteLeg {
 
 /// สร้างและแสดงแผนเที่ยวจาก AI ก่อนส่งจุดแวะไปยังหน้าจอนำทาง
 class PlanScreen extends StatefulWidget {
-  const PlanScreen({super.key, this.initialTripId});
+  const PlanScreen({super.key, this.initialTripId, this.onBackFromSavedView});
 
   /// เปิดด้วยแผนที่บันทึกไว้แล้ว (โหลดจาก GET /trips/:id)
   final int? initialTripId;
+
+  /// ใช้เมื่อเปิดจาก Profile (tab) แล้วกดย้อนกลับ ต้องการกลับไปหน้า Profile แทนการโชว์ฟอร์มเปล่า
+  final VoidCallback? onBackFromSavedView;
 
   @override
   State<PlanScreen> createState() => _PlanScreenState();
@@ -119,6 +122,30 @@ class _PlanScreenState extends State<PlanScreen> {
     _loadPlanOptions();
     if (_position == null) _getLocation();
     if (widget.initialTripId != null) {
+      _loadExistingPlan(widget.initialTripId!);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant PlanScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialTripId != oldWidget.initialTripId) {
+      if (widget.initialTripId != null) {
+        _loadExistingPlan(widget.initialTripId!);
+      } else {
+        // กลับมาเป็นโหมดสร้างใหม่
+        _routeRequestId++;
+        setState(() {
+          _plan = null;
+          _route = [];
+          _selectedDayIndex = 0;
+          _loadingExistingPlan = false;
+          _error = null;
+        });
+      }
+    } else if (widget.initialTripId != null && _plan == null && !_loadingExistingPlan) {
+      // กรณี View เดิมถูก _backToForm ล้าง _plan เป็น null แล้วกดเข้ามาดู trip เดิมซ้ำด้วย key เดิม
+      // ให้โหลดใหม่
       _loadExistingPlan(widget.initialTripId!);
     }
   }
@@ -744,28 +771,24 @@ class _PlanScreenState extends State<PlanScreen> {
     unawaited(_buildRoute(updatedPlan));
   }
 
-  void _reset() {
-    if (widget.initialTripId != null && Navigator.canPop(context)) {
+  void _backToForm() {
+    if (widget.initialTripId != null && widget.onBackFromSavedView != null) {
+      widget.onBackFromSavedView!.call();
+      return;
+    }
+    if (_plan != null && widget.initialTripId != null && Navigator.canPop(context)) {
       Navigator.pop(context);
       return;
     }
-    
+    if (_plan == null) {
+      if (Navigator.canPop(context)) Navigator.pop(context);
+      return;
+    }
     _routeRequestId++;
     setState(() {
-      _dates = null;
-      _budget = 30000;
-      _days = 3;
-      _selectedProvince = null;
-      _interests.clear();
-      _modes
-        ..clear()
-        ..add('car');
-      _mustVisit.clear();
       _plan = null;
-      _selectedDayIndex = 0;
       _route = [];
-      _excluded.clear();
-      _error = null;
+      _selectedDayIndex = 0;
     });
   }
 
