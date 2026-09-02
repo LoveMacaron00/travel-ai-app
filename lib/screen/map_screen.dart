@@ -66,8 +66,12 @@ class MapScreenState extends State<MapScreen> {
 
     _searchController.addListener(_onSearchChanged);
     _searchFocus.addListener(() {
-      if (!_searchFocus.hasFocus) {
-        setState(() => _showSuggestions = false);
+      if (_searchFocus.hasFocus) {
+        _updateSearchSuggestions();
+      } else {
+        if (_showSuggestions) {
+          setState(() => _showSuggestions = false);
+        }
       }
     });
   }
@@ -105,6 +109,9 @@ class MapScreenState extends State<MapScreen> {
         if (mounted) _mapController.move(nextPosition, 15.0);
       });
     }
+    if (_searchFocus.hasFocus) {
+      _updateSearchSuggestions();
+    }
   }
 
   void _onSearchChanged() {
@@ -114,21 +121,71 @@ class MapScreenState extends State<MapScreen> {
   void _updateSearchSuggestions() {
     if (!mounted) return;
     final query = _searchController.text.trim().toLowerCase();
+    // ถ้า query ว่างแต่ focus อยู่ ให้โชว์ 5 ที่ใกล้ที่สุด (ตามรูปที่ขอ)
     if (query.isEmpty) {
-      if (_showSuggestions || _suggestions.isNotEmpty) {
-        setState(() {
-          _suggestions = [];
-          _showSuggestions = false;
+      if (!_searchFocus.hasFocus) {
+        if (_showSuggestions || _suggestions.isNotEmpty) {
+          setState(() {
+            _suggestions = [];
+            _showSuggestions = false;
+          });
+        }
+        return;
+      }
+      // โชว์ 5 แนะนำใกล้สุด
+      List<PlaceMarker> nearest = List<PlaceMarker>.from(_places);
+      if (_currentPosition != null && nearest.isNotEmpty) {
+        const d = Distance();
+        nearest.sort((a, b) {
+          final da = d.as(
+            LengthUnit.Kilometer,
+            _currentPosition!,
+            LatLng(a.latitude, a.longitude),
+          );
+          final db = d.as(
+            LengthUnit.Kilometer,
+            _currentPosition!,
+            LatLng(b.latitude, b.longitude),
+          );
+          return da.compareTo(db);
         });
       }
+      final newSuggestions = nearest.take(5).toList();
+      final show = newSuggestions.isNotEmpty;
+      if (_suggestions.length == newSuggestions.length &&
+          _showSuggestions == show &&
+          _suggestions.every((e) => newSuggestions.contains(e))) {
+        return;
+      }
+      if (!mounted) return;
+      setState(() {
+        _suggestions = newSuggestions;
+        _showSuggestions = show;
+      });
       return;
     }
-    // ใช้ p.category ตรงๆ ไม่เรียก _getCategoryLabel(context) เพื่อกัน Assertion ตอน listener เด้งนอก build
     final matched = _places.where((p) {
       return p.title.toLowerCase().contains(query) ||
           p.description.toLowerCase().contains(query) ||
           p.category.toLowerCase().contains(query);
     }).toList();
+    // เรียงใกล้สุดก่อนเมื่อมีตำแหน่งปัจจุบัน
+    if (_currentPosition != null) {
+      const d = Distance();
+      matched.sort((a, b) {
+        final da = d.as(
+          LengthUnit.Kilometer,
+          _currentPosition!,
+          LatLng(a.latitude, a.longitude),
+        );
+        final db = d.as(
+          LengthUnit.Kilometer,
+          _currentPosition!,
+          LatLng(b.latitude, b.longitude),
+        );
+        return da.compareTo(db);
+      });
+    }
     final newSuggestions = matched.take(5).toList();
     final show = matched.isNotEmpty && _searchFocus.hasFocus;
     if (_suggestions.length == newSuggestions.length &&
@@ -155,14 +212,41 @@ class MapScreenState extends State<MapScreen> {
     final query = _searchController.text.trim().toLowerCase();
     List<PlaceMarker> newSuggestions = [];
     bool show = false;
-    if (query.isNotEmpty && _searchFocus.hasFocus) {
-      final matched = _places.where((p) {
-        return p.title.toLowerCase().contains(query) ||
-            p.description.toLowerCase().contains(query) ||
-            p.category.toLowerCase().contains(query);
-      }).toList();
-      newSuggestions = matched.take(5).toList();
-      show = matched.isNotEmpty;
+    if (_searchFocus.hasFocus) {
+      List<PlaceMarker> source;
+      if (query.isNotEmpty) {
+        source = _places.where((p) {
+          return p.title.toLowerCase().contains(query) ||
+              p.description.toLowerCase().contains(query) ||
+              p.category.toLowerCase().contains(query);
+        }).toList();
+      } else {
+        // โฟกัสแต่ยังไม่พิมพ์ → โชว์ 5 ใกล้สุด
+        source = List<PlaceMarker>.from(_places);
+      }
+      if (_currentPosition != null && source.isNotEmpty) {
+        const d = Distance();
+        source.sort((a, b) {
+          final da = d.as(
+            LengthUnit.Kilometer,
+            _currentPosition!,
+            LatLng(a.latitude, a.longitude),
+          );
+          final db = d.as(
+            LengthUnit.Kilometer,
+            _currentPosition!,
+            LatLng(b.latitude, b.longitude),
+          );
+          return da.compareTo(db);
+        });
+      }
+      if (query.isNotEmpty) {
+        newSuggestions = source.take(5).toList();
+        show = source.isNotEmpty;
+      } else {
+        newSuggestions = source.take(5).toList();
+        show = newSuggestions.isNotEmpty;
+      }
     }
     if (!mounted) return;
     setState(() {
@@ -245,6 +329,9 @@ class MapScreenState extends State<MapScreen> {
             _places = fetchedPlaces;
             _filteredPlaces = List.from(fetchedPlaces);
           });
+          if (_searchFocus.hasFocus) {
+            _updateSearchSuggestions();
+          }
           if (_pendingDestinationId != null) {
             showDestination(int.tryParse(_pendingDestinationId!) ?? -1);
           }
@@ -396,6 +483,29 @@ class MapScreenState extends State<MapScreen> {
       default:
         return Icons.place;
     }
+  }
+
+  String _distanceText(PlaceMarker place) {
+    final pos = _currentPosition;
+    if (pos == null) return '';
+    // กันพิกัดเพี้ยน
+    if (place.latitude.isNaN ||
+        place.longitude.isNaN ||
+        place.latitude < -90 ||
+        place.latitude > 90 ||
+        place.longitude < -180 ||
+        place.longitude > 180) {
+      return '';
+    }
+    final km = const Distance().as(
+      LengthUnit.Kilometer,
+      pos,
+      LatLng(place.latitude, place.longitude),
+    );
+    if (km.isNaN || km.isInfinite) return '';
+    if (km < 1) return '${(km * 1000).round()} m';
+    if (km < 10) return '${km.toStringAsFixed(1)} km';
+    return '${km.round()} km';
   }
 
   Widget _buildMarkerIcon(PlaceMarker place) {

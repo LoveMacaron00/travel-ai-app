@@ -208,6 +208,7 @@ extension _MapView on MapScreenState {
                           final place = _suggestions[index];
                           final catColor = _getCategoryColor(place.category);
                           final catIcon = _getCategoryIcon(place.category);
+                          final dist = _distanceText(place);
                           return ListTile(
                             dense: true,
                             contentPadding: const EdgeInsets.symmetric(
@@ -224,12 +225,52 @@ extension _MapView on MapScreenState {
                               ),
                               child: Icon(catIcon, color: catColor, size: 17),
                             ),
-                            title: Text(
-                              place.title,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
+                            title: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    place.title,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (dist.isNotEmpty) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xffe9ad0c).withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.near_me,
+                                          size: 10,
+                                          color: Color(0xff8c7b60),
+                                        ),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          dist,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xff8c7b60),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                             subtitle: Text(
                               place.description,
@@ -417,25 +458,61 @@ extension _MapView on MapScreenState {
                                   ],
                                 ),
                                 const SizedBox(height: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    _getCategoryLabel(
-                                      _selectedMarker!.category,
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        _getCategoryLabel(
+                                          _selectedMarker!.category,
+                                        ),
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.orange,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                     ),
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.orange,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                                    if (_distanceText(_selectedMarker!).isNotEmpty) ...[
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xffe9ad0c).withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.near_me,
+                                              size: 11,
+                                              color: Color(0xff8c7b60),
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Text(
+                                              _distanceText(_selectedMarker!),
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w700,
+                                                color: Color(0xff8c7b60),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                                 const SizedBox(height: 6.0),
                                 Text(
