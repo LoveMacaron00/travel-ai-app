@@ -133,7 +133,6 @@ class _PlanScreenState extends State<PlanScreen> {
       if (widget.initialTripId != null) {
         _loadExistingPlan(widget.initialTripId!);
       } else {
-        // กลับมาเป็นโหมดสร้างใหม่
         _routeRequestId++;
         setState(() {
           _plan = null;
@@ -143,10 +142,6 @@ class _PlanScreenState extends State<PlanScreen> {
           _error = null;
         });
       }
-    } else if (widget.initialTripId != null && _plan == null && !_loadingExistingPlan) {
-      // กรณี View เดิมถูก _backToForm ล้าง _plan เป็น null แล้วกดเข้ามาดู trip เดิมซ้ำด้วย key เดิม
-      // ให้โหลดใหม่
-      _loadExistingPlan(widget.initialTripId!);
     }
   }
 
@@ -247,6 +242,7 @@ class _PlanScreenState extends State<PlanScreen> {
   @override
   void dispose() {
     _locationService.removeListener(_onSharedLocationChanged);
+    _map.dispose();
     super.dispose();
   }
 

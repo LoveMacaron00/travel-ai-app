@@ -85,8 +85,10 @@ class MapScreenState extends State<MapScreen> {
   @override
   void dispose() {
     _locationService.removeListener(_onSharedLocationChanged);
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _searchFocus.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -106,45 +108,80 @@ class MapScreenState extends State<MapScreen> {
   }
 
   void _onSearchChanged() {
-    _applyFilters();
+    _updateSearchSuggestions();
+  }
+
+  void _updateSearchSuggestions() {
+    if (!mounted) return;
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) {
+      if (_showSuggestions || _suggestions.isNotEmpty) {
+        setState(() {
+          _suggestions = [];
+          _showSuggestions = false;
+        });
+      }
+      return;
+    }
+    // ใช้ p.category ตรงๆ ไม่เรียก _getCategoryLabel(context) เพื่อกัน Assertion ตอน listener เด้งนอก build
+    final matched = _places.where((p) {
+      return p.title.toLowerCase().contains(query) ||
+          p.description.toLowerCase().contains(query) ||
+          p.category.toLowerCase().contains(query);
+    }).toList();
+    final newSuggestions = matched.take(5).toList();
+    final show = matched.isNotEmpty && _searchFocus.hasFocus;
+    if (_suggestions.length == newSuggestions.length &&
+        _showSuggestions == show &&
+        _suggestions.every((e) => newSuggestions.contains(e))) {
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _suggestions = newSuggestions;
+      _showSuggestions = show;
+    });
   }
 
   void _applyFilters() {
+    if (!mounted) return;
+    final byCategory = _selectedCategory == 'all'
+        ? List<PlaceMarker>.from(_places)
+        : _places
+              .where(
+                (p) => p.category.toLowerCase() == _selectedCategory.toLowerCase(),
+              )
+              .toList();
     final query = _searchController.text.trim().toLowerCase();
-
-    final matched = _places.where((p) {
-      final matchesQuery =
-          query.isEmpty ||
-          p.title.toLowerCase().contains(query) ||
-          p.description.toLowerCase().contains(query) ||
-          _getCategoryLabel(p.category).toLowerCase().contains(query);
-
-      final matchesCategory =
-          _selectedCategory == 'all' ||
-          p.category.toLowerCase() == _selectedCategory.toLowerCase();
-
-      return matchesQuery && matchesCategory;
-    }).toList();
-
+    List<PlaceMarker> newSuggestions = [];
+    bool show = false;
+    if (query.isNotEmpty && _searchFocus.hasFocus) {
+      final matched = _places.where((p) {
+        return p.title.toLowerCase().contains(query) ||
+            p.description.toLowerCase().contains(query) ||
+            p.category.toLowerCase().contains(query);
+      }).toList();
+      newSuggestions = matched.take(5).toList();
+      show = matched.isNotEmpty;
+    }
+    if (!mounted) return;
     setState(() {
-      if (query.isNotEmpty) {
-        _suggestions = matched.take(5).toList();
-        _showSuggestions = matched.isNotEmpty;
-      } else {
-        _suggestions = [];
-        _showSuggestions = false;
-      }
-      _filteredPlaces = matched;
+      _filteredPlaces = byCategory;
+      _suggestions = newSuggestions;
+      _showSuggestions = show;
     });
   }
 
   void _selectSuggestion(PlaceMarker place) {
+    // กัน listener เด้งแล้วโชว์ suggestions ซ้ำ
+    _searchController.removeListener(_onSearchChanged);
     _searchController.text = place.title;
+    _searchController.addListener(_onSearchChanged);
     _searchFocus.unfocus();
     setState(() {
+      _suggestions = [];
       _showSuggestions = false;
       _selectedMarker = place;
-      _filteredPlaces = [place];
     });
     _mapController.move(LatLng(place.latitude, place.longitude), 16.0);
   }
@@ -157,7 +194,6 @@ class MapScreenState extends State<MapScreen> {
       _showSuggestions = false;
       _selectedMarker = null;
     });
-    _applyFilters();
   }
 
   Future<void> _loadDestinations() async {
@@ -181,6 +217,9 @@ class MapScreenState extends State<MapScreen> {
           double? lat = double.tryParse(item['latitude'].toString());
           double? lng = double.tryParse(item['longitude'].toString());
           if (lat == null || lng == null) continue;
+          if (lat.isNaN || lng.isNaN || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            continue;
+          }
 
           fetchedPlaces.add(
             PlaceMarker(

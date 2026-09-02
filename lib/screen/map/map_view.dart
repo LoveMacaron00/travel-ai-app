@@ -89,6 +89,17 @@ extension _MapView on MapScreenState {
                   child: TextField(
                     controller: _searchController,
                     focusNode: _searchFocus,
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (value) {
+                      final query = value.trim().toLowerCase();
+                      if (query.isEmpty) return;
+                      final matched = _places.where((p) {
+                        return p.title.toLowerCase().contains(query) ||
+                            p.description.toLowerCase().contains(query) ||
+                            p.category.toLowerCase().contains(query);
+                      }).toList();
+                      if (matched.isNotEmpty) _selectSuggestion(matched.first);
+                    },
                     decoration: InputDecoration(
                       hintText: context.l10n.searchAttractionsHint,
                       border: InputBorder.none,
@@ -139,11 +150,10 @@ extension _MapView on MapScreenState {
                           ),
                           selected: isSelected,
                           onSelected: (bool selected) {
-                            _updateState(() {
-                              _selectedCategory = catId;
-                              _selectedMarker = null;
-                              _applyFilters();
-                            });
+                            if (!selected) return;
+                            _selectedCategory = catId;
+                            _selectedMarker = null;
+                            _applyFilters();
                           },
                           selectedColor: Colors.orange,
                           labelStyle: TextStyle(
