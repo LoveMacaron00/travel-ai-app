@@ -764,7 +764,22 @@ class _PlanScreenState extends State<PlanScreen> {
       _plan = updatedPlan;
       _route = [];
     });
+    unawaited(_savePlanChanges(updatedPlan));
     unawaited(_buildRoute(updatedPlan));
+  }
+
+  /// บันทึกการแก้ไขสถานที่ (ลบ/เพิ่ม/สลับลำดับ) กลับลง server
+  /// เพื่อให้เปิดแผนเดิมจาก Profile ได้ตรงกับที่ผู้ใช้แก้ไขล่าสุด
+  Future<void> _savePlanChanges(TravelPlan plan) async {
+    if (plan.tripId <= 0) return;
+    final result = await AppServices.trips.updateTravelPlan(
+      plan.tripId,
+      plan.toJson(),
+    );
+    if (!mounted || result['success'] == true) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${result['message'] ?? 'บันทึกแผนไม่สำเร็จ'}')),
+    );
   }
 
   void _backToForm() {

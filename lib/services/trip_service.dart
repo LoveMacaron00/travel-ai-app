@@ -65,6 +65,29 @@ class TripService {
     }
   }
 
+  /// บันทึกการแก้ไขแผนที่ผู้ใช้ทำหน้า plan view (ลบ/เพิ่ม/สลับลำดับสถานที่)
+  /// ลง trip_plans ผ่าน PUT /trips/:id/plan
+  Future<Map<String, dynamic>> updateTravelPlan(
+    int tripId,
+    Map<String, dynamic> planData,
+  ) async {
+    try {
+      final response = await _client.put('/trips/$tripId/plan', body: planData);
+      if (response.statusCode != 200) {
+        return {
+          'success': false,
+          'message': ApiClient.responseMessage(
+            response,
+            'Unable to save plan changes',
+          ),
+        };
+      }
+      return {'success': true};
+    } catch (error) {
+      return {'success': false, 'message': 'Network error: $error'};
+    }
+  }
+
   /// ดึงประวัติแผนเที่ยวที่ผู้ใช้เคยสร้าง (GET /trips)
   Future<Map<String, dynamic>> listMyPlans() async {
     try {

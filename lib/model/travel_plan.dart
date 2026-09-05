@@ -55,6 +55,24 @@ class TravelStop {
         .toList(),
   );
 
+  Map<String, dynamic> toJson() => {
+    'destinationId': destinationId,
+    'place': place,
+    'province': province,
+    'activity': activity,
+    'latitude': latitude,
+    'longitude': longitude,
+    'imageUrl': imageUrl,
+    'arrivalTime': arrivalTime,
+    'durationMinutes': durationMinutes,
+    'entryCost': entryCost,
+    'foodCost': foodCost,
+    'transportMode': transportMode,
+    'transportCost': transportCost,
+    'tip': tip,
+    'segments': segments.map((e) => e.toJson()).toList(),
+  };
+
   TravelStop copyWith({
     String? destinationId,
     String? place,
@@ -112,6 +130,14 @@ class TravelSegment {
     estimatedMinutes: _number(j['estimatedMinutes']).round(),
     estimatedCost: _number(j['estimatedCost']),
   );
+
+  Map<String, dynamic> toJson() => {
+    'mode': mode,
+    'from': from,
+    'to': to,
+    'estimatedMinutes': estimatedMinutes,
+    'estimatedCost': estimatedCost,
+  };
 }
 
 class TravelDay {
@@ -131,6 +157,12 @@ class TravelDay {
         .map((e) => TravelStop.fromJson(Map<String, dynamic>.from(e)))
         .toList(),
   );
+
+  Map<String, dynamic> toJson() => {
+    'day': day,
+    'theme': theme,
+    'stops': stops.map((e) => e.toJson()).toList(),
+  };
 }
 
 class TravelPlan {
@@ -164,6 +196,14 @@ class TravelPlan {
       tips: ((j['tips'] as List?) ?? const []).map((e) => '$e').toList(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'summary': summary,
+    'totalEstimatedCost': totalEstimatedCost,
+    'budgetBreakdown': budgetBreakdown,
+    'days': days.map((e) => e.toJson()).toList(),
+    'tips': tips,
+  };
 
   /// มุมมองแบบแบนสำหรับ Map/Navigation ที่ไม่ต้องสนใจการแบ่งวัน
   List<TravelStop> get allStops => days.expand((d) => d.stops).toList();
