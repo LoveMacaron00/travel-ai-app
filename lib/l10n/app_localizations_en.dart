@@ -862,6 +862,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String savedPlanDuration(int count) {
+    return '$count-day trip';
+  }
+
+  @override
+  String planCreatedAt(String date) {
+    return 'Created $date';
+  }
+
+  @override
   String get deletePlan => 'Delete Plan';
 
   @override

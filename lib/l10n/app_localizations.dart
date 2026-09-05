@@ -1688,6 +1688,18 @@ abstract class AppLocalizations {
   /// **'{count} days'**
   String planDaysCount(int count);
 
+  /// No description provided for @savedPlanDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}-day trip'**
+  String savedPlanDuration(int count);
+
+  /// No description provided for @planCreatedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Created {date}'**
+  String planCreatedAt(String date);
+
   /// No description provided for @deletePlan.
   ///
   /// In en, this message translates to:

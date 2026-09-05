@@ -849,6 +849,16 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
+  String savedPlanDuration(int count) {
+    return 'ทริป $count วัน';
+  }
+
+  @override
+  String planCreatedAt(String date) {
+    return 'สร้างเมื่อ $date';
+  }
+
+  @override
   String get deletePlan => 'ลบแผนที่บันทึกไว้';
 
   @override

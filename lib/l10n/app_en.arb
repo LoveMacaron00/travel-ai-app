@@ -319,6 +319,14 @@
   "@planDaysCount": {
     "placeholders": {"count": {"type": "int"}}
   },
+  "savedPlanDuration": "{count}-day trip",
+  "@savedPlanDuration": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "planCreatedAt": "Created {date}",
+  "@planCreatedAt": {
+    "placeholders": {"date": {"type": "String"}}
+  },
   "deletePlan": "Delete Plan",
   "deletePlanConfirmation": "Are you sure you want to delete this plan?",
   "addManualDiary": "Add Memory",

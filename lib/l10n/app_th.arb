@@ -319,6 +319,14 @@
   "@planDaysCount": {
     "placeholders": {"count": {"type": "int"}}
   },
+  "savedPlanDuration": "ทริป {count} วัน",
+  "@savedPlanDuration": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "planCreatedAt": "สร้างเมื่อ {date}",
+  "@planCreatedAt": {
+    "placeholders": {"date": {"type": "String"}}
+  },
   "deletePlan": "ลบแผนที่บันทึกไว้",
   "deletePlanConfirmation": "คุณแน่ใจหรือไม่ว่าต้องการลบแผนที่บันทึกไว้นี้?",
   "addManualDiary": "เพิ่มความทรงจำ",

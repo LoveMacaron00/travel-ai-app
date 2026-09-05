@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/services/app_services.dart';
@@ -347,9 +348,15 @@ class ProfileScreenState extends State<ProfileScreen> {
     final String destination = plan['destination'] ?? 'Unknown';
     final String province = plan['province'] ?? '';
     final int days = plan['days'] ?? 1;
-    final String title = province.isNotEmpty && destination != province 
-        ? '$destination, $province' 
+    final String title = province.isNotEmpty && destination != province
+        ? '$destination, $province'
         : destination;
+    // created_at จาก API เป็น ISO string — แสดงกำกับไว้ให้แยกจากระยะเวลาทริป
+    final createdAt = DateTime.tryParse('${plan['created_at'] ?? ''}')?.toLocal();
+    final dateText = createdAt == null
+        ? null
+        : DateFormat('d MMM yyyy', Localizations.localeOf(context).languageCode)
+              .format(createdAt);
         
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -385,7 +392,9 @@ class ProfileScreenState extends State<ProfileScreen> {
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
           child: Text(
-            l10n.planDaysCount(days),
+            dateText == null
+                ? l10n.savedPlanDuration(days)
+                : '${l10n.savedPlanDuration(days)} · ${l10n.planCreatedAt(dateText)}',
             style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ),
