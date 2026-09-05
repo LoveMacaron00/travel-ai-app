@@ -262,12 +262,25 @@ class MapScreenState extends State<MapScreen> {
     _searchController.text = place.title;
     _searchController.addListener(_onSearchChanged);
     _searchFocus.unfocus();
+
+    // สถานที่ที่เลือกต้องมี mark บนแผนที่เสมอ แม้กำลังกรองหมวดหมู่ค้างไว้อยู่
+    final markerVisible = _filteredPlaces.any((p) => p.id == place.id);
     setState(() {
+      if (!markerVisible) {
+        _selectedCategory = 'all';
+        _filteredPlaces = List.from(_places);
+      }
       _suggestions = [];
       _showSuggestions = false;
       _selectedMarker = place;
     });
-    _mapController.move(LatLng(place.latitude, place.longitude), 16.0);
+
+    // ย้ายกล้องหลังเฟรมถัดไปให้ marker layer พร้อมก่อน — แพทเทิร์นเดียวกับ showDestination
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _mapController.move(LatLng(place.latitude, place.longitude), 16.0);
+      }
+    });
   }
 
   void _clearSearch() {
