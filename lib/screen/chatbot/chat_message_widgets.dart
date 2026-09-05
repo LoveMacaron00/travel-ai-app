@@ -143,7 +143,6 @@ class _ChatBubble extends StatelessWidget {
               if (message.sources.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 ...message.sources
-                    .take(2)
                     .map((source) => _SourcePill(
                           source: source,
                           onShowDestinationOnMap: onShowDestinationOnMap,
