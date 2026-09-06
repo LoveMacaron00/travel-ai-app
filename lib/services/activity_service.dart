@@ -48,16 +48,10 @@ class ActivityService {
     _timer?.cancel();
     _timer = null;
 
-    final sessionId = _sessionId;
+    // ไม่มี POST /activity/end แล้ว: แค่ทิ้ง sessionId ฝั่ง client แล้วหยุดส่ง
+    // heartbeat ฝั่ง server จะนับ inactive เองจาก last_seen_at ที่เกิน ~2 นาที
+    // ครั้งหน้า resume() จะ heartbeat โดยไม่มี sessionId แล้ว server จะสร้าง session ใหม่
     _sessionId = null;
-    if (!_isAuthenticated() || sessionId == null) return;
-
-    try {
-      await _client.post('/activity/end', body: {'sessionId': sessionId});
-    } catch (_) {
-      // การปิด app อาจยกเลิก network ได้ตามปกติ; server จะถือว่าหยุด active
-      // อัตโนมัติเมื่อ heartbeat ล่าสุดเกินช่วงเวลาที่กำหนด
-    }
   }
 
   /// บันทึกหลังโหลดหน้ารายละเอียดสำเร็จ โดย server เป็นผู้กัน view ซ้ำ
