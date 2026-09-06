@@ -51,7 +51,9 @@ class _HomeScreenState extends State<HomeScreen> {
     _position = next;
     if (!mounted) return;
     if (previous == null || const Distance().distance(previous, next) > 100) {
-      setState(() => _destinationsFuture = _loadDestinations());
+      setState(() {
+        _destinationsFuture = _loadDestinations();
+      });
     } else {
       setState(() {});
     }
