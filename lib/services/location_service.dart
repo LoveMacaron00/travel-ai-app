@@ -19,12 +19,20 @@ class LocationService extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  // ถ้า fix ใหม่ห่างจากตำแหน่งเดิมเกินกว่านี้ ถือว่าตำแหน่งเดิมคลาดเคลื่อน
+  // (เช่นค่าแคช/IP ของเบราว์เซอร์) จะรับค่าดิบทันทีแทนการเฉลี่ยกับค่าเก่า
+  static const double _resyncDistanceMeters = 150;
+
   // เกลี่ยตำแหน่งด้วยค่าเฉลี่ยถ่วงน้ำหนัก (exponential smoothing) เพื่อลดอาการ
   // ระยะทางบนหน้าจอเด้ง/ไม่ตรงกันระหว่างหน้า จากความคลาดเคลื่อนรายครั้งของ GPS
   // fix แรกใช้ค่าดิบทันที หลังจากนั้นผสมกับค่าเดิม 50/50 ต่อการอัปเดตแต่ละครั้ง
+  // แต่ถ้า fix ใหม่กระโดดไกลมาก จะรีเซ็ตเป็นค่าดิบเพื่อไม่ให้ติดกับตำแหน่งผิดเดิม
   LatLng _smoothPosition(LatLng raw) {
     final current = _currentPosition;
-    if (current == null) return raw;
+    if (current == null ||
+        const Distance().distance(current, raw) > _resyncDistanceMeters) {
+      return raw;
+    }
     const alpha = 0.5;
     return LatLng(
       current.latitude + (raw.latitude - current.latitude) * alpha,
@@ -71,14 +79,15 @@ class LocationService extends ChangeNotifier {
 
       Position? position;
       Object? lastError;
+      Future<Position> readPosition() => Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 12),
+        ),
+      );
       for (var attempt = 0; attempt < 2 && position == null; attempt++) {
         try {
-          position = await Geolocator.getCurrentPosition(
-            locationSettings: const LocationSettings(
-              accuracy: LocationAccuracy.high,
-              timeLimit: Duration(seconds: 12),
-            ),
-          );
+          position = await readPosition();
         } catch (e) {
           lastError = e;
           if (attempt == 0) {
@@ -90,7 +99,21 @@ class LocationService extends ChangeNotifier {
         if (_currentPosition != null) return _currentPosition;
         throw Exception('Unable to get current location: $lastError');
       }
-      _currentPosition = _smoothPosition(LatLng(position.latitude, position.longitude));
+      // เบราว์เซอร์ (Chrome) มักคืนค่าแรกจากแคช/IP ซึ่งคลาดเคลื่อนเป็นร้อยเมตร
+      // ถ้าค่าที่ได้ยังไม่แม่น (accuracy > 100 m) ขออีกครั้งแล้วเก็บค่าที่แม่นกว่า
+      if (kIsWeb && position.accuracy > 100) {
+        try {
+          final second = await readPosition();
+          if (second.accuracy < position.accuracy) position = second;
+        } catch (_) {
+          // ใช้ค่าแรกต่อไปถ้าขอครั้งที่สองไม่สำเร็จ
+        }
+      }
+      final resolved = position;
+      if (resolved == null) {
+        throw Exception('Unable to get current location: $lastError');
+      }
+      _currentPosition = _smoothPosition(LatLng(resolved.latitude, resolved.longitude));
       notifyListeners();
       return _currentPosition;
     } catch (e) {
