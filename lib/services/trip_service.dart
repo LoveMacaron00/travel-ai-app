@@ -9,6 +9,10 @@ class TripService {
 
   final ApiClient _client;
 
+  // POST /api/trips — สั่งสร้างแผนเที่ยวจาก AI (รับ input จากฟอร์มหน้า Plan)
+  // server ตอบกลับเป็น SSE stream อ่าน event done/error จนได้ tripId
+  // แล้วตามด้วย GET /api/trips/:tripId เพื่อเอา plan_data ฉบับเต็ม
+  // ใช้โดย: plan_screen.dart (_generate)
   Future<Map<String, dynamic>> createTravelPlan(
     Map<String, dynamic> input,
   ) async {
@@ -53,6 +57,8 @@ class TripService {
     }
   }
 
+  // GET /api/trips/:tripId — โหลดแผนเที่ยวที่บันทึกไว้ (รวม plan_data จาก trip_plans)
+  // ใช้โดย: plan_screen.dart (_loadExistingPlan เมื่อเปิดจาก Profile)
   Future<Map<String, dynamic>> getTravelPlan(int tripId) async {
     try {
       final response = await _client.get('/trips/$tripId');
@@ -65,8 +71,9 @@ class TripService {
     }
   }
 
-  /// บันทึกการแก้ไขแผนที่ผู้ใช้ทำหน้า plan view (ลบ/เพิ่ม/สลับลำดับสถานที่)
-  /// ลง trip_plans ผ่าน PUT /trips/:id/plan
+  // PUT /api/trips/:tripId/plan — บันทึกการแก้ไขแผน (ลบ/เพิ่ม/สลับลำดับสถานที่)
+  // ส่ง plan_data ทั้งก้อนกลับ server เพื่อ upsert ลง trip_plans
+  // ใช้โดย: plan_screen.dart (_savePlanChanges)
   Future<Map<String, dynamic>> updateTravelPlan(
     int tripId,
     Map<String, dynamic> planData,
@@ -88,7 +95,8 @@ class TripService {
     }
   }
 
-  /// ดึงประวัติแผนเที่ยวที่ผู้ใช้เคยสร้าง (GET /trips)
+  // GET /api/trips — ประวัติแผนเที่ยวที่ผู้ใช้เคยสร้าง (20 รายการล่าสุด)
+  // ใช้โดย: profile_screen.dart (_loadTrips)
   Future<Map<String, dynamic>> listMyPlans() async {
     try {
       final response = await _client.get('/trips');
@@ -102,7 +110,8 @@ class TripService {
     }
   }
 
-  /// ลบประวัติแผนเที่ยว (DELETE /trips/:id)
+  // DELETE /api/trips/:tripId — ลบประวัติแผนเที่ยว
+  // ใช้โดย: profile_screen.dart (_deleteTrip)
   Future<Map<String, dynamic>> deletePlan(int tripId) async {
     try {
       final response = await _client.delete('/trips/$tripId');
@@ -115,6 +124,9 @@ class TripService {
     }
   }
 
+  // GET {osrmBaseUrl}/route/v1/:profile/:from;:to — ขอเส้นทางถนนจริงจาก OSRM
+  // ใช้กับเฉพาะ car/walking/bus (mode อื่นใช้เส้นตรงบนแผนที่แทน)
+  // ใช้โดย: plan_screen.dart (_buildRoute), plan_navigation_screen.dart
   Future<List<List<double>>> getRoadRoute({
     required double fromLat,
     required double fromLng,
@@ -154,6 +166,9 @@ class TripService {
     }
   }
 
+  // GET /api/mobile/plan-options — ตัวเลือก interests / transport modes
+  // ที่ admin ปรับได้ ใช้แสดงในฟอร์มสร้างแผน
+  // ใช้โดย: plan_screen.dart (_loadPlanOptions)
   Future<Map<String, dynamic>> getPlanOptions() async {
     try {
       final response = await _client.get('/mobile/plan-options');

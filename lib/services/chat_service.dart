@@ -67,6 +67,9 @@ class ChatService {
     };
   }
 
+  // GET /api/chat/sessions/latest — ดึง session แชทล่าสุดของผู้ใช้
+  // ถ้ายังไม่เคยมี (404) จะตามด้วย POST /api/chat/sessions เพื่อสร้างใหม่
+  // ใช้โดย: chatbot_screen.dart (_initializeChat)
   Future<Map<String, dynamic>> getOrCreateSession() async {
     try {
       var response = await _client.get('/chat/sessions/latest');
@@ -82,6 +85,9 @@ class ChatService {
     }
   }
 
+  // GET /api/chat/sessions/:sessionId/messages — ดึงประวัติแชททั้ง session
+  // server จะ enrich sources (ชื่อ/จังหวัด/รูปจาก source_chunk_ids) ให้ด้วย
+  // ใช้โดย: chatbot_screen.dart (_initializeChat)
   Future<Map<String, dynamic>> getMessages(int sessionId) async {
     try {
       final response = await _client.get('/chat/sessions/$sessionId/messages');
@@ -94,6 +100,9 @@ class ChatService {
     }
   }
 
+  // POST /api/chat/sessions/:sessionId/messages — ส่งข้อความหา AI Guide
+  // คำตอบไหลกลับเป็น SSE stream (event: token/done/error) อ่านด้วย _readAssistantStream
+  // ใช้โดย: chatbot_screen.dart (_requestAssistantAnswer)
   Future<Map<String, dynamic>> sendMessage({
     required int sessionId,
     required String message,
@@ -113,6 +122,9 @@ class ChatService {
     }
   }
 
+  // PATCH /api/chat/messages/:messageId — แก้ข้อความ user แล้วให้ AI ตอบใหม่
+  // คำตอบใหม่ไหลกลับเป็น SSE พร้อม deletedAssistantMessageIds (id คำตอบเดิมที่ถูกลบ)
+  // ใช้โดย: chatbot_screen.dart (_editMessage)
   Future<Map<String, dynamic>> updateMessage({
     required int messageId,
     required String message,
@@ -132,6 +144,9 @@ class ChatService {
     }
   }
 
+  // DELETE /api/chat/messages/:messageId — ลบข้อความ user (และคำตอบ AI ที่ตอบคู่กัน)
+  // คืน deleted_message_ids เพื่อให้ UI ลบ bubble ออกให้ตรงกับฐานข้อมูล
+  // ใช้โดย: chatbot_screen.dart (_deleteMessage)
   Future<Map<String, dynamic>> deleteMessage(int messageId) async {
     try {
       final response = await _client.delete('/chat/messages/$messageId');
@@ -148,6 +163,9 @@ class ChatService {
     }
   }
 
+  // POST /api/chat/navigation — บันทึกว่าผู้ใช้กด "ดูบนแผนที่" จาก source card ในแชท
+  // เก็บลง chat_navigation_events เพื่อทำ analytics
+  // ใช้โดย: chatbot/chat_message_widgets.dart (ปุ่มบน source card)
   Future<Map<String, dynamic>> logNavigation({
     required int messageId,
     required int destinationId,
@@ -175,6 +193,9 @@ class ChatService {
     }
   }
 
+  // POST /api/chat/sessions/:sessionId/images — สแกนรูป (สถานที่/ป้าย/อาหาร)
+  // ส่งเป็น multipart พร้อม mode + พิกัด GPS (ถ้าถ่ายสด) รอ JSON คำตอบเดียว
+  // ใช้โดย: chatbot_screen.dart (_pickAndAnalyzeImage)
   Future<Map<String, dynamic>> sendImage({
     required int sessionId,
     required ImageUpload image,

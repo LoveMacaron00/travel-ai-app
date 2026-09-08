@@ -37,11 +37,15 @@ class AuthService {
     await _store.clear();
   }
 
+  // POST /api/users/register — สมัครสมาชิกใหม่ ได้ token + user กลับมา
+  // ใช้โดย: sign_up_screen.dart
   Future<Map<String, dynamic>> register({
     required String email,
     required String password,
   }) => _authenticate('/users/register', email: email, password: password);
 
+  // POST /api/users/login — เข้าสู่ระบบ ได้ token + user กลับมา
+  // ใช้โดย: sign_in_screen.dart
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -87,6 +91,8 @@ class AuthService {
         'interests': interests,
         if (profileImageUrl != null) 'profile_image_url': profileImageUrl,
       };
+      // PUT /api/users/profile — บันทึกชื่อผู้ใช้ / ความสนใจ / รูปโปรไฟล์
+      // ใช้โดย: profile_screen.dart
       final response = await _client.put('/users/profile', body: body);
       final data = ApiClient.decodeMap(response.body);
       if (response.statusCode == 200 && data != null) {
@@ -107,6 +113,9 @@ class AuthService {
 
   Future<Map<String, dynamic>> uploadProfileImage(ImageUpload image) async {
     try {
+      // POST /api/users/profile/upload-image — อัปโหลดรูปโปรไฟล์แบบ multipart
+      // server คืน user object ใหม่ (พร้อม URL รูป) เก็บแทน session เดิม
+      // ใช้โดย: profile_screen.dart
       final request = http.MultipartRequest(
         'POST',
         _client.uri('/users/profile/upload-image'),

@@ -9,6 +9,8 @@ class TravelDiaryService {
 
   final ApiClient _client;
 
+  // GET /api/mobile/diary — โหลดบันทึก Smart Diary ทั้งหมดของผู้ใช้ (เรียงใหม่→เก่า)
+  // ใช้โดย: travel_diary_screen.dart, travel_footprint_screen.dart (ผ่าน diaryAutomation)
   Future<List<TravelDiaryEntry>> load() async {
     try {
       final response = await _client.get('/mobile/diary');
@@ -28,6 +30,8 @@ class TravelDiaryService {
     }
   }
 
+  // POST /api/mobile/diary — เพิ่ม/อัปเดต (upsert) บันทึก diary หนึ่งรายการ
+  // ใช้โดย: travel_diary_screen.dart (บันทึกฟอร์ม), travel_diary_automation_service.dart
   Future<bool> upsert(TravelDiaryEntry entry) async {
     try {
       final response = await _client.post(
@@ -40,6 +44,8 @@ class TravelDiaryService {
     }
   }
 
+  // DELETE /api/mobile/diary/:entryId — ลบบันทึก diary หนึ่งรายการ
+  // ใช้โดย: travel_diary_screen.dart
   Future<bool> delete(String entryId) async {
     try {
       final response = await _client.delete(
@@ -51,10 +57,9 @@ class TravelDiaryService {
     }
   }
 
-  /// Upload image เพื่อใช้ใน diary entry
-  /// คืน URL ของรูปที่ upload ไปยัง server (relative path หรือ full URL)
-  /// คืน null ถ้า upload ไม่สำเร็จ
-  /// Delegates to [MediaUploadService] to avoid duplication with Auth/Chat.
+  // POST /api/mobile/diary/upload — อัปโหลดรูปประกอบ diary แบบ multipart
+  // server คืน URL รูป (relative path) นำไปใส่ใน entry ก่อนบันทึก
+  // ใช้โดย: travel_diary_screen.dart, travel_diary_automation_service.dart
   Future<String?> uploadImage(ImageUpload image) =>
       MediaUploadService(_client).uploadSingle(
         endpoint: '/mobile/diary/upload',

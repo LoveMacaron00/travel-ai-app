@@ -9,6 +9,8 @@ class FeedbackService {
 
   final ApiClient _client;
 
+  // POST /api/mobile/feedback — ส่ง feedback ของผู้ใช้ถึงทีมงาน
+  // ใช้โดย: widgets/feedback_dialog.dart (เรียกจาก profile_screen.dart)
   Future<Map<String, dynamic>> submitFeedback({
     required String message,
   }) async {
@@ -35,6 +37,8 @@ class FeedbackService {
     }
   }
 
+  // GET /api/mobile/feedback/my — ประวัติ feedback ที่ผู้ใช้เคยส่ง
+  // ใช้โดย: feedback_history_screen.dart
   Future<Map<String, dynamic>> getUserFeedback() async {
     try {
       final response = await _client.get('/mobile/feedback/my');

@@ -63,6 +63,9 @@ class ActivityService {
     if (sessionId == null) return false;
 
     try {
+      // POST /api/mobile/destinations/:id/view — บันทึกว่าผู้ใช้เปิดดูสถานที่นี้
+      // ส่ง sessionId ไปให้ server นับ view ได้ (server กัน view ซ้ำใน session เดียวเอง)
+      // ใช้โดย: destination_detail_screen.dart, plan/plan_details.dart
       final response = await _client.post(
         '/mobile/destinations/$destinationId/view',
         body: {'sessionId': sessionId},
@@ -87,6 +90,9 @@ class ActivityService {
 
   Future<void> _performHeartbeat(int generation) async {
     try {
+      // POST /api/activity/heartbeat — ส่งสัญญาณ "ออนไลน์อยู่" ทุก 1 นาที
+      // ครั้งแรกไม่ส่ง sessionId server จะสร้าง session ใหม่แล้วคืน id กลับมาเก็บไว้
+      // ใช้โดย: main.dart (resume/pause ตาม lifecycle ของแอป)
       final response = await _client.post(
         '/activity/heartbeat',
         body: {if (_sessionId != null) 'sessionId': _sessionId},

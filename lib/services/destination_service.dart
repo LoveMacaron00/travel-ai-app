@@ -10,6 +10,8 @@ class DestinationService {
   DateTime? _cacheTime;
   String? _cacheLanguage;
 
+  // GET /api/mobile/destinations — รายการสถานที่ท่องเที่ยวทั้งหมด (มี cache 10 นาที)
+  // ใช้โดย: home_screen.dart, map_screen.dart, plan_screen.dart, all_destinations_screen.dart
   Future<Map<String, dynamic>> getDestinations({
     int? limit,
     bool forceRefresh = false,
@@ -52,6 +54,8 @@ class DestinationService {
     }
   }
 
+  // GET /api/mobile/destinations/:id — รายละเอียดสถานที่หนึ่งแห่ง
+  // ใช้โดย: destination_detail_screen.dart, plan/plan_details.dart
   Future<Map<String, dynamic>> getDestinationDetails(int id) async {
     try {
       final response = await _client.get('/mobile/destinations/$id');
@@ -70,6 +74,8 @@ class DestinationService {
     }
   }
 
+  // GET /api/mobile/provinces — รายชื่อจังหวัดสำหรับ dropdown ในแบบฟอร์มสร้างแผน
+  // ใช้โดย: plan_screen.dart (_loadProvinces)
   Future<Map<String, dynamic>> getProvinces() async {
     try {
       final response = await _client.get('/mobile/provinces');

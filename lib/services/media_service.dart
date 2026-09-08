@@ -30,7 +30,9 @@ class MediaService {
     if (isApiOrigin) return resolved;
 
     // Browser fetch ภาพข้าม origin ต้องอาศัย CORS ซึ่ง CDN ภายนอกบางแห่ง
-    // ไม่ส่ง header นี้ จึงผ่าน proxy ที่ตรวจ allow-list ใน API เฉพาะบน Web
+    // ไม่ส่ง header นี้ จึงผ่าน proxy GET /api/mobile/media?url=...
+    // (ตรวจ allow-list ใน API) เฉพาะบน Web เท่านั้น
+    // ใช้โดย: media_image.dart widget → ทุกหน้าที่แสดงรูปจาก server/CDN
     return _client
         .uri('/mobile/media')
         .replace(queryParameters: {'url': resolved})
