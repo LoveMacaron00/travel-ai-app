@@ -705,7 +705,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripGenerationFailed => 'Failed to create trip';
 
   @override
-  String get createTravelPlan => 'Create my travel plan';
+  String get createTravelPlan => 'Create my travel trip';
 
   @override
   String get thailandNearYou => 'THAILAND · NEAR YOU';

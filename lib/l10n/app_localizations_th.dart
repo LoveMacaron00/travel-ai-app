@@ -693,7 +693,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get tripGenerationFailed => 'สร้างทริปไม่สำเร็จ';
 
   @override
-  String get createTravelPlan => 'สร้างแผนการเดินทาง';
+  String get createTravelPlan => 'สร้างทริปการเดินทาง';
 
   @override
   String get thailandNearYou => 'ประเทศไทย · ใกล้คุณ';

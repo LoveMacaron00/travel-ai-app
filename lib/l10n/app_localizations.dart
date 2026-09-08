@@ -1397,7 +1397,7 @@ abstract class AppLocalizations {
   /// No description provided for @createTravelPlan.
   ///
   /// In en, this message translates to:
-  /// **'Create my travel plan'**
+  /// **'Create my travel trip'**
   String get createTravelPlan;
 
   /// No description provided for @thailandNearYou.
