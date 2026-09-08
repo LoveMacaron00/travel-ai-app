@@ -203,18 +203,14 @@ class _FeedbackHistoryScreenState extends State<FeedbackHistoryScreen> {
             // Admin reply (if exists)
             if (adminReply != null && adminReply.toString().isNotEmpty) ...[
               const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: _brandGold.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       l10n.adminReply,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: _brandGold,
