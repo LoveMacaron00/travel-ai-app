@@ -354,7 +354,7 @@
   "noFeedbackYet": "ยังไม่มีความคิดเห็น",
   "feedbackPending": "รอดำเนินการ",
   "feedbackReplied": "ตอบกลับแล้ว",
-  "yourFeedback": "ความคิดเห็นของคุณ:",
-  "adminReply": "การตอบกลับจากแอดมิน:",
+  "yourFeedback": "ความคิดเห็นของคุณ",
+  "adminReply": "การตอบกลับจากแอดมิน",
   "feedbackHistory": "ประวัติความคิดเห็น"
 }

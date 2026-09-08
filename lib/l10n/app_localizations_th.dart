@@ -941,10 +941,10 @@ class AppLocalizationsTh extends AppLocalizations {
   String get feedbackReplied => 'ตอบกลับแล้ว';
 
   @override
-  String get yourFeedback => 'ความคิดเห็นของคุณ:';
+  String get yourFeedback => 'ความคิดเห็นของคุณ';
 
   @override
-  String get adminReply => 'การตอบกลับจากแอดมิน:';
+  String get adminReply => 'การตอบกลับจากแอดมิน';
 
   @override
   String get feedbackHistory => 'ประวัติความคิดเห็น';

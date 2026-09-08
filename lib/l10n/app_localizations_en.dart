@@ -955,10 +955,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feedbackReplied => 'Replied';
 
   @override
-  String get yourFeedback => 'Your feedback:';
+  String get yourFeedback => 'Your feedback';
 
   @override
-  String get adminReply => 'Admin reply:';
+  String get adminReply => 'Admin reply';
 
   @override
   String get feedbackHistory => 'Feedback History';

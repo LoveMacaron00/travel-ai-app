@@ -1865,13 +1865,13 @@ abstract class AppLocalizations {
   /// No description provided for @yourFeedback.
   ///
   /// In en, this message translates to:
-  /// **'Your feedback:'**
+  /// **'Your feedback'**
   String get yourFeedback;
 
   /// No description provided for @adminReply.
   ///
   /// In en, this message translates to:
-  /// **'Admin reply:'**
+  /// **'Admin reply'**
   String get adminReply;
 
   /// No description provided for @feedbackHistory.

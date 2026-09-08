@@ -354,7 +354,7 @@
   "noFeedbackYet": "No feedback yet",
   "feedbackPending": "Pending",
   "feedbackReplied": "Replied",
-  "yourFeedback": "Your feedback:",
-  "adminReply": "Admin reply:",
+  "yourFeedback": "Your feedback",
+  "adminReply": "Admin reply",
   "feedbackHistory": "Feedback History"
 }
