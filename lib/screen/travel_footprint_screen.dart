@@ -12,6 +12,14 @@ import 'package:myapp/widgets/media_image.dart';
 
 const _footprintGold = Color(0xfff4b400);
 const _footprintCanvas = Color(0xfff8f9fa);
+const _footprintBorder = Color(0xffeadfca);
+const _footprintChipBg = Color(0xffffe7a0);
+const _footprintCardBg = Color(0xfffff7dc);
+
+const _defaultMapCenter = LatLng(13.2, 101.0);
+const _defaultMapZoom = 7.0;
+const _emptyMapZoom = 5.3;
+const _focusZoom = 14.0;
 
 class TravelFootprintScreen extends StatefulWidget {
   const TravelFootprintScreen({super.key, this.onBack, this.onOpenDiary});
@@ -25,6 +33,9 @@ class TravelFootprintScreen extends StatefulWidget {
 
 class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
   late final TravelDiaryService _diary;
+  final _mapController = MapController();
+  final _scrollController = ScrollController();
+  final _mapKey = GlobalKey();
   List<TravelDiaryEntry> _entries = [];
   bool _loading = true;
   String? _selectedEntryId;
@@ -34,6 +45,13 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
     super.initState();
     _diary = AppServices.diary;
     _loadEntries();
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadEntries() async {
@@ -46,7 +64,8 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
       _entries = entries;
       _loading = false;
       // ถ้า entry ที่เลือกไว้ถูกลบไป ให้ล้างฟิลเตอร์
-      if (_selectedEntryId != null && !_entries.any((e) => e.id == _selectedEntryId)) {
+      if (_selectedEntryId != null &&
+          !_entries.any((e) => e.id == _selectedEntryId)) {
         _selectedEntryId = null;
       }
     });
@@ -86,6 +105,35 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
     await _loadEntries();
   }
 
+  /// แตะการ์ด timeline → zoom แผนที่ไปที่ mark (ไม่เปิด diary)
+  /// แตะซ้ำตอนเลือกอยู่แล้ว หรือ entry ไม่มีพิกัด → เปิด diary แทน
+  void _focusEntry(TravelDiaryEntry entry) {
+    if (entry.id == _selectedEntryId || !entry.hasLocation) {
+      _openDiary();
+      return;
+    }
+    setState(() => _selectedEntryId = entry.id);
+    _mapController.move(LatLng(entry.latitude!, entry.longitude!), _focusZoom);
+    final mapContext = _mapKey.currentContext;
+    if (mapContext != null) {
+      Scrollable.ensureVisible(
+        mapContext,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+        alignment: 0.05,
+      );
+    }
+  }
+
+  /// แตะ mark บนแผนที่ → เลือก + จัดกึ่งกลาง mark (คง zoom เดิม)
+  void _focusMarker(TravelDiaryEntry entry) {
+    setState(() => _selectedEntryId = entry.id);
+    _mapController.move(
+      LatLng(entry.latitude!, entry.longitude!),
+      _mapController.camera.zoom,
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: _footprintCanvas,
@@ -108,6 +156,7 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
             color: _footprintGold,
             onRefresh: _loadEntries,
             child: ListView(
+              controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
               children: [
@@ -148,7 +197,7 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
                               size: 18,
                             ),
                             label: Text(province),
-                            backgroundColor: const Color(0xffffe7a0),
+                            backgroundColor: _footprintChipBg,
                             side: BorderSide.none,
                           ),
                         )
@@ -176,7 +225,8 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           visualDensity: VisualDensity.compact,
                         ),
-                        onPressed: () => setState(() => _selectedEntryId = null),
+                        onPressed: () =>
+                            setState(() => _selectedEntryId = null),
                         icon: const Icon(Icons.clear, size: 16),
                         label: Text(context.l10n.clearSearch),
                       ),
@@ -197,7 +247,7 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
               ],
             ),
           ),
-   );
+  );
 
   String? get _homeProvinceKey {
     final counts = <String, int>{};
@@ -232,27 +282,28 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
     return context.l10n.visitedMonthsAgo(months < 1 ? 1 : months);
   }
 
+  Widget _timelineFallbackThumb() => Container(
+    width: 72,
+    height: 72,
+    color: const Color(0xfffff2cc),
+    child: const Icon(Icons.place_outlined, color: _footprintGold),
+  );
+
   Widget _timelineThumb(TravelDiaryEntry entry) {
     final url = entry.imageUrls.isNotEmpty ? entry.imageUrls.first : '';
-    Widget fallback() => Container(
-      width: 72,
-      height: 72,
-      color: const Color(0xfffff2cc),
-      child: const Icon(Icons.place_outlined, color: _footprintGold),
-    );
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
         width: 72,
         height: 72,
         child: url.isEmpty
-            ? fallback()
+            ? _timelineFallbackThumb()
             : mediaNetworkImage(
                 url,
                 width: 72,
                 height: 72,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => fallback(),
+                errorBuilder: (_, __, ___) => _timelineFallbackThumb(),
               ),
       ),
     );
@@ -263,17 +314,17 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       child: Material(
-        color: isSelected ? const Color(0xfffff7dc) : Colors.white,
+        color: isSelected ? _footprintCardBg : Colors.white,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: _openDiary,
+          onTap: () => _focusEntry(entry),
           child: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isSelected ? _footprintGold : const Color(0xffeadfca),
+                color: isSelected ? _footprintGold : _footprintBorder,
                 width: isSelected ? 2 : 1,
               ),
             ),
@@ -363,35 +414,80 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
     ),
   );
 
+  LatLng _mapCenter(List<TravelDiaryEntry> located) {
+    if (located.isEmpty) return _defaultMapCenter;
+    var lat = 0.0;
+    var lng = 0.0;
+    for (final entry in located) {
+      lat += entry.latitude!;
+      lng += entry.longitude!;
+    }
+    return LatLng(lat / located.length, lng / located.length);
+  }
+
+  CircleMarker _footprintCircle(TravelDiaryEntry entry) {
+    final isSelected = entry.id == _selectedEntryId;
+    return CircleMarker(
+      point: LatLng(entry.latitude!, entry.longitude!),
+      radius: isSelected ? 40 : 34,
+      color: _footprintGold.withValues(alpha: isSelected ? 0.32 : 0.22),
+      borderColor: _footprintGold,
+      borderStrokeWidth: isSelected ? 3 : 2,
+    );
+  }
+
+  Marker _footprintMarker(TravelDiaryEntry entry) {
+    final isSelected = entry.id == _selectedEntryId;
+    return Marker(
+      point: LatLng(entry.latitude!, entry.longitude!),
+      width: isSelected ? 46 : 38,
+      height: isSelected ? 46 : 38,
+      child: GestureDetector(
+        onTap: () => _focusMarker(entry),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.black87 : _footprintGold,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: isSelected ? 4 : 3),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 7,
+                offset: Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Icon(
+            isSelected ? Icons.check : Icons.flag,
+            color: Colors.white,
+            size: isSelected ? 22 : 19,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _mapCard() {
     final locatedEntries = _locatedEntries;
-    final center = locatedEntries.isEmpty
-        ? const LatLng(13.2, 101.0)
-        : LatLng(
-            locatedEntries
-                    .map((entry) => entry.latitude!)
-                    .reduce((a, b) => a + b) /
-                locatedEntries.length,
-            locatedEntries
-                    .map((entry) => entry.longitude!)
-                    .reduce((a, b) => a + b) /
-                locatedEntries.length,
-          );
 
     return Container(
+      key: _mapKey,
       height: 310,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: const Color(0xfffff7dc),
+        color: _footprintCardBg,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xffeadfca)),
+        border: Border.all(color: _footprintBorder),
       ),
       child: Stack(
         children: [
           FlutterMap(
+            mapController: _mapController,
             options: MapOptions(
-              initialCenter: center,
-              initialZoom: locatedEntries.isEmpty ? 5.3 : 7,
+              initialCenter: _mapCenter(locatedEntries),
+              initialZoom: locatedEntries.isEmpty
+                  ? _emptyMapZoom
+                  : _defaultMapZoom,
               onTap: (_, __) {
                 if (_selectedEntryId != null) {
                   setState(() => _selectedEntryId = null);
@@ -405,111 +501,66 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
               ),
               if (locatedEntries.isNotEmpty)
                 CircleLayer(
-                  circles: locatedEntries
-                      .map(
-                        (entry) {
-                          final isSelected = entry.id == _selectedEntryId;
-                          return CircleMarker(
-                            point: LatLng(entry.latitude!, entry.longitude!),
-                            radius: isSelected ? 40 : 34,
-                            color: _footprintGold.withValues(alpha: isSelected ? 0.32 : 0.22),
-                            borderColor: _footprintGold,
-                            borderStrokeWidth: isSelected ? 3 : 2,
-                          );
-                        },
-                      )
-                      .toList(),
+                  circles: locatedEntries.map(_footprintCircle).toList(),
                 ),
               if (locatedEntries.isNotEmpty)
                 MarkerLayer(
-                  markers: locatedEntries
-                      .map(
-                        (entry) {
-                          final isSelected = entry.id == _selectedEntryId;
-                          return Marker(
-                            point: LatLng(entry.latitude!, entry.longitude!),
-                            width: isSelected ? 46 : 38,
-                            height: isSelected ? 46 : 38,
-                            child: GestureDetector(
-                              onTap: () => setState(() => _selectedEntryId = entry.id),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: isSelected ? Colors.black87 : _footprintGold,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: isSelected ? 4 : 3),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Colors.black26,
-                                      blurRadius: 7,
-                                      offset: Offset(0, 3),
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  isSelected ? Icons.check : Icons.flag,
-                                  color: Colors.white,
-                                  size: isSelected ? 22 : 19,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      )
-                      .toList(),
+                  markers: locatedEntries.map(_footprintMarker).toList(),
                 ),
             ],
           ),
-          if (locatedEntries.isEmpty)
-            Positioned.fill(
-              child: ColoredBox(
-                color: Colors.white.withValues(alpha: 0.72),
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(28),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.add_location_alt_outlined,
-                          size: 40,
-                          color: _footprintGold,
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          context.l10n.noFootprint,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          context.l10n.noFootprintDescription,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.black54,
-                            fontSize: 13,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          if (locatedEntries.isEmpty) _mapEmptyOverlay(),
         ],
       ),
     );
   }
+
+  Widget _mapEmptyOverlay() => Positioned.fill(
+    child: ColoredBox(
+      color: Colors.white.withValues(alpha: 0.72),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.add_location_alt_outlined,
+                size: 40,
+                color: _footprintGold,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                context.l10n.noFootprint,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                context.l10n.noFootprintDescription,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.black54,
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 
   Widget _emptyProvinces() => Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: const Color(0xffeadfca)),
+      border: Border.all(color: _footprintBorder),
     ),
     child: Text(
       context.l10n.noFootprintDescription,
