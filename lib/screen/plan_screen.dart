@@ -483,21 +483,55 @@ class _PlanScreenState extends State<PlanScreen> {
     return (cost < 50 ? 50 : cost).roundToDouble();
   }
 
-  List<TravelStop> _withRecalculatedTransportCosts(List<TravelStop> stops) {
-    if (stops.length < 2) return stops;
+  String _stopIdentity(TravelStop stop) {
+    final id = stop.destinationId.trim();
+    if (id.isNotEmpty) return 'id:$id';
+    return 'place:${_placeKey(stop.place)}';
+  }
+
+  /// คำนวณค่าเดินทางใหม่เฉพาะขาที่เปลี่ยน (จุดก่อนหน้าเปลี่ยนจากการลบ/สลับ)
+  /// ขาเดิมคงค่า AI ไว้ทั้งหมด กันยอดรวมร่วงทั้งก้อนทั้งที่จุดที่ลบค่าเดินทางเป็น 0
+  List<TravelStop> _recalculatedStopsPreservingCosts(
+    List<TravelStop> oldStops,
+    List<TravelStop> newStops,
+  ) {
+    if (newStops.isEmpty) return newStops;
+    // จุดก่อนหน้าของแต่ละ stop ใน list เดิม
+    final oldPrevByStop = <String, String?>{};
+    for (var i = 0; i < oldStops.length; i++) {
+      oldPrevByStop[_stopIdentity(oldStops[i])] = i == 0
+          ? null
+          : _stopIdentity(oldStops[i - 1]);
+    }
+    final oldByStop = {for (final s in oldStops) _stopIdentity(s): s};
+
     final updated = <TravelStop>[];
-    for (var i = 0; i < stops.length; i++) {
-      final stop = stops[i];
-      if (i == 0) {
-        // จุดแรกไม่มีค่าเดินทางมาจากจุดก่อนหน้า
-        updated.add(stop.copyWith(transportCost: 0));
+    for (var i = 0; i < newStops.length; i++) {
+      final stop = newStops[i];
+      final key = _stopIdentity(stop);
+      final old = oldByStop[key];
+      final newPrevKey = i == 0 ? null : _stopIdentity(newStops[i - 1]);
+
+      // ขาเดิม (จุดก่อนหน้าเดิม + จุดเดิม) → คงค่า AI ไว้
+      if (old != null && oldPrevByStop[key] == newPrevKey) {
+        updated.add(
+          stop.copyWith(
+            transportCost: old.transportCost,
+            segments: old.segments,
+          ),
+        );
         continue;
       }
+      // กลายเป็นจุดแรกของวัน (ไม่มีขาเข้า) → ไม่มีค่าเดินทาง
+      if (i == 0) {
+        updated.add(stop.copyWith(transportCost: 0, segments: const []));
+        continue;
+      }
+      // ขาใหม่ (จุดก่อนหน้าเปลี่ยน) → ประมาณเฉพาะขานี้ขาเดียว
       final prev = updated[i - 1];
       final from = LatLng(prev.latitude, prev.longitude);
       final to = LatLng(stop.latitude, stop.longitude);
       final estimated = _estimateTransportCost(from, to, stop.transportMode);
-      // สร้าง segment สรุปให้สอดคล้องกับ transportCost ที่คำนวณใหม่
       final segment = TravelSegment(
         mode: stop.transportMode,
         from: prev.place,
@@ -512,31 +546,49 @@ class _PlanScreenState extends State<PlanScreen> {
     return updated;
   }
 
-  TravelPlan _withRecalculatedBudget(TravelPlan plan, List<TravelDay> newDays) {
-    double sumTransport = 0;
-    double sumFood = 0;
-    double sumActivities = 0;
-    for (final day in newDays) {
+  /// ปรับงบแบบ delta จากของเดิม (ไม่คำนวณใหม่จากศูนย์ เพราะ total ของ AI
+  /// อาจไม่เท่ากับผลรวม breakdown พอดี) ลบจุดออกยอดลดแค่ค่าของจุดนั้น
+  /// + ส่วนต่างของขาที่เปลี่ยนเท่านั้น
+  TravelPlan _withDeltaBudget(TravelPlan plan, List<TravelDay> newDays) {
+    double oldTransport = 0, oldFood = 0, oldActivities = 0;
+    for (final day in plan.days) {
       for (final stop in day.stops) {
-        sumTransport += stop.transportCost;
-        sumFood += stop.foodCost;
-        sumActivities += stop.entryCost;
+        oldTransport += stop.transportCost;
+        oldFood += stop.foodCost;
+        oldActivities += stop.entryCost;
       }
     }
-    final accommodation = plan.budgetBreakdown['accommodation'] ?? 0;
-    // รักษาโครงสร้างเดิมแต่ปรับ 3 หมวดที่ผูกกับ stops
+    double newTransport = 0, newFood = 0, newActivities = 0;
+    for (final day in newDays) {
+      for (final stop in day.stops) {
+        newTransport += stop.transportCost;
+        newFood += stop.foodCost;
+        newActivities += stop.entryCost;
+      }
+    }
+    double nonNegative(double v) => v < 0 ? 0 : v;
     final newBreakdown = Map<String, double>.from(plan.budgetBreakdown);
-    newBreakdown['transport'] = sumTransport;
-    newBreakdown['food'] = sumFood;
-    newBreakdown['activities'] = sumActivities;
-    // คำนวณยอดรวมใหม่ = ที่พัก + ค่าใช้จ่ายรวมของทุก stops
-    final newTotal = accommodation + sumFood + sumTransport + sumActivities;
-    // ถ้า breakdown เดิมไม่มี accommodation ให้ใช้ total เดิมเป็นฐาน + delta transport แทน
-    final fallbackTotal = newTotal > 0 ? newTotal : plan.totalEstimatedCost;
+    newBreakdown['transport'] = nonNegative(
+      (newBreakdown['transport'] ?? oldTransport) +
+          (newTransport - oldTransport),
+    );
+    newBreakdown['food'] = nonNegative(
+      (newBreakdown['food'] ?? oldFood) + (newFood - oldFood),
+    );
+    newBreakdown['activities'] = nonNegative(
+      (newBreakdown['activities'] ?? oldActivities) +
+          (newActivities - oldActivities),
+    );
+    final newTotal = nonNegative(
+      plan.totalEstimatedCost +
+          (newTransport - oldTransport) +
+          (newFood - oldFood) +
+          (newActivities - oldActivities),
+    );
     return TravelPlan(
       tripId: plan.tripId,
       summary: plan.summary,
-      totalEstimatedCost: fallbackTotal,
+      totalEstimatedCost: newTotal,
       budgetBreakdown: newBreakdown,
       days: newDays,
       tips: plan.tips,
@@ -745,8 +797,8 @@ class _PlanScreenState extends State<PlanScreen> {
         tips: plan.tips,
       );
     } else {
-      // ลบ/สลับลำดับ → คำนวณใหม่ทั้งวัน
-      recalculatedStops = _withRecalculatedTransportCosts(stops);
+      // ลบ/สลับลำดับ → ประมาณใหม่เฉพาะขาที่เปลี่ยน ที่เหลือคงค่า AI เดิม
+      recalculatedStops = _recalculatedStopsPreservingCosts(oldStops, stops);
       final days = [
         for (var index = 0; index < plan.days.length; index++)
           TravelDay(
@@ -757,7 +809,7 @@ class _PlanScreenState extends State<PlanScreen> {
                 : List<TravelStop>.from(plan.days[index].stops),
           ),
       ];
-      updatedPlan = _withRecalculatedBudget(plan, days);
+      updatedPlan = _withDeltaBudget(plan, days);
     }
 
     setState(() {
