@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:myapp/config/app_config.dart';
 import 'package:myapp/l10n/l10n.dart';
@@ -249,17 +250,6 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
           ),
   );
 
-  String? get _homeProvinceKey {
-    final counts = <String, int>{};
-    for (final entry in _entries) {
-      final key = entry.province.trim().toLowerCase();
-      if (key.isEmpty) continue;
-      counts[key] = (counts[key] ?? 0) + 1;
-    }
-    if (counts.isEmpty) return null;
-    return counts.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
-  }
-
   String _timelineTitle(TravelDiaryEntry entry) {
     final title = entry.title.trim();
     if (title.isNotEmpty) return title;
@@ -269,9 +259,6 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
   }
 
   String _visitedLabel(TravelDiaryEntry entry) {
-    if (entry.province.trim().toLowerCase() == _homeProvinceKey) {
-      return context.l10n.homeBase;
-    }
     final elapsed = DateTime.now().difference(entry.date);
     if (elapsed.inHours < 1) return context.l10n.visitedToday;
     if (elapsed.inHours < 24) {
@@ -280,6 +267,16 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
     if (elapsed.inDays < 30) return context.l10n.visitedDaysAgo(elapsed.inDays);
     final months = elapsed.inDays ~/ 30;
     return context.l10n.visitedMonthsAgo(months < 1 ? 1 : months);
+  }
+
+  String _formatEntryDate(TravelDiaryEntry entry) {
+    final locale = Localizations.localeOf(context).languageCode;
+    final datePart = DateFormat(
+      'd MMM yyyy',
+      locale,
+    ).format(entry.date);
+    final timePart = DateFormat('HH:mm', locale).format(entry.date);
+    return '$datePart • $timePart';
   }
 
   Widget _timelineFallbackThumb() => Container(
@@ -345,13 +342,50 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        _visitedLabel(entry),
-                        style: const TextStyle(
-                          color: Colors.black45,
-                          fontSize: 12,
-                        ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.calendar_month_outlined,
+                            size: 13,
+                            color: Colors.black45,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              _formatEntryDate(entry),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.black54,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.history,
+                            size: 13,
+                            color: Colors.black38,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              _visitedLabel(entry),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.black45,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
