@@ -77,6 +77,7 @@ class _PlanScreenState extends State<PlanScreen> {
   List<ProvinceOption> _provinceOptions = [];
   List<_PreferenceOptionItem> _dynamicInterests = [];
   List<_PreferenceOptionItem> _dynamicModes = [];
+  bool _loadingPlanOptions = true;
   String? _selectedProvince;
   final Set<String> _interests = {};
   final Set<String> _modes = {'car'};
@@ -90,25 +91,8 @@ class _PlanScreenState extends State<PlanScreen> {
   // extension view เรียกผ่าน wrapper นี้แทน protected State.setState โดยตรง
   void _updateState(VoidCallback update) => setState(update);
 
-  static const _interestOptions = [
-    'Food',
-    'Cafe',
-    'Nature',
-    'Beach',
-    'Temple',
-    'Adventure',
-    'Shopping',
-    'Nightlife',
-    'Culture',
-  ];
-  static const _modeOptions = <String, IconData>{
-    'car': Icons.directions_car,
-    'walking': Icons.directions_walk,
-    'bus': Icons.directions_bus,
-    'train': Icons.train,
-    'ferry': Icons.directions_boat,
-    'flight': Icons.flight,
-  };
+  // รายการ options (key/label/icon_url) มาจาก DB ผ่าน GET /mobile/plan-options ทั้งหมด
+  // icon วาดด้วยรูปจาก icon_url, fallback เป็น Icons.route ตัวเดียว (ไม่มี map ราย mode)
 
   @override
   void initState() {
@@ -150,15 +134,15 @@ class _PlanScreenState extends State<PlanScreen> {
       _loadingExistingPlan = true;
       _error = null;
     });
-    
+
     final result = await AppServices.trips.getTravelPlan(tripId);
     if (!mounted) return;
-    
+
     if (result['success'] == true) {
       final trip = Map<String, dynamic>.from(result['data']);
       final raw = Map<String, dynamic>.from(trip['plan_data'] as Map? ?? {});
       final plan = TravelPlan.fromJson(raw, tripId: tripId);
-      
+
       setState(() {
         _plan = plan;
         _selectedDayIndex = 0;
@@ -176,13 +160,18 @@ class _PlanScreenState extends State<PlanScreen> {
 
   Future<void> _loadPlanOptions() async {
     final res = await AppServices.trips.getPlanOptions();
-    if (!mounted || res['success'] != true || res['data'] is! Map) return;
+    if (!mounted) return;
+    if (res['success'] != true || res['data'] is! Map) {
+      setState(() => _loadingPlanOptions = false);
+      return;
+    }
 
     final data = Map<String, dynamic>.from(res['data'] as Map);
     final rawInterests = (data['interests'] as List? ?? []);
     final rawModes = (data['transportModes'] as List? ?? []);
 
     setState(() {
+      _loadingPlanOptions = false;
       if (rawInterests.isNotEmpty) {
         _dynamicInterests = rawInterests
             .whereType<Map>()
@@ -209,6 +198,12 @@ class _PlanScreenState extends State<PlanScreen> {
             .where((item) => item.key.isNotEmpty)
             .toList();
       }
+      // กัน default 'car' หลุดเมื่อ admin ปิด/เปลี่ยนตัวเลือกใน DB
+      if (_dynamicModes.isNotEmpty) {
+        final validKeys = _dynamicModes.map((e) => e.key.toLowerCase()).toSet();
+        _modes.removeWhere((m) => !validKeys.contains(m.toLowerCase()));
+        if (_modes.isEmpty) _modes.add(_dynamicModes.first.key);
+      }
     });
   }
 
@@ -216,15 +211,13 @@ class _PlanScreenState extends State<PlanScreen> {
     final rawInterests = AppServices.auth.currentUser?['interests'];
     if (rawInterests is! List) return;
 
+    // เก็บค่า profile แบบ case-insensitive ตรงๆ ไม่ต้องกรองผ่าน static list
+    // UI (_interestChips) จะ match กับ _dynamicInterests จาก DB เองหลังโหลดเสร็จ
     final profileInterests = rawInterests
-        .map((interest) => interest.toString().trim().toLowerCase())
+        .map((interest) => interest.toString().trim())
         .where((interest) => interest.isNotEmpty)
         .toSet();
-    _interests.addAll(
-      _interestOptions.where(
-        (option) => profileInterests.contains(option.toLowerCase()),
-      ),
-    );
+    _interests.addAll(profileInterests);
   }
 
   @override
@@ -464,7 +457,9 @@ class _PlanScreenState extends State<PlanScreen> {
     final key = _placeKey(stop.place);
     if (key.isNotEmpty) {
       for (final p in _places) {
-        if (_placeKey(p.title) == key && p.province.isNotEmpty) return p.province;
+        if (_placeKey(p.title) == key && p.province.isNotEmpty) {
+          return p.province;
+        }
       }
     }
     return '';
@@ -512,10 +507,7 @@ class _PlanScreenState extends State<PlanScreen> {
             : (const Distance().as(LengthUnit.Kilometer, from, to) * 2).round(),
         estimatedCost: estimated,
       );
-      updated.add(stop.copyWith(
-        transportCost: estimated,
-        segments: [segment],
-      ));
+      updated.add(stop.copyWith(transportCost: estimated, segments: [segment]));
     }
     return updated;
   }
@@ -686,10 +678,12 @@ class _PlanScreenState extends State<PlanScreen> {
     final oldStops = oldDay.stops;
 
     // กรณีเพิ่มที่เดียวต่อท้าย → คิดเพิ่มแบบบวกเพิ่ม ไม่คำนวณใหม่ทั้งหมดเพื่อไม่ให้ยอดลด
-    final isAppendOne = stops.length == oldStops.length + 1 &&
-        List.generate(oldStops.length,
-                (i) => stops[i].destinationId == oldStops[i].destinationId)
-            .every((e) => e);
+    final isAppendOne =
+        stops.length == oldStops.length + 1 &&
+        List.generate(
+          oldStops.length,
+          (i) => stops[i].destinationId == oldStops[i].destinationId,
+        ).every((e) => e);
     List<TravelStop> recalculatedStops;
     TravelPlan updatedPlan;
 
@@ -709,7 +703,8 @@ class _PlanScreenState extends State<PlanScreen> {
             to: rawNew.place,
             estimatedMinutes: rawNew.segments.isNotEmpty
                 ? rawNew.segments.first.estimatedMinutes
-                : (const Distance().as(LengthUnit.Kilometer, from, to) * 2).round(),
+                : (const Distance().as(LengthUnit.Kilometer, from, to) * 2)
+                      .round(),
             estimatedCost: estimated,
           ),
         ];
@@ -734,8 +729,13 @@ class _PlanScreenState extends State<PlanScreen> {
       final newBreakdown = Map<String, double>.from(plan.budgetBreakdown);
       newBreakdown['transport'] = (newBreakdown['transport'] ?? 0) + estimated;
       newBreakdown['food'] = (newBreakdown['food'] ?? 0) + newStop.foodCost;
-      newBreakdown['activities'] = (newBreakdown['activities'] ?? 0) + newStop.entryCost;
-      final newTotal = plan.totalEstimatedCost + estimated + newStop.foodCost + newStop.entryCost;
+      newBreakdown['activities'] =
+          (newBreakdown['activities'] ?? 0) + newStop.entryCost;
+      final newTotal =
+          plan.totalEstimatedCost +
+          estimated +
+          newStop.foodCost +
+          newStop.entryCost;
       updatedPlan = TravelPlan(
         tripId: plan.tripId,
         summary: plan.summary,
@@ -787,7 +787,9 @@ class _PlanScreenState extends State<PlanScreen> {
       widget.onBackFromSavedView!.call();
       return;
     }
-    if (_plan != null && widget.initialTripId != null && Navigator.canPop(context)) {
+    if (_plan != null &&
+        widget.initialTripId != null &&
+        Navigator.canPop(context)) {
       Navigator.pop(context);
       return;
     }

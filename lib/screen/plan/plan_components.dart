@@ -172,13 +172,26 @@ extension _PlanComponents on _PlanScreenState {
   }
 
   Widget _interestChips(Set<String> selected) {
-    final items = _dynamicInterests.isNotEmpty
-        ? _dynamicInterests
-        : _PlanScreenState._interestOptions
-              .map(
-                (k) => _PreferenceOptionItem(key: k, label: _interestLabel(k)),
-              )
-              .toList();
+    // Single source: DB ผ่าน _dynamicInterests เท่านั้น (ไม่มี fallback hardcode)
+    if (_loadingPlanOptions && _dynamicInterests.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(strokeWidth: 2.5),
+          ),
+        ),
+      );
+    }
+    if (_dynamicInterests.isEmpty) {
+      return Text(
+        context.l10n.noResults,
+        style: const TextStyle(color: Colors.black38, fontSize: 13),
+      );
+    }
+    final items = _dynamicInterests;
 
     return Wrap(
       spacing: 8,
@@ -204,22 +217,33 @@ extension _PlanComponents on _PlanScreenState {
   }
 
   Widget _transportChips(Set<String> selected) {
-    final items = _dynamicModes.isNotEmpty
-        ? _dynamicModes
-        : _PlanScreenState._modeOptions.entries
-              .map(
-                (e) =>
-                    _PreferenceOptionItem(key: e.key, label: _modeLabel(e.key)),
-              )
-              .toList();
+    // Single source: DB ผ่าน _dynamicModes เท่านั้น (ไม่มี fallback hardcode)
+    if (_loadingPlanOptions && _dynamicModes.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(strokeWidth: 2.5),
+          ),
+        ),
+      );
+    }
+    if (_dynamicModes.isEmpty) {
+      return Text(
+        context.l10n.noResults,
+        style: const TextStyle(color: Colors.black38, fontSize: 13),
+      );
+    }
+    final items = _dynamicModes;
 
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: items.map((item) {
         final keyLower = item.key.toLowerCase();
-        final fallbackIcon =
-            _PlanScreenState._modeOptions[keyLower] ?? Icons.directions_car;
+        const fallbackIcon = Icons.route;
         final isSelected = selected.any((s) => s.toLowerCase() == keyLower);
         return FilterChip(
           avatar: _optionIcon(item.iconUrl, fallbackIcon),
@@ -574,15 +598,22 @@ extension _PlanComponents on _PlanScreenState {
     RegExp(r'\B(?=(\d{3})+(?!\d))'),
     (m) => ',',
   );
-  String _modeLabel(String value) => switch (value.toLowerCase()) {
-    'car' => context.l10n.transportCar,
-    'walking' => context.l10n.transportWalking,
-    'bus' => context.l10n.transportBus,
-    'train' => context.l10n.transportTrain,
-    'ferry' => context.l10n.transportFerry,
-    'flight' => context.l10n.transportFlight,
-    _ => _title(value),
-  };
+  String _modeLabel(String value) {
+    // ใช้ label จาก DB ก่อน (รองรับ mode ใหม่ที่ admin เพิ่ม) แล้วค่อย fallback เป็น l10n
+    final keyLower = value.toLowerCase();
+    for (final item in _dynamicModes) {
+      if (item.key.toLowerCase() == keyLower) return item.label;
+    }
+    return switch (keyLower) {
+      'car' => context.l10n.transportCar,
+      'walking' => context.l10n.transportWalking,
+      'bus' => context.l10n.transportBus,
+      'train' => context.l10n.transportTrain,
+      'ferry' => context.l10n.transportFerry,
+      'flight' => context.l10n.transportFlight,
+      _ => _title(value),
+    };
+  }
 
   bool _usesRoadRoute(String mode) =>
       const {'car', 'walking', 'bus'}.contains(mode.toLowerCase());
@@ -603,19 +634,6 @@ extension _PlanComponents on _PlanScreenState {
     'ferry' => const Color(0xff00779e),
     'flight' => const Color(0xffb84d36),
     _ => const Color(0xff7a5800),
-  };
-
-  String _interestLabel(String value) => switch (value) {
-    'Food' => context.l10n.interestFood,
-    'Cafe' => context.l10n.interestCafe,
-    'Nature' => context.l10n.interestNature,
-    'Beach' => context.l10n.interestBeach,
-    'Temple' => context.l10n.interestTemple,
-    'Adventure' => context.l10n.interestAdventure,
-    'Shopping' => context.l10n.interestShopping,
-    'Nightlife' => context.l10n.interestNightlife,
-    'Culture' => context.l10n.interestCulture,
-    _ => value,
   };
 
   String _title(String value) => switch (value.toLowerCase()) {

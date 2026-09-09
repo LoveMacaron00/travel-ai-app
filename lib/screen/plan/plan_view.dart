@@ -3,7 +3,8 @@ part of '../plan_screen.dart';
 // Form, result list และ map preview ของแผน
 extension _PlanMainView on _PlanScreenState {
   Widget _buildScaffold(BuildContext context) => PopScope(
-    canPop: _plan == null &&
+    canPop:
+        _plan == null &&
         !_loadingExistingPlan &&
         !(widget.initialTripId != null && widget.onBackFromSavedView != null),
     onPopInvokedWithResult: (didPop, _) {
@@ -14,9 +15,11 @@ extension _PlanMainView on _PlanScreenState {
       body: SafeArea(
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 350),
-          child: _loadingExistingPlan 
+          child: _loadingExistingPlan
               ? const Center(child: CircularProgressIndicator(color: _gold))
-              : _plan == null ? _buildForm() : _buildResult(_plan!),
+              : _plan == null
+              ? _buildForm()
+              : _buildResult(_plan!),
         ),
       ),
     ),
@@ -625,7 +628,10 @@ extension _PlanMainView on _PlanScreenState {
                             ),
                             if (_provinceForStop(stop).isNotEmpty)
                               Container(
-                                margin: const EdgeInsets.only(top: 4, bottom: 2),
+                                margin: const EdgeInsets.only(
+                                  top: 4,
+                                  bottom: 2,
+                                ),
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
                                   vertical: 2,
@@ -730,11 +736,7 @@ extension _PlanMainView on _PlanScreenState {
                         stop.entryCost,
                       ),
                       const SizedBox(width: 8),
-                      _price(
-                        _PlanScreenState._modeOptions[stop.transportMode] ??
-                            Icons.route,
-                        stop.transportCost,
-                      ),
+                      _price(Icons.route, stop.transportCost),
                       const Spacer(),
                       FilledButton.icon(
                         style: FilledButton.styleFrom(

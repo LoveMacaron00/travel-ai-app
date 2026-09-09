@@ -209,8 +209,7 @@ extension _PlanDetailsView on _PlanScreenState {
                     stop.foodCost,
                   ),
                   _detailCostRow(
-                    _PlanScreenState._modeOptions[stop.transportMode] ??
-                        Icons.route,
+                    Icons.route,
                     context.l10n.transport,
                     stop.transportCost,
                   ),
@@ -237,10 +236,7 @@ extension _PlanDetailsView on _PlanScreenState {
                         leading: CircleAvatar(
                           backgroundColor: const Color(0xffffe9a6),
                           foregroundColor: const Color(0xff856000),
-                          child: Icon(
-                            _PlanScreenState._modeOptions[segment.mode] ??
-                                Icons.route,
-                          ),
+                          child: Icon(Icons.route),
                         ),
                         title: Text(
                           '${_modeLabel(segment.mode)} · ${segment.estimatedMinutes} ${context.l10n.minutesShort}',
