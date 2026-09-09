@@ -24,6 +24,8 @@ const _gold = Color(0xffe9ad0c);
 const _ink = Color(0xff292620);
 const _canvas = Color(0xfff7f2e8);
 
+/// ขาเส้นทางหนึ่งช่วงบนแผนที่ (จุดแวะ → จุดแวะถัดไป)
+/// แยกตาม mode เพื่อวาดสี/เส้นทึบ-เส้นประต่างกัน
 class _PlanRouteLeg {
   const _PlanRouteLeg({required this.mode, required this.points});
 
@@ -45,6 +47,7 @@ class PlanScreen extends StatefulWidget {
   State<PlanScreen> createState() => _PlanScreenState();
 }
 
+/// ตัวเลือกความสนใจ/พาหนะ 1 ชิ้น ที่ได้จาก DB (key ใช้ส่ง API, label/icon ใช้แสดงผล)
 class _PreferenceOptionItem {
   const _PreferenceOptionItem({
     required this.key,
@@ -58,6 +61,7 @@ class _PreferenceOptionItem {
 }
 
 class _PlanScreenState extends State<PlanScreen> {
+  // จำกัดจำนวนสถานที่ที่ผู้ใช้บังคับให้ไป เพื่อไม่ให้ AI วางแผนวันนั้นแน่นเกิน
   static const _maxMustVisitPlaces = 5;
 
   final LocationService _locationService = LocationService.instance;
@@ -95,6 +99,8 @@ class _PlanScreenState extends State<PlanScreen> {
   // icon วาดด้วยรูปจาก icon_url, fallback เป็น Icons.route ตัวเดียว (ไม่มี map ราย mode)
 
   @override
+  // โหลดข้อมูลครั้งแรกแบบขนาน: โปรไฟล์, สถานที่, จังหวัด, options จาก DB
+  // พิกัด GPS ถ้ายังไม่มีจะขอใหม่ และถ้าเปิดแผนเก่า (initialTripId) โหลดแผนทันที
   void initState() {
     super.initState();
     _loadedLanguage = AppServices.locale.languageCode;
@@ -111,6 +117,8 @@ class _PlanScreenState extends State<PlanScreen> {
   }
 
   @override
+  // กรณีแปลง widget ใหม่โดยเปลี่ยน initialTripId (เช่นกดเปิดแผนอื่นจาก Profile)
+  // — tripId ใหม่: โหลดแผนใหม่ / เป็น null: ล้าง plan กลับไปหน้าฟอร์ม
   void didUpdateWidget(covariant PlanScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.initialTripId != oldWidget.initialTripId) {
@@ -129,6 +137,8 @@ class _PlanScreenState extends State<PlanScreen> {
     }
   }
 
+  /// โหลดแผนที่บันทึกไว้จาก server (GET /trips/:id) มาแสดงทันที
+  /// ไม่ผ่านฟอร์ม — ใช้เมื่อเปิดจาก Profile
   Future<void> _loadExistingPlan(int tripId) async {
     setState(() {
       _loadingExistingPlan = true;
@@ -158,6 +168,8 @@ class _PlanScreenState extends State<PlanScreen> {
     }
   }
 
+  /// โหลดตัวเลือกความสนใจ/พาหนะจาก DB — ไม่มี hardcode fallback
+  /// และตรวจว่า default 'car' ยังถูกต้องตาม options ที่ admin เปิดไว้
   Future<void> _loadPlanOptions() async {
     final res = await AppServices.trips.getPlanOptions();
     if (!mounted) return;
@@ -207,6 +219,7 @@ class _PlanScreenState extends State<PlanScreen> {
     });
   }
 
+  /// ดึง interests ที่ผู้ใช้เคยเลือกในโปรไฟล์มาติ๊กไว้ล่วงหน้าในฟอร์ม
   void _loadProfileInterests() {
     final rawInterests = AppServices.auth.currentUser?['interests'];
     if (rawInterests is! List) return;
@@ -221,6 +234,7 @@ class _PlanScreenState extends State<PlanScreen> {
   }
 
   @override
+  // ถ้าภาษาของแอปเปลี่ยนกลางคัน ให้โหลดข้อมูลที่ผูกกับภาษาใหม่ทั้งหมด
   void didChangeDependencies() {
     super.didChangeDependencies();
     final language = Localizations.localeOf(context).languageCode;
@@ -239,6 +253,7 @@ class _PlanScreenState extends State<PlanScreen> {
     super.dispose();
   }
 
+  // ตำแหน่ง GPS เปลี่ยน (มาจาก service กลาง) — sync พิกัดที่แสดงบนฟอร์ม
   void _onSharedLocationChanged() {
     if (!mounted) return;
     setState(() {
@@ -248,6 +263,9 @@ class _PlanScreenState extends State<PlanScreen> {
     });
   }
 
+  /// โหลดรายการสถานที่ทั้งหมดจาก server มาเก็บเป็น PlaceMarker
+  /// ใช้ใน place picker และหาจังหวัดย้อนให้ stop ที่ไม่มีข้อมูล
+  /// ถ้าระหว่างรอ response ภาษาเปลี่ยน จะทิ้งผลลัพธ์เก่า (กันข้อมูลภาษาเก่าค้าง)
   Future<void> _loadPlaces() async {
     final requestedLanguage = AppServices.locale.languageCode;
     final result = await AppServices.destinations.getDestinations();
@@ -273,6 +291,8 @@ class _PlanScreenState extends State<PlanScreen> {
     );
   }
 
+  /// โหลดรายชื่อจังหวัดสำหรับ dropdown — ถ้าจังหวัดที่เคยเลือกไว้ไม่อยู่ใน
+  /// รายการใหม่ (เช่นภาษาเปลี่ยน) ให้เคลียร์ค่าที่เลือก
   Future<void> _loadProvinces() async {
     final requestedLanguage = AppServices.locale.languageCode;
     if (mounted) setState(() => _loadingProvinces = true);
@@ -304,6 +324,7 @@ class _PlanScreenState extends State<PlanScreen> {
     });
   }
 
+  /// ขอตำแหน่ง GPS ใหม่ — ถ้าถูกปฏิเสธ permission จะเปิดหน้าตั้งค่าให้ผู้ใช้เอง
   Future<void> _getLocation() async {
     final position = await _locationService.refresh(
       openSettingsWhenDenied: true,
@@ -315,6 +336,7 @@ class _PlanScreenState extends State<PlanScreen> {
     });
   }
 
+  /// รวมทุก input บนฟอร์มเป็น JSON body สำหรับยิงสร้างแผน
   Map<String, dynamic> _input() => {
     'destination': _selectedProvince,
     'province': _selectedProvince,
@@ -339,6 +361,8 @@ class _PlanScreenState extends State<PlanScreen> {
     if (_dates != null) 'start_date': _dates!.start.toIso8601String(),
   };
 
+  /// กดปุ่มสร้างแผน — ยิงให้ AI สร้างแผนจาก _input() แล้วแปลง plan_data
+  /// เป็น TravelPlan, เติม must-visit ที่หายไป, สลับไปหน้าผลลัพธ์ และวาดเส้นทาง
   Future<void> _generate() async {
     setState(() {
       _generating = true;
@@ -372,6 +396,8 @@ class _PlanScreenState extends State<PlanScreen> {
     }
   }
 
+  /// การันตีว่าสถานที่ที่ผู้ใช้บังคับเลือก (must-visit) ถูกใส่ในแผนทุกที่
+  /// ถ้า AI ไม่ได้ใส่ จะแทรกต่อท้ายวันที่มีจุดแวะน้อยที่สุด
   TravelPlan _ensureMustVisitStops(TravelPlan plan) {
     if (_mustVisit.isEmpty) return plan;
 
@@ -401,6 +427,7 @@ class _PlanScreenState extends State<PlanScreen> {
     );
   }
 
+  // เช็คว่าแผนมีสถานที่นี้อยู่แล้วไหม — เทียบทั้ง id และชื่อ (กัน AI เขียนชื่อเพี้ยน)
   bool _planContainsPlace(List<TravelDay> days, PlaceMarker place) {
     final id = place.id.trim();
     final title = _placeKey(place.title);
@@ -411,6 +438,7 @@ class _PlanScreenState extends State<PlanScreen> {
     return false;
   }
 
+  // วันที่ควรแทรก must-visit — เลือกวันที่มีจุดแวะน้อยที่สุด (ถ้าไม่มีวันเลยสร้างวันใหม่)
   TravelDay _targetDayForMustVisit(List<TravelDay> days) {
     if (days.isEmpty) {
       final day = TravelDay(
