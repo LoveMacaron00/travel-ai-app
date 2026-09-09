@@ -18,6 +18,9 @@ const _diaryGold = Color(0xfff4b400);
 const _diaryPaleGold = Color(0xffffefbd);
 const _diaryBorder = Color(0xffe6e6e6);
 
+/// หน้า Smart Travel Diary — สมุดบันทึกการเดินทางแบบ timeline แบ่งตามวัน
+/// บันทึกเข้ามาได้ 3 ช่องทาง: GPS อัตโนมัติ (TravelDiaryAutomationService),
+/// กล้อง AI สแกน (ผ่าน ChatbotScreen) และผู้ใช้พิมพ์เอง
 class TravelDiaryScreen extends StatefulWidget {
   const TravelDiaryScreen({super.key, this.onBack});
 
@@ -29,7 +32,9 @@ class TravelDiaryScreen extends StatefulWidget {
 
 class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
   late final TravelDiaryService _diary;
+  // debounce บันทึกโน้ตราย entry — พิมพ์ต่อเนื่องจะ reset timer กันยิง API ทุก keystroke
   final Map<String, Timer> _noteSaveTimers = {};
+  // debounce reload รายการ เมื่อ GPS เปลี่ยน (อาจมี entry ใหม่จากระบบ auto โผล่มา)
   Timer? _locationReloadTimer;
   List<TravelDiaryEntry> _entries = [];
   bool _loading = true;
@@ -42,6 +47,8 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     _initializeDiary();
   }
 
+  /// เปิด automation บันทึก GPS อัตโนมัติ (ถ้าผู้ใช้ไม่ได้ปิดสวิตช์ไว้)
+  /// ก่อนโหลดรายการทั้งหมดจาก server มาแสดง
   Future<void> _initializeDiary() async {
     if (await TravelDiaryAutomationService.isEnabled()) {
       await AppServices.diaryAutomation.start();
@@ -60,6 +67,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
   }
 
   void _onLocationChanged() {
+    // GPS เด้งบ่อย รอให้ตำแหน่งนิ่ง 1.2 วินาทีแล้วค่อยโหลดใหม่ครั้งเดียว
     _locationReloadTimer?.cancel();
     _locationReloadTimer = Timer(const Duration(milliseconds: 1200), () {
       if (mounted) unawaited(_loadEntries());
@@ -75,6 +83,8 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     });
   }
 
+  /// เปิดกล้อง AI สแกนสถานที่ — ฝั่ง ChatbotScreen จะเรียก recordAiCapture()
+  /// บันทึก entry เอง พอกลับมาหน้านี้จึงต้อง reload รายการ
   Future<void> _openAiCamera() async {
     await Navigator.push(
       context,
@@ -85,6 +95,8 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     await _loadEntries();
   }
 
+  /// autosave โน้ตแบบ debounce — หยุดพิมพ์ 650ms แล้วค่อย upsert กลับ server
+  /// timer เก่าถูก cancel ทุกครั้งที่พิมพ์ต่อ จึงบันทึกรอบสุดท้ายรอบเดียว
   void _scheduleNoteSave(TravelDiaryEntry entry, String note) {
     _noteSaveTimers[entry.id]?.cancel();
     _noteSaveTimers[entry.id] = Timer(const Duration(milliseconds: 650), () {
@@ -96,6 +108,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     });
   }
 
+  /// ลบ entry — มี dialog ยืนยันก่อนเสมอ เพราะลบแล้วถอนคืนไม่ได้
   Future<void> _deleteEntry(TravelDiaryEntry entry) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -124,6 +137,8 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     if (mounted) setState(() {});
   }
 
+  /// เพิ่มบันทึกเองจากฟอร์ม — อัปโหลดรูปก่อน (ถ้ามี) แล้วจึงบันทึก entry
+  /// รูปไม่สำเร็จก็ยังบันทึกข้อความได้ แค่ไม่มีรูปประกอบ
   Future<void> _addManualDiary() async {
     final result = await showDiaryManualSheet(context: context, isEdit: false);
     if (!mounted) return;
@@ -176,6 +191,9 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     }
   }
 
+  /// แก้ไข entry ที่สร้างเอง — กติกาภาพ:
+  /// อัปโหลดรูปใหม่สำเร็จ → แทนที่รูปเดิมทั้งหมด
+  /// อัปโหลดพลาด → คงรูปเดิมไว้ (เว้นแต่ผู้ใช้สั่งลบรูปเดิมในฟอร์มแล้ว) พร้อมแจ้งเตือน
   Future<void> _editManualDiary(TravelDiaryEntry entry) async {
     final result = await showDiaryManualSheet(
       context: context,
@@ -257,6 +275,10 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     }
   }
 
+  /// จัดกลุ่ม entries ตามวันเพื่อวาด timeline
+  /// เลขวัน (Day 1, 2, ...) นับจากเก่าสุด แต่ลิสต์ที่ได้เรียงใหม่สุดก่อน
+  /// ภายในวันเดียวเรียงเก่า → ใหม่ ส่วนชื่อสถานที่ของวันใช้จังหวัดสูงสุด 2 ที่
+  /// ถ้าไม่มีจังหวัดใช้ชื่อ entry แรกแทน
   List<_DiaryDay> get _days {
     final grouped = <DateTime, List<TravelDiaryEntry>>{};
     for (final entry in _entries) {
@@ -287,6 +309,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     }).toList();
   }
 
+  // format วันที่/เวลา ตามภาษาที่ตั้งในแอป (ไทย/อังกฤษ)
   String _formatDate(DateTime date) => DateFormat(
     'd MMMM yyyy',
     Localizations.localeOf(context).languageCode,
@@ -486,6 +509,8 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
         ),
       );
 
+  /// ไอคอน/สีของ node บน timeline ต่างกันตามแหล่งที่มาของ entry
+  /// ทอง = จับจาก GPS อัตโนมัติ, เทา = สแกนด้วยกล้อง AI, น้ำเงิน = พิมพ์เอง
   Widget _timelineNode(TravelDiaryEntry entry) {
     final IconData icon;
     final Color color;
@@ -550,6 +575,8 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       SizedBox(
         width: 32,
         height: 24,
+        // เมนูจัดการ entry — ให้แก้ไขเฉพาะที่ผู้ใช้พิมพ์เอง (manual)
+        // entry จาก AI/GPS ลบได้อย่างเดียว กัน user แก้ข้อมูลที่ระบบสร้างไว้
         child: PopupMenuButton<String>(
           padding: EdgeInsets.zero,
           icon: const Icon(Icons.more_vert, size: 18, color: Colors.black45),
@@ -645,6 +672,8 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     ),
   );
 
+  /// แกลเลอรีรูปของ entry — 1 รูปโชว์เต็ม, หลายรูปโชว์ 2 รูปแรก
+  /// และทับรูปที่สองด้วยป้าย "+N" นับรูปที่เหลือ
   Widget _imageGallery(TravelDiaryEntry entry) {
     final images = entry.imageUrls;
     if (images.length == 1) {
@@ -704,6 +733,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
   );
 }
 
+/// ข้อมูลหนึ่งวันของ diary เอาไปแสดงเป็น section เดียวบน timeline
 class _DiaryDay {
   const _DiaryDay({
     required this.number,
