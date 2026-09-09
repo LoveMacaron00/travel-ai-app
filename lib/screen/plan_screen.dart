@@ -456,6 +456,8 @@ class _PlanScreenState extends State<PlanScreen> {
     );
   }
 
+  // สร้าง TravelStop จาก PlaceMarker ที่ผู้ใช้เลือก — ใช้ทั้งตอน AI ลืมใส่
+  // และตอนผู้ใช้กดเพิ่มที่เองหลังสร้างแผนแล้ว (ค่าใช้จ่ายปล่อยเป็น 0 ให้ AI/ระบบคิด)
   TravelStop _mustVisitStop(PlaceMarker place, int stopIndex) {
     final activity = stripHtmlText(place.description).trim();
     return TravelStop(
@@ -478,6 +480,7 @@ class _PlanScreenState extends State<PlanScreen> {
     );
   }
 
+  // หาจังหวัดของ stop จาก 3 ชั้น: ข้อมูลในตัว stop → id → ชื่อที่ normalize แล้ว
   String _provinceForStop(TravelStop stop) {
     if (stop.province.trim().isNotEmpty) return stop.province.trim();
     final byId = _places.where((p) => p.id == stop.destinationId).firstOrNull;
@@ -493,6 +496,7 @@ class _PlanScreenState extends State<PlanScreen> {
     return '';
   }
 
+  // ประมาณค่าเดินทางตามระยะทาง × อัตราต่อกม. ของแต่ละพาหนะ (ขั้นต่ำ 50฿)
   double _estimateTransportCost(LatLng from, LatLng to, String mode) {
     final lower = mode.toLowerCase();
     if (lower == 'walking') return 0;
@@ -511,6 +515,7 @@ class _PlanScreenState extends State<PlanScreen> {
     return (cost < 50 ? 50 : cost).roundToDouble();
   }
 
+  // identity ของ stop สำหรับเทียบตอนลบ/สลับ — ใช้ id ถ้ามี ไม่มีค่อยใช้ชื่อที่ normalize
   String _stopIdentity(TravelStop stop) {
     final id = stop.destinationId.trim();
     if (id.isNotEmpty) return 'id:$id';
@@ -623,15 +628,20 @@ class _PlanScreenState extends State<PlanScreen> {
     );
   }
 
+  // ช่วงเวลาถึงของจุดแวะที่แทรกเอง — กระจายเข้า slot มาตรฐานของวัน
   String _arrivalTimeForStopIndex(int stopIndex) {
     const slots = ['09:00', '11:00', '13:30', '15:30', '17:00'];
     final index = stopIndex.clamp(0, slots.length - 1).toInt();
     return slots[index];
   }
 
+  // normalize ชื่อสถานที่เพื่อใช้เทียบ (ตัด space, ลowercase ทั้งหมด)
   String _placeKey(String value) =>
       value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '');
 
+  /// สร้างเส้นทางบนแผนที่ของวันที่เลือก — วนคู่จุดแวะตามลำดับ
+  /// car/walking/bus ขอเส้นทางตามถนนจริงจาก backend ส่วน mode อื่นวาดตรงจุดถึงจุด
+  /// ใช้ _routeRequestId เป็นหมายเลขรุ่น — ถ้าผู้ใช้สลับวันเร็ว ๆ ผลลัพธ์รุ่นเก่าจะถูกทิ้ง
   Future<void> _buildRoute(TravelPlan plan) async {
     final requestId = ++_routeRequestId;
     final day = _selectedDayFor(plan);
@@ -673,12 +683,13 @@ class _PlanScreenState extends State<PlanScreen> {
     }
   }
 
-  TravelDay? _selectedDayFor(TravelPlan plan) {
-    if (plan.days.isEmpty) return null;
+  TravelDay? _selectedDayFor(TravelPlan plan) {    if (plan.days.isEmpty) return null;
     final index = _selectedDayIndex.clamp(0, plan.days.length - 1);
     return plan.days[index];
   }
 
+  // กดสลับวัน — เคลียร์เส้นทางเดิม วาดใหม่, scroll ให้แผนที่เข้าจอ
+  // และเลื่อนกล้องไปจุดแวะแรกของวันนั้น (รอ post-frame เพราะ map อาจยังไม่ถูก build)
   void _selectDay(int index) {
     final plan = _plan;
     if (plan == null || index < 0 || index >= plan.days.length) return;
@@ -703,6 +714,7 @@ class _PlanScreenState extends State<PlanScreen> {
     });
   }
 
+  // ลากสลับลำดับจุดแวะในวันที่เลือก (มาจาก SliverReorderableList)
   void _reorderStops(int oldIndex, int newIndex) {
     final plan = _plan;
     if (plan == null) return;
@@ -718,6 +730,8 @@ class _PlanScreenState extends State<PlanScreen> {
     _replaceSelectedDayStops(stops);
   }
 
+  // ลบจุดแวะ — จดชื่อใส่ _excluded เพื่อไม่ให้ AI เอากลับมาในรอบสร้างถัดไป
+  // และถอดออกจาก must-visit ด้วย (ป้องกัน _ensureMustVisitStops เติมกลับมาทันที)
   void _removeStop(int stopIndex) {
     final plan = _plan;
     if (plan == null) return;
@@ -734,6 +748,7 @@ class _PlanScreenState extends State<PlanScreen> {
     _replaceSelectedDayStops(stops);
   }
 
+  // เพิ่มสถานที่เข้าวันที่เลือกหลังสร้างแผนแล้ว — กันซ้ำด้วย destinationId
   void _addStopToSelectedDay(PlaceMarker place) {
     final plan = _plan;
     if (plan == null) return;
@@ -749,6 +764,8 @@ class _PlanScreenState extends State<PlanScreen> {
     ]);
   }
 
+  /// จุดรวมของทุกการแก้ไข (เพิ่ม/ลบ/สลับ) — คำนวณ stops + งบใหม่ตามกติกา
+  /// ของแต่ละกรณี แล้วทั้งบันทึกกลับ server และวาดเส้นทางใหม่
   void _replaceSelectedDayStops(List<TravelStop> stops) {
     final plan = _plan;
     if (plan == null) return;
@@ -862,6 +879,8 @@ class _PlanScreenState extends State<PlanScreen> {
     );
   }
 
+  // ปุ่มย้อนกลับจากหน้าผลลัพธ์ — แยก 3 กรณี:
+  // เปิดจาก Profile → เด้ง callback กลับหน้าเดิม / กดออกจากแผนเก่า → pop หน้าจอ / สร้างเอง → กลับฟอร์ม (ล้าง plan)
   void _backToForm() {
     if (widget.initialTripId != null && widget.onBackFromSavedView != null) {
       widget.onBackFromSavedView!.call();
