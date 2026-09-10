@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:myapp/l10n/app_localizations.dart';
-import 'package:myapp/screen/welcome_screen.dart';
-import 'package:myapp/screen/main_navigation_screen.dart';
-import 'package:myapp/services/app_services.dart';
+import 'package:myapp/features/auth/presentation/welcome_screen.dart';
+import 'package:myapp/features/home/presentation/main_navigation_screen.dart';
+import 'package:myapp/core/di/app_services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

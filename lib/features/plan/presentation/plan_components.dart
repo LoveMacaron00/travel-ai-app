@@ -1,0 +1,649 @@
+part of 'plan_screen.dart';
+
+// UI components และ interaction ย่อยที่ใช้ร่วมกันในหน้าแผน
+extension _PlanComponents on _PlanScreenState {
+  Widget _costSummary(TravelPlan plan) => Container(
+    margin: const EdgeInsets.all(16),
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: const Color(0xffeadcc2)),
+    ),
+    child: Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                context.l10n.estimatedTripCost,
+                style: const TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            Text(
+              '฿${_money(plan.totalEstimatedCost)}',
+              style: const TextStyle(
+                color: _gold,
+                fontSize: 19,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+        const Divider(height: 26),
+        ...plan.budgetBreakdown.entries.map(
+          (e) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              children: [
+                Text(
+                  _title(e.key),
+                  style: const TextStyle(color: Colors.black54),
+                ),
+                const Spacer(),
+                Text(
+                  '฿${_money(e.value)}',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          context.l10n.estimateDisclaimer,
+          style: const TextStyle(color: Colors.black38, fontSize: 11),
+        ),
+      ],
+    ),
+  );
+
+  Widget _section({
+    required int number,
+    required String title,
+    String? subtitle,
+    required Widget child,
+  }) => Container(
+    margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: const Color(0xffeadcc2)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: _gold,
+              foregroundColor: Colors.white,
+              child: Text('$number'),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (subtitle != null)
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: Colors.black45,
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        child,
+      ],
+    ),
+  );
+
+  Widget _locationTile() => Container(
+    padding: const EdgeInsets.all(13),
+    decoration: BoxDecoration(
+      color: const Color(0xfffff6d7),
+      borderRadius: BorderRadius.circular(15),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.my_location, color: _gold),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.l10n.currentGpsLocation,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              Text(
+                _position == null
+                    ? (_locating
+                          ? context.l10n.findingLocation
+                          : context.l10n.locationUnavailable)
+                    : '${_position!.latitude.toStringAsFixed(5)}, ${_position!.longitude.toStringAsFixed(5)}',
+                style: const TextStyle(color: Colors.black45, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+        IconButton(onPressed: _getLocation, icon: const Icon(Icons.refresh)),
+      ],
+    ),
+  );
+
+  Widget _optionIcon(String? iconUrl, IconData fallbackIcon) {
+    if (iconUrl != null && iconUrl.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: mediaNetworkImage(
+            iconUrl,
+            width: 18,
+            height: 18,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => Icon(fallbackIcon, size: 17),
+          ),
+        ),
+      );
+    }
+    return Icon(fallbackIcon, size: 17);
+  }
+
+  Widget _interestChips(Set<String> selected) {
+    // Single source: DB ผ่าน _dynamicInterests เท่านั้น (ไม่มี fallback hardcode)
+    if (_loadingPlanOptions && _dynamicInterests.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(strokeWidth: 2.5),
+          ),
+        ),
+      );
+    }
+    if (_dynamicInterests.isEmpty) {
+      return Text(
+        context.l10n.noResults,
+        style: const TextStyle(color: Colors.black38, fontSize: 13),
+      );
+    }
+    final items = _dynamicInterests;
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: items.map((item) {
+        final keyLower = item.key.toLowerCase();
+        final isSelected = selected.any((s) => s.toLowerCase() == keyLower);
+        return FilterChip(
+          label: Text(item.label),
+          selected: isSelected,
+          selectedColor: const Color(0xffffe7a0),
+          checkmarkColor: const Color(0xff986b00),
+          onSelected: (on) => _updateState(() {
+            if (on) {
+              selected.add(item.key);
+            } else {
+              selected.removeWhere((s) => s.toLowerCase() == keyLower);
+            }
+          }),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _transportChips(Set<String> selected) {
+    // Single source: DB ผ่าน _dynamicModes เท่านั้น (ไม่มี fallback hardcode)
+    if (_loadingPlanOptions && _dynamicModes.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(strokeWidth: 2.5),
+          ),
+        ),
+      );
+    }
+    if (_dynamicModes.isEmpty) {
+      return Text(
+        context.l10n.noResults,
+        style: const TextStyle(color: Colors.black38, fontSize: 13),
+      );
+    }
+    final items = _dynamicModes;
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: items.map((item) {
+        final keyLower = item.key.toLowerCase();
+        const fallbackIcon = Icons.route;
+        final isSelected = selected.any((s) => s.toLowerCase() == keyLower);
+        return FilterChip(
+          avatar: _optionIcon(item.iconUrl, fallbackIcon),
+          label: Text(item.label),
+          selected: isSelected,
+          selectedColor: const Color(0xffffe7a0),
+          showCheckmark: false,
+          onSelected: (v) => _updateState(() {
+            if (v) {
+              selected.add(item.key);
+            } else if (selected.length > 1) {
+              selected.removeWhere((s) => s.toLowerCase() == keyLower);
+            }
+          }),
+        );
+      }).toList(),
+    );
+  }
+
+  Future<void> _pickDates() async {
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: now,
+      lastDate: DateTime(now.year + 2),
+      initialDateRange: _dates,
+    );
+    if (picked != null) {
+      _updateState(() {
+        _dates = picked;
+        _days = picked.duration.inDays + 1;
+      });
+    }
+  }
+
+  void _showPlacePicker() {
+    if (_mustVisit.length >= _PlanScreenState._maxMustVisitPlaces) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.mustVisitLimitReached)),
+      );
+      return;
+    }
+
+    String query = '';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: _canvas,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheet) => AnimatedBuilder(
+          animation: _locationService,
+          builder: (context, _) {
+            final origin = _position;
+            final queryLower = query.toLowerCase();
+            final matches = _places
+                .where(
+                  (p) =>
+                      query.isEmpty ||
+                      p.title.toLowerCase().contains(queryLower) ||
+                      p.province.toLowerCase().contains(queryLower),
+                )
+                .toList();
+            if (origin != null) {
+              matches.sort(
+                (a, b) => const Distance()
+                    .as(
+                      LengthUnit.Kilometer,
+                      origin,
+                      LatLng(a.latitude, a.longitude),
+                    )
+                    .compareTo(
+                      const Distance().as(
+                        LengthUnit.Kilometer,
+                        origin,
+                        LatLng(b.latitude, b.longitude),
+                      ),
+                    ),
+              );
+            }
+            final filtered = matches.take(30).toList();
+            return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: .78,
+              maxChildSize: .92,
+              builder: (_, controller) => Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 14),
+                    child: Text(
+                      context.l10n.addAPlace,
+                      style: const TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: TextField(
+                      onChanged: (v) => setSheet(() => query = v),
+                      decoration: _inputDecoration(
+                        context.l10n.searchPlacesThailand,
+                        Icons.search,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: filtered.isEmpty
+                        ? ListView(
+                            controller: controller,
+                            children: [
+                              const SizedBox(height: 60),
+                              Icon(
+                                Icons.search_off,
+                                size: 48,
+                                color: Colors.black26,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                context.l10n.noResults,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.black38,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ],
+                          )
+                        : ListView.builder(
+                            controller: controller,
+                            itemCount: filtered.length,
+                            itemBuilder: (_, i) {
+                              final p = filtered[i];
+                              final description = stripHtmlText(p.description);
+                              final distanceLabel = origin == null
+                                  ? null
+                                  : _distanceLabel(origin, p);
+                              return ListTile(
+                                leading: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: p.imageUrl.isEmpty
+                                      ? const SizedBox(
+                                          width: 52,
+                                          child: Icon(Icons.place),
+                                        )
+                                      : mediaNetworkImage(
+                                          p.imageUrl,
+                                          width: 52,
+                                          height: 52,
+                                          fit: BoxFit.cover,
+                                        ),
+                                ),
+                                title: Text(
+                                  p.title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (p.province.isNotEmpty)
+                                      Container(
+                                        margin: const EdgeInsets.only(
+                                          bottom: 4,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xffffe7a0),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          p.province,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xff986b00),
+                                          ),
+                                        ),
+                                      ),
+                                    if (description.isNotEmpty)
+                                      Text(
+                                        description,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                  ],
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (distanceLabel != null)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xfff4f0e8),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          distanceLabel,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+                                      ),
+                                    const SizedBox(width: 6),
+                                    GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () {
+                                        if (!_mustVisit.any(
+                                          (x) => x.id == p.id,
+                                        )) {
+                                          if (_mustVisit.length >=
+                                              _PlanScreenState
+                                                  ._maxMustVisitPlaces) {
+                                            Navigator.pop(sheetContext);
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  context
+                                                      .l10n
+                                                      .mustVisitLimitReached,
+                                                ),
+                                              ),
+                                            );
+                                            return;
+                                          }
+                                          _mustVisit.add(p);
+                                        }
+                                        Navigator.pop(sheetContext);
+                                        if (_plan != null) {
+                                          _addStopToSelectedDay(p);
+                                        } else if (mounted) {
+                                          _updateState(() {});
+                                        }
+                                      },
+                                      child: const Icon(
+                                        Icons.add_circle,
+                                        color: _gold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                onTap: () {
+                                  final detailId = int.tryParse(p.id);
+                                  if (detailId == null) return;
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => DestinationDetailScreen(
+                                        destinationId: detailId,
+                                        fallbackName: p.title,
+                                        fallbackImageUrl: p.imageUrl,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  String _distanceLabel(LatLng origin, PlaceMarker place) {
+    final meters = const Distance().distance(
+      origin,
+      LatLng(place.latitude, place.longitude),
+    );
+    if (meters < 1000) return '${meters.round()} m';
+    return '${(meters / 1000).toStringAsFixed(1)} km';
+  }
+
+  InputDecoration _inputDecoration(String? label, IconData icon) =>
+      InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: _gold),
+        filled: true,
+        fillColor: const Color(0xfffbf8f1),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xffe6dbc8)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xffe6dbc8)),
+        ),
+      );
+  Widget _roundIcon(IconData icon, VoidCallback onTap) => Material(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(14),
+    child: IconButton(onPressed: onTap, icon: Icon(icon)),
+  );
+  Widget _stat(String value, String label) => Expanded(
+    child: Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+          ),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.black45, fontSize: 11),
+          ),
+        ],
+      ),
+    ),
+  );
+  Widget _price(IconData icon, double value) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+    decoration: BoxDecoration(
+      color: const Color(0xfff4f0e8),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, size: 15, color: Colors.black45),
+        const SizedBox(width: 5),
+        Text('฿${_money(value)}', style: const TextStyle(fontSize: 12)),
+      ],
+    ),
+  );
+  String _date(DateTime d) => '${d.day}/${d.month}/${d.year}';
+  String _money(num n) => n.round().toString().replaceAllMapped(
+    RegExp(r'\B(?=(\d{3})+(?!\d))'),
+    (m) => ',',
+  );
+  String _modeLabel(String value) {
+    // ใช้ label จาก DB ก่อน (รองรับ mode ใหม่ที่ admin เพิ่ม) แล้วค่อย fallback เป็น l10n
+    final keyLower = value.toLowerCase();
+    for (final item in _dynamicModes) {
+      if (item.key.toLowerCase() == keyLower) return item.label;
+    }
+    return switch (keyLower) {
+      'car' => context.l10n.transportCar,
+      'walking' => context.l10n.transportWalking,
+      'bus' => context.l10n.transportBus,
+      'train' => context.l10n.transportTrain,
+      'ferry' => context.l10n.transportFerry,
+      'flight' => context.l10n.transportFlight,
+      _ => _title(value),
+    };
+  }
+
+  bool _usesRoadRoute(String mode) =>
+      const {'car', 'walking', 'bus'}.contains(mode.toLowerCase());
+
+  Color _routeColor(String mode) => switch (mode.toLowerCase()) {
+    'walking' => const Color(0xff6d7278),
+    'bus' => const Color(0xff2d7dd2),
+    'train' => const Color(0xff7b2cbf),
+    'ferry' => const Color(0xff0096c7),
+    'flight' => const Color(0xffe76f51),
+    _ => _gold,
+  };
+
+  Color _routeLabelColor(String mode) => switch (mode.toLowerCase()) {
+    'walking' => const Color(0xff4f5459),
+    'bus' => const Color(0xff1f5f9f),
+    'train' => const Color(0xff61208f),
+    'ferry' => const Color(0xff00779e),
+    'flight' => const Color(0xffb84d36),
+    _ => const Color(0xff7a5800),
+  };
+
+  String _title(String value) => switch (value.toLowerCase()) {
+    'food' => context.l10n.food,
+    'transport' => context.l10n.transport,
+    'admission' => context.l10n.admission,
+    _ =>
+      value
+          .split(RegExp(r'[_ ]'))
+          .map((s) => s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}')
+          .join(' '),
+  };
+}

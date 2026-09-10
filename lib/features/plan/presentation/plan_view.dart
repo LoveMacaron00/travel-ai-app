@@ -1,0 +1,781 @@
+part of 'plan_screen.dart';
+
+// Form, result list และ map preview ของแผน
+extension _PlanMainView on _PlanScreenState {
+  Widget _buildScaffold(BuildContext context) => PopScope(
+    canPop:
+        _plan == null &&
+        !_loadingExistingPlan &&
+        !(widget.initialTripId != null && widget.onBackFromSavedView != null),
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop) _backToForm();
+    },
+    child: Scaffold(
+      backgroundColor: _canvas,
+      body: SafeArea(
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 350),
+          child: _loadingExistingPlan
+              ? const Center(child: CircularProgressIndicator(color: _gold))
+              : _plan == null
+              ? _buildForm()
+              : _buildResult(_plan!),
+        ),
+      ),
+    ),
+  );
+
+  Widget _header(String eyebrow, String title, {VoidCallback? back}) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+    child: Row(
+      children: [
+        if (back != null) _roundIcon(Icons.arrow_back, back),
+        if (back != null) const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: back == null
+                ? CrossAxisAlignment.center
+                : CrossAxisAlignment.start,
+            children: [
+              Text(
+                eyebrow,
+                style: const TextStyle(
+                  color: Color(0xff8c7b60),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: _ink,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _buildForm() => SingleChildScrollView(
+    key: const ValueKey('form'),
+    padding: const EdgeInsets.only(bottom: 28),
+    child: Column(
+      children: [
+        _header(
+          context.l10n.aiPlanTravel,
+          context.l10n.buildYourTrip,
+          back: Navigator.canPop(context) ? () => Navigator.pop(context) : null,
+        ),
+        _hero(),
+        _section(
+          number: 1,
+          title: context.l10n.setTheBasics,
+          subtitle: context.l10n.locationStartingPoint,
+          child: Column(
+            children: [
+              _locationTile(),
+              const SizedBox(height: 12),
+              ProvinceSelector(
+                value: _selectedProvince,
+                options: _provinceOptions,
+                loading: _loadingProvinces,
+                decoration: _inputDecoration(
+                  null,
+                  Icons.location_city_outlined,
+                ).copyWith(helperText: context.l10n.databaseProvinceOnly),
+                selectHint: context.l10n.selectProvince,
+                loadingHint: context.l10n.loadingProvinces,
+                onChanged: (value) => _updateState(() {
+                  _selectedProvince = value;
+                  _excluded.clear();
+                  _error = null;
+                }),
+              ),
+              const SizedBox(height: 12),
+              InkWell(
+                onTap: _pickDates,
+                borderRadius: BorderRadius.circular(16),
+                child: InputDecorator(
+                  decoration: _inputDecoration(
+                    null,
+                    Icons.calendar_today_outlined,
+                  ),
+                  child: Text(
+                    _dates == null
+                        ? context.l10n.chooseDates
+                        : '${_date(_dates!.start)} – ${_date(_dates!.end)} · $_days ${context.l10n.days}',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    context.l10n.estimatedBudget,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  Text(
+                    '฿${_money(_budget)}',
+                    style: const TextStyle(
+                      color: _gold,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+              Slider(
+                value: _budget,
+                min: 3000,
+                max: 150000,
+                divisions: 49,
+                activeColor: _gold,
+                onChanged: (v) => _updateState(() => _budget = v),
+              ),
+            ],
+          ),
+        ),
+        _section(
+          number: 2,
+          title: context.l10n.whatDoYouEnjoy,
+          child: _interestChips(_interests),
+        ),
+        _section(
+          number: 3,
+          title: context.l10n.howCanYouTravel,
+          child: _transportChips(_modes),
+        ),
+        _section(
+          number: 4,
+          title: context.l10n.mustVisitPlaces,
+          subtitle: context.l10n.mustVisitOptional,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_mustVisit.isNotEmpty)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _mustVisit
+                      .map(
+                        (p) => InputChip(
+                          label: Text(p.title),
+                          backgroundColor: const Color(0xffffe7a0),
+                          deleteIconColor: const Color(0xff986b00),
+                          side: BorderSide.none,
+                          onDeleted: () =>
+                              _updateState(() => _mustVisit.remove(p)),
+                        ),
+                      )
+                      .toList(),
+                ),
+              if (_mustVisit.isNotEmpty) const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _showPlacePicker,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(42),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+                icon: const Icon(Icons.add_location_alt_outlined),
+                label: Text(context.l10n.addAPlace),
+              ),
+            ],
+          ),
+        ),
+        if (_error != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            child: Text(
+              _error!,
+              style: const TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+          child: SizedBox(
+            width: double.infinity,
+            height: 58,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: _gold,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              onPressed: _generating ? null : _generate,
+              icon: _generating
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.auto_awesome),
+              label: Text(
+                _generating
+                    ? context.l10n.designingTrip
+                    : context.l10n.createTravelPlan,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _hero() {
+    final image = _places
+        .where((p) => p.imageUrl.isNotEmpty)
+        .firstOrNull
+        ?.imageUrl;
+    return Container(
+      height: 210,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        color: _ink,
+        image: image == null
+            ? null
+            : DecorationImage(
+                image: mediaImageProvider(image),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  Colors.black.withValues(alpha: .36),
+                  BlendMode.darken,
+                ),
+              ),
+      ),
+      padding: const EdgeInsets.all(22),
+      alignment: Alignment.bottomLeft,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.l10n.thailandNearYou,
+            style: const TextStyle(
+              color: Color(0xffffd65a),
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            context.l10n.aiFindBudgetPlaces,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 27,
+              height: 1.05,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResult(TravelPlan plan) {
+    final selectedDay = _selectedDayFor(plan);
+    return Stack(
+      key: const ValueKey('result'),
+      children: [
+        Positioned.fill(child: _planMap(plan, fullScreen: true)),
+        DraggableScrollableSheet(
+          initialChildSize: .68,
+          minChildSize: .08,
+          maxChildSize: .94,
+          builder: (_, controller) => DecoratedBox(
+            decoration: const BoxDecoration(
+              color: _canvas,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: CustomScrollView(
+              controller: controller,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: _header(
+                    context.l10n.aiGeneratedPlan,
+                    context.l10n.yourRoute,
+                    back: _backToForm,
+                  ),
+                ),
+                if (plan.days.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 14),
+                      child: PlanDaySelector(
+                        dayNumbers: plan.days.map((day) => day.day).toList(),
+                        selectedIndex: _selectedDayIndex.clamp(
+                          0,
+                          plan.days.length - 1,
+                        ),
+                        dayLabel: context.l10n.day,
+                        onSelected: _selectDay,
+                      ),
+                    ),
+                  ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+                    child: Row(
+                      children: [
+                        _stat('${plan.allStops.length}', context.l10n.places),
+                        _stat('${plan.days.length}', context.l10n.days),
+                        _stat(
+                          '฿${_money(plan.totalEstimatedCost)}',
+                          context.l10n.estimated,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.l10n.recommendedItinerary,
+                          style: const TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          plan.summary,
+                          style: const TextStyle(
+                            color: Colors.black54,
+                            height: 1.45,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xfffff4d2),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xffffd76a)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          color: Color(0xff9a6b00),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            context.l10n.aiPlanDisclaimer,
+                            style: const TextStyle(
+                              color: Color(0xff684d0a),
+                              fontSize: 12,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (selectedDay != null) ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+                      child: Text(
+                        '${context.l10n.day} ${selectedDay.day} · ${selectedDay.theme.toUpperCase()}',
+                        style: const TextStyle(
+                          color: Color(0xff9a6b00),
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: .5,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SliverReorderableList(
+                    itemCount: selectedDay.stops.length,
+                    onReorder: _reorderStops,
+                    itemBuilder: (_, i) => _stopTile(
+                      selectedDay.stops[i],
+                      i + 1,
+                      key: ValueKey(selectedDay.stops[i]),
+                      reorderIndex: i,
+                    ),
+                  ),
+                ],
+                SliverToBoxAdapter(child: _costSummary(plan)),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                    child: OutlinedButton.icon(
+                      onPressed: _showPlacePicker,
+                      icon: const Icon(Icons.add),
+                      label: Text(context.l10n.addAPlace),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _planMap(TravelPlan plan, {bool fullScreen = false}) {
+    final day = _selectedDayFor(plan);
+    final stops = day?.stops ?? const <TravelStop>[];
+    final mapPoints = [
+      if (_position != null) LatLng(_position!.latitude, _position!.longitude),
+      ...stops.map((stop) => LatLng(stop.latitude, stop.longitude)),
+    ];
+    return Container(
+      key: _planMapKey,
+      height: fullScreen ? null : 250,
+      margin: fullScreen
+          ? EdgeInsets.zero
+          : const EdgeInsets.symmetric(horizontal: 16),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: fullScreen ? null : BorderRadius.circular(22),
+      ),
+      child: Stack(
+        children: [
+          FlutterMap(
+            key: ValueKey('plan-map-day-${day?.day ?? 0}'),
+            mapController: _map,
+            options: MapOptions(
+              initialCenter: (mapPoints.isEmpty
+                  ? const LatLng(13.7563, 100.5018)
+                  : mapPoints.first),
+              initialZoom: 15,
+              initialCameraFit: mapPoints.length > 1
+                  ? CameraFit.bounds(
+                      bounds: LatLngBounds.fromPoints(mapPoints),
+                      padding: const EdgeInsets.all(36),
+                    )
+                  : null,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: AppConfig.mapTileUrl,
+                userAgentPackageName: 'com.example.myapp',
+              ),
+              if (_route.isNotEmpty)
+                PolylineLayer(
+                  polylines: _route
+                      .map(
+                        (leg) => Polyline(
+                          points: leg.points,
+                          color: _routeColor(leg.mode),
+                          strokeWidth: 5,
+                          pattern: _usesRoadRoute(leg.mode)
+                              ? const StrokePattern.solid()
+                              : StrokePattern.dashed(segments: const [12, 8]),
+                        ),
+                      )
+                      .toList(),
+                ),
+              MarkerLayer(
+                markers: [
+                  if (_position != null)
+                    Marker(
+                      point: LatLng(_position!.latitude, _position!.longitude),
+                      width: 46,
+                      height: 46,
+                      child: Center(
+                        child: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: const Color(0xff1877f2),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 3),
+                            boxShadow: const [
+                              BoxShadow(color: Colors.black26, blurRadius: 5),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.my_location,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ...stops.indexed.map(
+                    (e) => Marker(
+                      point: LatLng(e.$2.latitude, e.$2.longitude),
+                      width: 132,
+                      height: 88,
+                      child: _buildPlanStopMarker(e.$2, e.$1 + 1),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Positioned(
+            top: 16,
+            right: 16,
+            child: Material(
+              color: Colors.white,
+              elevation: 3,
+              shape: const CircleBorder(),
+              child: IconButton(
+                tooltip: context.l10n.currentGpsLocation,
+                onPressed: _position == null
+                    ? null
+                    : () => _map.move(
+                        LatLng(_position!.latitude, _position!.longitude),
+                        15,
+                      ),
+                icon: const Icon(Icons.my_location, color: Color(0xff1877f2)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _stopTile(
+    TravelStop stop,
+    int number, {
+    required Key key,
+    required int reorderIndex,
+  }) => KeyedSubtree(
+    key: key,
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => _showStopDetails(stop, number),
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 5, 16, 7),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xffeadcc2)),
+          ),
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        radius: 15,
+                        backgroundColor: _gold,
+                        foregroundColor: Colors.white,
+                        child: Text('$number'),
+                      ),
+                      const SizedBox(width: 12),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: stop.imageUrl.isEmpty
+                            ? Container(
+                                width: 76,
+                                height: 76,
+                                color: const Color(0xffeee7da),
+                                child: const Icon(Icons.landscape),
+                              )
+                            : mediaNetworkImage(
+                                AppServices.media.fullUrl(stop.imageUrl),
+                                width: 76,
+                                height: 76,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  width: 76,
+                                  height: 76,
+                                  color: const Color(0xffeee7da),
+                                  child: const Icon(Icons.landscape),
+                                ),
+                              ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              stop.place,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            if (_provinceForStop(stop).isNotEmpty)
+                              Container(
+                                margin: const EdgeInsets.only(
+                                  top: 4,
+                                  bottom: 2,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xffffe7a0),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.location_on,
+                                      size: 11,
+                                      color: Color(0xff986b00),
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Flexible(
+                                      child: Text(
+                                        _provinceForStop(stop),
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xff986b00),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            Text(
+                              '${stop.arrivalTime} · ${stop.durationMinutes} ${context.l10n.minutesShort}',
+                              style: const TextStyle(
+                                color: Colors.black45,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              stop.activity,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.black54,
+                                height: 1.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuButton<String>(
+                        onSelected: (v) {
+                          if (v == 'remove') _removeStop(reorderIndex);
+                        },
+                        itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: 'remove',
+                            child: Text(context.l10n.removeFromPlan),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (stop.segments.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: stop.segments
+                            .map(
+                              (segment) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _routeColor(
+                                    segment.mode,
+                                  ).withValues(alpha: .14),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${_modeLabel(segment.mode)} · ${segment.estimatedMinutes} ${context.l10n.minutesShort} · ฿${_money(segment.estimatedCost)}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: _routeLabelColor(segment.mode),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
+                  Row(
+                    children: [
+                      _price(
+                        Icons.confirmation_number_outlined,
+                        stop.entryCost,
+                      ),
+                      const SizedBox(width: 8),
+                      _price(Icons.route, stop.transportCost),
+                      const Spacer(),
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _gold,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(13),
+                          ),
+                        ),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                PlanNavigationScreen(destination: stop),
+                          ),
+                        ),
+                        icon: const Icon(Icons.navigation, size: 17),
+                        label: Text(context.l10n.navigate),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Positioned.fill(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: ReorderableDragStartListener(
+                    index: reorderIndex,
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(Icons.drag_handle, color: Colors.black45),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
