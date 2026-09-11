@@ -257,6 +257,18 @@
   "mustVisitOptional": "Selected places are always included",
   "addAPlace": "Add a place",
   "mustVisitLimitReached": "You can add up to 5 must-visit places.",
+  "placeAdded": "Added {name}",
+  "@placeAdded": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "placeRemoved": "Removed {name}",
+  "@placeRemoved": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "placeAlreadyAdded": "{name} is already in the plan",
+  "@placeAlreadyAdded": {
+    "placeholders": {"name": {"type": "String"}}
+  },
   "designingTrip": "Designing your trip…",
   "tripReady": "Trip ready ✓",
   "tripReadyTapHint": "Tap to view",

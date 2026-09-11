@@ -693,6 +693,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mustVisitLimitReached => 'You can add up to 5 must-visit places.';
 
   @override
+  String placeAdded(String name) {
+    return 'Added $name';
+  }
+
+  @override
+  String placeRemoved(String name) {
+    return 'Removed $name';
+  }
+
+  @override
+  String placeAlreadyAdded(String name) {
+    return '$name is already in the plan';
+  }
+
+  @override
   String get designingTrip => 'Designing your trip…';
 
   @override

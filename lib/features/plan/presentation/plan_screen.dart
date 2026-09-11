@@ -730,6 +730,15 @@ class _PlanScreenState extends State<PlanScreen> {
     _replaceSelectedDayStops(stops);
   }
 
+  // แจ้งเตือนสั้น ๆ ผ่าน SnackBar — ใช้ State.context (Scaffold) เสมอ
+  // เพื่อให้เรียกหลัง Navigator.pop(sheet) ได้โดยไม่พัง
+  void _showPlanSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
   // ลบจุดแวะ — จดชื่อใส่ _excluded เพื่อไม่ให้ AI เอากลับมาในรอบสร้างถัดไป
   // และถอดออกจาก must-visit ด้วย (ป้องกัน _ensureMustVisitStops เติมกลับมาทันที)
   void _removeStop(int stopIndex) {
@@ -746,22 +755,40 @@ class _PlanScreenState extends State<PlanScreen> {
     );
     final stops = List<TravelStop>.from(day.stops)..removeAt(stopIndex);
     _replaceSelectedDayStops(stops);
+    _showPlanSnack(context.l10n.placeRemoved(removed.place));
   }
 
-  // เพิ่มสถานที่เข้าวันที่เลือกหลังสร้างแผนแล้ว — กันซ้ำด้วย destinationId
-  void _addStopToSelectedDay(PlaceMarker place) {
+  // เช็คว่าสถานที่นี้อยู่ในวันที่เลือกแล้วหรือยัง — เทียบทั้ง id และชื่อ
+  // (กัน AI เขียนชื่อเพี้ยน / destinationId ว่าง)
+  bool _isDuplicateInSelectedDay(PlaceMarker place) {
     final plan = _plan;
-    if (plan == null) return;
+    if (plan == null) return false;
     final day = _selectedDayFor(plan);
-    if (day == null ||
-        day.stops.any((stop) => stop.destinationId == place.id)) {
-      return;
+    if (day == null) return false;
+    final id = place.id.trim();
+    final title = _placeKey(place.title);
+    for (final stop in day.stops) {
+      if (id.isNotEmpty && stop.destinationId.trim() == id) return true;
+      if (title.isNotEmpty && _placeKey(stop.place) == title) return true;
+    }
+    return false;
+  }
+
+  // เพิ่มสถานที่เข้าวันที่เลือกหลังสร้างแผนแล้ว — คืน true ถ้าเพิ่มสำเร็จ,
+  // false ถ้าซ้ำ (ให้ caller แสดง SnackBar เอง)
+  bool _addStopToSelectedDay(PlaceMarker place) {
+    final plan = _plan;
+    if (plan == null) return false;
+    final day = _selectedDayFor(plan);
+    if (day == null || _isDuplicateInSelectedDay(place)) {
+      return false;
     }
 
     _replaceSelectedDayStops([
       ...day.stops,
       _mustVisitStop(place, day.stops.length),
     ]);
+    return true;
   }
 
   /// จุดรวมของทุกการแก้ไข (เพิ่ม/ลบ/สลับ) — คำนวณ stops + งบใหม่ตามกติกา

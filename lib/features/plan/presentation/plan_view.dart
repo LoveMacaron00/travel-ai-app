@@ -168,8 +168,12 @@ extension _PlanMainView on _PlanScreenState {
                           backgroundColor: const Color(0xffffe7a0),
                           deleteIconColor: const Color(0xff986b00),
                           side: BorderSide.none,
-                          onDeleted: () =>
-                              _updateState(() => _mustVisit.remove(p)),
+                          onDeleted: () {
+                            _updateState(() => _mustVisit.remove(p));
+                            _showPlanSnack(
+                              context.l10n.placeRemoved(p.title),
+                            );
+                          },
                         ),
                       )
                       .toList(),

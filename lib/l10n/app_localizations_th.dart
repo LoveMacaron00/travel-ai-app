@@ -681,6 +681,21 @@ class AppLocalizationsTh extends AppLocalizations {
   String get mustVisitLimitReached => 'เพิ่มสถานที่ที่ต้องไปได้สูงสุด 5 แห่ง';
 
   @override
+  String placeAdded(String name) {
+    return 'เพิ่ม $name แล้ว';
+  }
+
+  @override
+  String placeRemoved(String name) {
+    return 'นำ $name ออกแล้ว';
+  }
+
+  @override
+  String placeAlreadyAdded(String name) {
+    return '$name อยู่ในแผนแล้ว';
+  }
+
+  @override
   String get designingTrip => 'กำลังออกแบบทริป…';
 
   @override

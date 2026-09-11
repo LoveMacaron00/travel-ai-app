@@ -257,6 +257,18 @@
   "mustVisitOptional": "เลือกแล้วจะถูกใส่ในทริปเสมอ",
   "addAPlace": "เพิ่มสถานที่",
   "mustVisitLimitReached": "เพิ่มสถานที่ที่ต้องไปได้สูงสุด 5 แห่ง",
+  "placeAdded": "เพิ่ม {name} แล้ว",
+  "@placeAdded": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "placeRemoved": "นำ {name} ออกแล้ว",
+  "@placeRemoved": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "placeAlreadyAdded": "{name} อยู่ในแผนแล้ว",
+  "@placeAlreadyAdded": {
+    "placeholders": {"name": {"type": "String"}}
+  },
   "designingTrip": "กำลังออกแบบทริป…",
   "tripReady": "ออกแบบทริปเสร็จแล้ว ✓",
   "tripReadyTapHint": "แตะเพื่อดู",

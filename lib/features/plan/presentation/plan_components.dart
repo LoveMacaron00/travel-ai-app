@@ -281,9 +281,7 @@ extension _PlanComponents on _PlanScreenState {
 
   void _showPlacePicker() {
     if (_mustVisit.length >= _PlanScreenState._maxMustVisitPlaces) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.mustVisitLimitReached)),
-      );
+      _showPlanSnack(context.l10n.mustVisitLimitReached);
       return;
     }
 
@@ -465,6 +463,35 @@ extension _PlanComponents on _PlanScreenState {
                                     GestureDetector(
                                       behavior: HitTestBehavior.opaque,
                                       onTap: () {
+                                        // เคสเพิ่มเข้าวันที่เลือกของแผนที่สร้างแล้ว —
+                                        // ต้องกันซ้ำก่อนเสมอ (เทียบทั้ง id และชื่อ)
+                                        if (_plan != null &&
+                                            _isDuplicateInSelectedDay(p)) {
+                                          Navigator.pop(sheetContext);
+                                          _showPlanSnack(
+                                            context.l10n.placeAlreadyAdded(
+                                              p.title,
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        // เคสฟอร์ม (ยังไม่มีแผน) — must-visit ซ้ำ
+                                        // ก็แจ้งเตือนด้วย ไม่ใช่เงียบ
+                                        if (_plan == null &&
+                                            _mustVisit.any(
+                                              (x) =>
+                                                  x.id == p.id ||
+                                                  _placeKey(x.title) ==
+                                                      _placeKey(p.title),
+                                            )) {
+                                          Navigator.pop(sheetContext);
+                                          _showPlanSnack(
+                                            context.l10n.placeAlreadyAdded(
+                                              p.title,
+                                            ),
+                                          );
+                                          return;
+                                        }
                                         if (!_mustVisit.any(
                                           (x) => x.id == p.id,
                                         )) {
@@ -472,16 +499,10 @@ extension _PlanComponents on _PlanScreenState {
                                               _PlanScreenState
                                                   ._maxMustVisitPlaces) {
                                             Navigator.pop(sheetContext);
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  context
-                                                      .l10n
-                                                      .mustVisitLimitReached,
-                                                ),
-                                              ),
+                                            _showPlanSnack(
+                                              context
+                                                  .l10n
+                                                  .mustVisitLimitReached,
                                             );
                                             return;
                                           }
@@ -489,9 +510,24 @@ extension _PlanComponents on _PlanScreenState {
                                         }
                                         Navigator.pop(sheetContext);
                                         if (_plan != null) {
-                                          _addStopToSelectedDay(p);
+                                          final added = _addStopToSelectedDay(
+                                            p,
+                                          );
+                                          _showPlanSnack(
+                                            added
+                                                ? context.l10n.placeAdded(
+                                                    p.title,
+                                                  )
+                                                : context.l10n
+                                                      .placeAlreadyAdded(
+                                                        p.title,
+                                                      ),
+                                          );
                                         } else if (mounted) {
                                           _updateState(() {});
+                                          _showPlanSnack(
+                                            context.l10n.placeAdded(p.title),
+                                          );
                                         }
                                       },
                                       child: const Icon(
