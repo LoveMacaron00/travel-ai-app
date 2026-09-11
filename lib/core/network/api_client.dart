@@ -60,6 +60,13 @@ class ApiClient {
     body: body == null ? null : jsonEncode(body),
   );
 
+  Future<http.Response> patch(String path, {Object? body}) =>
+      httpClient.patch(
+        uri(path),
+        headers: headers(),
+        body: body == null ? null : jsonEncode(body),
+      );
+
   Future<http.Response> delete(String path) =>
       httpClient.delete(uri(path), headers: headers());
 

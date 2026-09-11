@@ -1730,6 +1730,60 @@ abstract class AppLocalizations {
   /// **'Are you sure you want to delete this plan?'**
   String get deletePlanConfirmation;
 
+  /// No description provided for @planNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan name'**
+  String get planNameLabel;
+
+  /// No description provided for @planNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Weekend in Chiang Mai'**
+  String get planNameHint;
+
+  /// No description provided for @planNameOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional — shown in your saved plans'**
+  String get planNameOptional;
+
+  /// No description provided for @renamePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename plan'**
+  String get renamePlan;
+
+  /// No description provided for @planRenamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan renamed'**
+  String get planRenamed;
+
+  /// No description provided for @planNameEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a plan name'**
+  String get planNameEmpty;
+
+  /// No description provided for @resetPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset plan'**
+  String get resetPlan;
+
+  /// No description provided for @resetPlanConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Revert to the original AI plan? Added, removed or reordered places will be lost.'**
+  String get resetPlanConfirmation;
+
+  /// No description provided for @planReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan reset to the original version'**
+  String get planReset;
+
   /// No description provided for @addManualDiary.
   ///
   /// In en, this message translates to:

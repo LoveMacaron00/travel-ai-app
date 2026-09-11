@@ -167,6 +167,10 @@ class TravelDay {
 
 class TravelPlan {
   final int tripId;
+
+  /// ชื่อแผนที่ผู้ใช้ตั้งเอง — '' คือยังไม่ตั้ง ให้ UI fallback เป็น destination/province
+  /// เก็บแยกจาก plan_data (มาจากคอลัมน์ trips.title) จึงไม่ถูกส่งกลับใน toJson
+  final String title;
   final String summary;
   final double totalEstimatedCost;
   final Map<String, double> budgetBreakdown;
@@ -174,18 +178,24 @@ class TravelPlan {
   final List<String> tips;
   const TravelPlan({
     required this.tripId,
+    this.title = '',
     required this.summary,
     required this.totalEstimatedCost,
     required this.budgetBreakdown,
     required this.days,
     required this.tips,
   });
-  factory TravelPlan.fromJson(Map<String, dynamic> j, {int tripId = 0}) {
+  factory TravelPlan.fromJson(
+    Map<String, dynamic> j, {
+    int tripId = 0,
+    String title = '',
+  }) {
     final rawBudget = Map<String, dynamic>.from(
       j['budgetBreakdown'] as Map? ?? {},
     );
     return TravelPlan(
       tripId: tripId,
+      title: title,
       summary: '${j['summary'] ?? ''}',
       totalEstimatedCost: _number(j['totalEstimatedCost']),
       budgetBreakdown: rawBudget.map((k, v) => MapEntry(k, _number(v))),

@@ -303,6 +303,67 @@ class ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _renamePlan(
+    int tripId,
+    String currentTitle,
+    AppLocalizations l10n,
+  ) async {
+    final controller = TextEditingController(text: currentTitle);
+    final renamed = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.renamePlan),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 120,
+          textInputAction: TextInputAction.done,
+          decoration: InputDecoration(
+            hintText: dialogContext.l10n.planNameHint,
+            counterText: '',
+          ),
+          onSubmitted: (_) => Navigator.pop(dialogContext, controller.text),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(dialogContext.l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, controller.text),
+            child: Text(dialogContext.l10n.save),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (renamed == null) return;
+    final name = renamed.trim();
+    if (name.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.planNameEmpty)));
+      }
+      return;
+    }
+
+    if (mounted) setState(() => _loadingPlans = true);
+    final result = await AppServices.trips.renamePlan(tripId, name);
+    if (!mounted) return;
+    if (result['success'] == true) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.planRenamed)));
+      _loadSavedPlans();
+    } else {
+      setState(() => _loadingPlans = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${result['message'] ?? l10n.planRenamed}')),
+      );
+    }
+  }
+
   Future<void> _deletePlan(int tripId, AppLocalizations l10n) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -348,9 +409,13 @@ class ProfileScreenState extends State<ProfileScreen> {
     final String destination = plan['destination'] ?? 'Unknown';
     final String province = plan['province'] ?? '';
     final int days = plan['days'] ?? 1;
-    final String title = province.isNotEmpty && destination != province
-        ? '$destination, $province'
-        : destination;
+    // ชื่อที่ผู้ใช้ตั้งเองมีลำดับสูงกว่า — ว่าง/ไม่มีให้ fallback เป็น destination/province
+    final String customTitle = '${plan['title'] ?? ''}'.trim();
+    final String title = customTitle.isNotEmpty
+        ? customTitle
+        : (province.isNotEmpty && destination != province
+              ? '$destination, $province'
+              : destination);
     // created_at จาก API เป็น ISO string — แสดงกำกับไว้ให้แยกจากระยะเวลาทริป
     final createdAt = DateTime.tryParse('${plan['created_at'] ?? ''}')?.toLocal();
     final dateText = createdAt == null
@@ -401,11 +466,17 @@ class ProfileScreenState extends State<ProfileScreen> {
         trailing: PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert, color: Colors.grey),
           onSelected: (value) {
-            if (value == 'delete') {
+            if (value == 'rename') {
+              _renamePlan(id, customTitle, l10n);
+            } else if (value == 'delete') {
               _deletePlan(id, l10n);
             }
           },
           itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'rename',
+              child: Text(l10n.renamePlan),
+            ),
             PopupMenuItem(
               value: 'delete',
               child: Text(l10n.deletePlan, style: const TextStyle(color: Colors.red)),

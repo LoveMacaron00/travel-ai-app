@@ -894,6 +894,34 @@ class AppLocalizationsEn extends AppLocalizations {
       'Are you sure you want to delete this plan?';
 
   @override
+  String get planNameLabel => 'Plan name';
+
+  @override
+  String get planNameHint => 'e.g. Weekend in Chiang Mai';
+
+  @override
+  String get planNameOptional => 'Optional — shown in your saved plans';
+
+  @override
+  String get renamePlan => 'Rename plan';
+
+  @override
+  String get planRenamed => 'Plan renamed';
+
+  @override
+  String get planNameEmpty => 'Please enter a plan name';
+
+  @override
+  String get resetPlan => 'Reset plan';
+
+  @override
+  String get resetPlanConfirmation =>
+      'Revert to the original AI plan? Added, removed or reordered places will be lost.';
+
+  @override
+  String get planReset => 'Plan reset to the original version';
+
+  @override
   String get addManualDiary => 'Add Memory';
 
   @override

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -64,9 +65,13 @@ class _PlanScreenState extends State<PlanScreen> {
   // จำกัดจำนวนสถานที่ที่ผู้ใช้บังคับให้ไป เพื่อไม่ให้ AI วางแผนวันนั้นแน่นเกิน
   static const _maxMustVisitPlaces = 5;
 
+  // ชื่อแผนยาวสุด 120 ตัวอักษร — ตรงกับ CHECK ฝั่ง backend (PATCH /trips/:id)
+  static const _maxPlanNameLength = 120;
+
   final LocationService _locationService = LocationService.instance;
   final _map = MapController();
   final _planMapKey = GlobalKey();
+  final _planNameController = TextEditingController();
   DateTimeRange? _dates;
   double _budget = 30000;
   int _days = 3;
@@ -90,6 +95,8 @@ class _PlanScreenState extends State<PlanScreen> {
   List<_PlanRouteLeg> _route = [];
   int _selectedDayIndex = 0;
   int _routeRequestId = 0;
+  bool _resettingPlan = false;
+  Map<String, dynamic>? _originalPlanJson;
   late String _loadedLanguage;
 
   // extension view เรียกผ่าน wrapper นี้แทน protected State.setState โดยตรง
@@ -126,6 +133,7 @@ class _PlanScreenState extends State<PlanScreen> {
         _loadExistingPlan(widget.initialTripId!);
       } else {
         _routeRequestId++;
+        _originalPlanJson = null;
         setState(() {
           _plan = null;
           _route = [];
@@ -134,6 +142,18 @@ class _PlanScreenState extends State<PlanScreen> {
           _error = null;
         });
       }
+    }
+  }
+
+  // เก็บ snapshot แผนแรกที่ AI สร้างไว้ใน memory สำหรับปุ่ม reset
+  // deep copy ผ่าน json เพื่อกัน reference ของแผนที่กำลังแก้ไขไปทับของเดิม
+  void _storeOriginalPlan(Map<String, dynamic> raw) {
+    try {
+      _originalPlanJson = Map<String, dynamic>.from(
+        jsonDecode(jsonEncode(raw)) as Map,
+      );
+    } on FormatException {
+      _originalPlanJson = null;
     }
   }
 
@@ -151,10 +171,18 @@ class _PlanScreenState extends State<PlanScreen> {
     if (result['success'] == true) {
       final trip = Map<String, dynamic>.from(result['data']);
       final raw = Map<String, dynamic>.from(trip['plan_data'] as Map? ?? {});
-      final plan = TravelPlan.fromJson(raw, tripId: tripId);
+      final plan = TravelPlan.fromJson(
+        raw,
+        tripId: tripId,
+        title: '${trip['title'] ?? ''}',
+      );
 
+      // เปิดแผนเก่า: เก็บ snapshot ตอนเปิดไว้ — reset จะย้อนการแก้ของ session นี้
+      // (trip เก่าไม่มี snapshot แผนแรกใน memory/server แล้วเพราะทุกการแก้ save ทับ)
+      _storeOriginalPlan(raw);
       setState(() {
         _plan = plan;
+        _planNameController.text = plan.title;
         _selectedDayIndex = 0;
         _route = [];
         _loadingExistingPlan = false;
@@ -249,6 +277,7 @@ class _PlanScreenState extends State<PlanScreen> {
   @override
   void dispose() {
     _locationService.removeListener(_onSharedLocationChanged);
+    _planNameController.dispose();
     _map.dispose();
     super.dispose();
   }
@@ -336,8 +365,18 @@ class _PlanScreenState extends State<PlanScreen> {
     });
   }
 
+  // ชื่อแผนที่ผู้ใช้กรอกในฟอร์ม — trim แล้วตัดให้ไม่เกิน limit ก่อนส่ง
+  String get _planNameInput {
+    final name = _planNameController.text.trim();
+    if (name.isEmpty) return '';
+    return name.length > _maxPlanNameLength
+        ? name.substring(0, _maxPlanNameLength)
+        : name;
+  }
+
   /// รวมทุก input บนฟอร์มเป็น JSON body สำหรับยิงสร้างแผน
   Map<String, dynamic> _input() => {
+    if (_planNameInput.isNotEmpty) 'title': _planNameInput,
     'destination': _selectedProvince,
     'province': _selectedProvince,
     'days': _days,
@@ -375,11 +414,17 @@ class _PlanScreenState extends State<PlanScreen> {
       final trip = Map<String, dynamic>.from(result['data']);
       final raw = Map<String, dynamic>.from(trip['plan_data'] as Map? ?? {});
       final tripId = int.tryParse('${trip['id']}') ?? 0;
+      _storeOriginalPlan(raw);
       final next = _ensureMustVisitStops(
-        TravelPlan.fromJson(raw, tripId: tripId),
+        TravelPlan.fromJson(
+          raw,
+          tripId: tripId,
+          title: '${trip['title'] ?? _planNameInput}',
+        ),
       );
       setState(() {
         _plan = next;
+        _planNameController.text = next.title;
         _selectedDayIndex = 0;
         _route = [];
         _generating = false;
@@ -419,6 +464,7 @@ class _PlanScreenState extends State<PlanScreen> {
 
     return TravelPlan(
       tripId: plan.tripId,
+      title: plan.title,
       summary: plan.summary,
       totalEstimatedCost: plan.totalEstimatedCost,
       budgetBreakdown: plan.budgetBreakdown,
@@ -620,6 +666,7 @@ class _PlanScreenState extends State<PlanScreen> {
     );
     return TravelPlan(
       tripId: plan.tripId,
+      title: plan.title,
       summary: plan.summary,
       totalEstimatedCost: newTotal,
       budgetBreakdown: newBreakdown,
@@ -862,6 +909,7 @@ class _PlanScreenState extends State<PlanScreen> {
           newStop.entryCost;
       updatedPlan = TravelPlan(
         tripId: plan.tripId,
+        title: plan.title,
         summary: plan.summary,
         totalEstimatedCost: newTotal,
         budgetBreakdown: newBreakdown,
@@ -906,6 +954,111 @@ class _PlanScreenState extends State<PlanScreen> {
     );
   }
 
+  // เปลี่ยนชื่อแผนเที่ยวจากหัวข้อหน้าผลลัพธ์ — PATCH /trips/:id
+  // ชื่อว่างเปล่าใช้ fallback destination/province แทน จึง block ไม่ให้บันทึกชื่อว่าง
+  Future<void> _renameCurrentPlan(String title) async {
+    final plan = _plan;
+    final name = title.trim();
+    if (plan == null || plan.tripId <= 0 || name.isEmpty) {
+      if (name.isEmpty && mounted) {
+        _showPlanSnack(context.l10n.planNameEmpty);
+      }
+      return;
+    }
+    final result = await AppServices.trips.renamePlan(plan.tripId, name);
+    if (!mounted) return;
+    if (result['success'] == true) {
+      _planNameController.text = name;
+      setState(() {
+        _plan = TravelPlan(
+          tripId: plan.tripId,
+          title: name,
+          summary: plan.summary,
+          totalEstimatedCost: plan.totalEstimatedCost,
+          budgetBreakdown: plan.budgetBreakdown,
+          days: plan.days,
+          tips: plan.tips,
+        );
+      });
+      _showPlanSnack(context.l10n.planRenamed);
+    } else {
+      _showPlanSnack('${result['message'] ?? context.l10n.couldNotCreatePlan}');
+    }
+  }
+
+  /// รีเซ็ตแผนกลับเป็นค่าเริ่มต้นที่ AI สร้าง — ยกเลิกทุกการเพิ่ม/ลบ/สลับลำดับ
+  /// ทั้งบนหน้าจอ (state) และ server (PUT /plan) โดยคงชื่อแผนที่ผู้ใช้ตั้งไว้
+  /// reset ได้เฉพาะการแก้ใน session นี้ (ย้อนไปถึง snapshot ตอนเปิดแผน)
+  /// การแก้เก่าที่ save ทับไปก่อนหน้านี้แล้วจะย้อนไม่ได้ — backend เก็บแค่ฉบับล่าสุด
+  Future<void> _resetPlanToOriginal() async {
+    final plan = _plan;
+    if (plan == null || plan.tripId <= 0 || _resettingPlan) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.resetPlan),
+        content: Text(dialogContext.l10n.resetPlanConfirmation),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(dialogContext.l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(dialogContext.l10n.resetPlan),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+
+    // snapshot ตอนเปิดแผนควรมีเสมอ — ถ้าไม่มีให้โหลดจาก server แทนกันพัง
+    // (หมายเหตุ: server เก็บแค่ฉบับล่าสุด จึงย้อนได้ถึงตอนเปิดแผนใน session นี้เท่านั้น)
+    setState(() => _resettingPlan = true);
+    Map<String, dynamic>? raw = _originalPlanJson;
+    if (raw == null) {
+      final result = await AppServices.trips.getTravelPlan(plan.tripId);
+      if (!mounted) return;
+      if (result['success'] == true) {
+        final trip = Map<String, dynamic>.from(result['data']);
+        raw = Map<String, dynamic>.from(trip['plan_data'] as Map? ?? {});
+      } else {
+        setState(() => _resettingPlan = false);
+        _showPlanSnack('${result['message'] ?? context.l10n.couldNotCreatePlan}');
+        return;
+      }
+    }
+
+    final restored = TravelPlan.fromJson(
+      raw,
+      tripId: plan.tripId,
+      title: plan.title,
+    );
+    final saveResult = await AppServices.trips.updateTravelPlan(
+      plan.tripId,
+      restored.toJson(),
+    );
+    if (!mounted) return;
+    if (saveResult['success'] != true) {
+      setState(() => _resettingPlan = false);
+      _showPlanSnack(
+        '${saveResult['message'] ?? context.l10n.couldNotCreatePlan}',
+      );
+      return;
+    }
+
+    setState(() {
+      _plan = restored;
+      _selectedDayIndex = 0;
+      _route = [];
+      _excluded.clear();
+      _resettingPlan = false;
+    });
+    _showPlanSnack(context.l10n.planReset);
+    await _buildRoute(restored);
+  }
+
   // ปุ่มย้อนกลับจากหน้าผลลัพธ์ — แยก 3 กรณี:
   // เปิดจาก Profile → เด้ง callback กลับหน้าเดิม / กดออกจากแผนเก่า → pop หน้าจอ / สร้างเอง → กลับฟอร์ม (ล้าง plan)
   void _backToForm() {
@@ -924,6 +1077,7 @@ class _PlanScreenState extends State<PlanScreen> {
       return;
     }
     _routeRequestId++;
+    _originalPlanJson = null;
     setState(() {
       _plan = null;
       _route = [];

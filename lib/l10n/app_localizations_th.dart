@@ -881,6 +881,34 @@ class AppLocalizationsTh extends AppLocalizations {
       'คุณแน่ใจหรือไม่ว่าต้องการลบแผนที่บันทึกไว้นี้?';
 
   @override
+  String get planNameLabel => 'ชื่อแผน';
+
+  @override
+  String get planNameHint => 'เช่น เที่ยวเชียงใหม่สุดสัปดาห์';
+
+  @override
+  String get planNameOptional => 'ไม่บังคับ — แสดงในแผนที่บันทึกไว้';
+
+  @override
+  String get renamePlan => 'เปลี่ยนชื่อแผน';
+
+  @override
+  String get planRenamed => 'เปลี่ยนชื่อแผนแล้ว';
+
+  @override
+  String get planNameEmpty => 'กรุณาตั้งชื่อแผน';
+
+  @override
+  String get resetPlan => 'รีเซ็ตแผน';
+
+  @override
+  String get resetPlanConfirmation =>
+      'กลับเป็นแผนแรกที่ AI สร้างใช่ไหม? สถานที่ที่เพิ่ม ลบ หรือสลับลำดับไว้จะหายไป';
+
+  @override
+  String get planReset => 'รีเซ็ตแผนกลับเป็นค่าเริ่มต้นแล้ว';
+
+  @override
   String get addManualDiary => 'เพิ่มความทรงจำ';
 
   @override

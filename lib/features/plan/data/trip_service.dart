@@ -110,6 +110,29 @@ class TripService {
     }
   }
 
+  // PATCH /api/trips/:tripId — เปลี่ยนชื่อแผนเที่ยว
+  // ใช้โดย: profile_screen.dart (_renamePlan), plan_screen.dart (result header)
+  Future<Map<String, dynamic>> renamePlan(int tripId, String title) async {
+    try {
+      final response = await _client.patch(
+        '/trips/$tripId',
+        body: {'title': title},
+      );
+      if (response.statusCode != 200) {
+        return {
+          'success': false,
+          'message': ApiClient.responseMessage(
+            response,
+            'Unable to rename plan',
+          ),
+        };
+      }
+      return {'success': true};
+    } catch (error) {
+      return {'success': false, 'message': 'Network error: $error'};
+    }
+  }
+
   // DELETE /api/trips/:tripId — ลบประวัติแผนเที่ยว
   // ใช้โดย: profile_screen.dart (_deleteTrip)
   Future<Map<String, dynamic>> deletePlan(int tripId) async {

@@ -593,6 +593,41 @@ extension _PlanComponents on _PlanScreenState {
     borderRadius: BorderRadius.circular(14),
     child: IconButton(onPressed: onTap, icon: Icon(icon)),
   );
+
+  // Dialog เปลี่ยนชื่อแผนจากหัวข้อหน้าผลลัพธ์ — เปิดจากปุ่มปากกาข้าง _header
+  Future<void> _showRenamePlanDialog(TravelPlan plan) async {
+    final controller = TextEditingController(text: plan.title);
+    final renamed = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.renamePlan),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: _PlanScreenState._maxPlanNameLength,
+          textInputAction: TextInputAction.done,
+          decoration: InputDecoration(
+            hintText: dialogContext.l10n.planNameHint,
+            counterText: '',
+          ),
+          onSubmitted: (_) => Navigator.pop(dialogContext, controller.text),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(dialogContext.l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, controller.text),
+            child: Text(dialogContext.l10n.save),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (renamed == null) return;
+    await _renameCurrentPlan(renamed);
+  }
   Widget _stat(String value, String label) => Expanded(
     child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 4),

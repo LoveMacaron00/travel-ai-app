@@ -25,7 +25,12 @@ extension _PlanMainView on _PlanScreenState {
     ),
   );
 
-  Widget _header(String eyebrow, String title, {VoidCallback? back}) => Padding(
+  Widget _header(
+    String eyebrow,
+    String title, {
+    VoidCallback? back,
+    Widget? action,
+  }) => Padding(
     padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
     child: Row(
       children: [
@@ -56,6 +61,10 @@ extension _PlanMainView on _PlanScreenState {
             ],
           ),
         ),
+        if (action != null) ...[
+          const SizedBox(width: 8),
+          action,
+        ],
       ],
     ),
   );
@@ -77,6 +86,20 @@ extension _PlanMainView on _PlanScreenState {
           subtitle: context.l10n.locationStartingPoint,
           child: Column(
             children: [
+              TextField(
+                controller: _planNameController,
+                maxLength: _PlanScreenState._maxPlanNameLength,
+                textInputAction: TextInputAction.done,
+                decoration:
+                    _inputDecoration(
+                      context.l10n.planNameLabel,
+                      Icons.drive_file_rename_outline,
+                    ).copyWith(
+                      hintText: context.l10n.planNameHint,
+                      helperText: context.l10n.planNameOptional,
+                    ),
+              ),
+              const SizedBox(height: 12),
               _locationTile(),
               const SizedBox(height: 12),
               ProvinceSelector(
@@ -311,8 +334,14 @@ extension _PlanMainView on _PlanScreenState {
                 SliverToBoxAdapter(
                   child: _header(
                     context.l10n.aiGeneratedPlan,
-                    context.l10n.yourRoute,
+                    plan.title.isNotEmpty
+                        ? plan.title
+                        : context.l10n.yourRoute,
                     back: _backToForm,
+                    action: _roundIcon(
+                      Icons.drive_file_rename_outline,
+                      () => _showRenamePlanDialog(plan),
+                    ),
                   ),
                 ),
                 if (plan.days.isNotEmpty)
@@ -405,13 +434,53 @@ extension _PlanMainView on _PlanScreenState {
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
-                      child: Text(
-                        '${context.l10n.day} ${selectedDay.day} · ${selectedDay.theme.toUpperCase()}',
-                        style: const TextStyle(
-                          color: Color(0xff9a6b00),
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: .5,
-                        ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${context.l10n.day} ${selectedDay.day} · ${selectedDay.theme.toUpperCase()}',
+                              style: const TextStyle(
+                                color: Color(0xff9a6b00),
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: .5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton.icon(
+                            onPressed: _resettingPlan
+                                ? null
+                                : _resetPlanToOriginal,
+                            style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xff9a6b00),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              tapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            icon: _resettingPlan
+                                ? const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.restart_alt,
+                                    size: 18,
+                                  ),
+                            label: Text(
+                              context.l10n.resetPlan,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
