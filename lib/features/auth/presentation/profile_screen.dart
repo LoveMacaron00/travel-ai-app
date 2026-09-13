@@ -425,74 +425,73 @@ class ProfileScreenState extends State<ProfileScreen> {
         
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
+      child: Material(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        leading: Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: brandGold.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(Icons.map_outlined, color: brandGold),
+        clipBehavior: Clip.antiAlias,
+        elevation: 1,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
         ),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.w700),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text(
-            dateText == null
-                ? l10n.savedPlanDuration(days)
-                : '${l10n.savedPlanDuration(days)} · ${l10n.planCreatedAt(dateText)}',
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          leading: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: brandGold.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(Icons.map_outlined, color: brandGold),
           ),
-        ),
-        trailing: PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert, color: Colors.grey),
-          onSelected: (value) {
-            if (value == 'rename') {
-              _renamePlan(id, customTitle, l10n);
-            } else if (value == 'delete') {
-              _deletePlan(id, l10n);
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              dateText == null
+                  ? l10n.savedPlanDuration(days)
+                  : '${l10n.savedPlanDuration(days)} · ${l10n.planCreatedAt(dateText)}',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ),
+          trailing: PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.grey),
+            onSelected: (value) {
+              if (value == 'rename') {
+                _renamePlan(id, customTitle, l10n);
+              } else if (value == 'delete') {
+                _deletePlan(id, l10n);
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'rename',
+                child: Text(l10n.renamePlan),
+              ),
+              PopupMenuItem(
+                value: 'delete',
+                child: Text(l10n.deletePlan, style: const TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+          onTap: () {
+            if (widget.onViewPlan != null) {
+              widget.onViewPlan!(id);
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => PlanScreen(initialTripId: id)),
+              ).then((_) => _loadSavedPlans());
             }
           },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: 'rename',
-              child: Text(l10n.renamePlan),
-            ),
-            PopupMenuItem(
-              value: 'delete',
-              child: Text(l10n.deletePlan, style: const TextStyle(color: Colors.red)),
-            ),
-          ],
         ),
-        onTap: () {
-          if (widget.onViewPlan != null) {
-            widget.onViewPlan!(id);
-          } else {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => PlanScreen(initialTripId: id)),
-            ).then((_) => _loadSavedPlans());
-          }
-        },
       ),
     );
   }
@@ -651,11 +650,10 @@ class ProfileScreenState extends State<ProfileScreen> {
             ),
             const Divider(height: 40, thickness: 1),
 
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xfffff8e4),
-                borderRadius: BorderRadius.circular(18),
-              ),
+            Material(
+              color: const Color(0xfffff8e4),
+              borderRadius: BorderRadius.circular(18),
+              clipBehavior: Clip.antiAlias,
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 14,
