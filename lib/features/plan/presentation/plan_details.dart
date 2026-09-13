@@ -359,6 +359,51 @@ extension _PlanDetailsView on _PlanScreenState {
   );
 
   Widget _buildPlanStopMarker(TravelStop stop, int number) {
+    // ที่พักค้างคืนใช้หมุดม่วงแยกจากจุดพักรายทางสีฟ้าและหมุดทองของสถานที่ท่องเที่ยว
+    if (stop.isOvernight) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: const Color(0xff7b2cbf),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.hotel, color: Colors.white, size: 18),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            constraints: const BoxConstraints(maxWidth: 128),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xfff1e8fb),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xff7b2cbf)),
+            ),
+            child: Text(
+              stop.place,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: Color(0xff5a1f8f),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
     // จุดแวะพัก OSM ใช้หมุดเล็กสีฟ้าแยกจากหมุดทองของสถานที่ท่องเที่ยว
     if (stop.isRestStop) {
       return Column(

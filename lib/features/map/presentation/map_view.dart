@@ -15,6 +15,7 @@ extension _MapView on MapScreenState {
               initialZoom: 15.0,
               onTap: (tapPosition, point) {
                 _searchFocus.unfocus();
+                _clearGpsRoute();
                 _updateState(() {
                   _selectedMarker = null;
                   _showSuggestions = false;
@@ -34,6 +35,17 @@ extension _MapView on MapScreenState {
                   ),
                 ],
               ),
+              // เส้นทาง GPS → สถานที่ที่เลือก (ทอง) — วาดเหนือ tiles ใต้ชั้นหมุด
+              if (_gpsRoute.isNotEmpty)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: _gpsRoute,
+                      color: const Color(0xffe9ad0c),
+                      strokeWidth: 5,
+                    ),
+                  ],
+                ),
               MarkerLayer(
                 markers: _filteredPlaces.map((place) {
                   return Marker(
@@ -161,6 +173,7 @@ extension _MapView on MapScreenState {
                             if (!selected) return;
                             _selectedCategory = catId;
                             _selectedMarker = null;
+                            _clearGpsRoute();
                             _applyFilters();
                           },
                           selectedColor: Colors.orange,
@@ -454,9 +467,10 @@ extension _MapView on MapScreenState {
                                       ),
                                     ),
                                     GestureDetector(
-                                      onTap: () => _updateState(
-                                        () => _selectedMarker = null,
-                                      ),
+                                      onTap: () => _updateState(() {
+                                        _selectedMarker = null;
+                                        _clearGpsRoute();
+                                      }),
                                       child: const Icon(
                                         Icons.close,
                                         size: 18,

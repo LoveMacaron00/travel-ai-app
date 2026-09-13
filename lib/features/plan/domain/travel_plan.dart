@@ -21,6 +21,12 @@ class TravelStop {
   final bool isRestStop;
   final String restType;
 
+  /// ประเภท stop จาก server: 'rest' (พักรายทาง) / 'overnight' (ที่พักค้างคืน) / '' (สถานที่เที่ยว)
+  final String stopType;
+
+  /// ที่พักค้างคืนท้ายวัน — แยกสี/ไอคอนจากจุดพักรายทาง
+  bool get isOvernight => stopType == 'overnight';
+
   const TravelStop({
     required this.destinationId,
     required this.place,
@@ -39,6 +45,7 @@ class TravelStop {
     required this.segments,
     this.isRestStop = false,
     this.restType = '',
+    this.stopType = '',
   });
 
   factory TravelStop.fromJson(Map<String, dynamic> j) => TravelStop(
@@ -63,6 +70,7 @@ class TravelStop {
     isRestStop:
         j['isRestStop'] == true || '${j['destinationId'] ?? ''}'.startsWith('osm:'),
     restType: '${j['restType'] ?? ''}',
+    stopType: '${j['stopType'] ?? ''}',
   );
 
   Map<String, dynamic> toJson() => {
@@ -83,6 +91,7 @@ class TravelStop {
     'segments': segments.map((e) => e.toJson()).toList(),
     if (isRestStop) 'isRestStop': true,
     if (restType.isNotEmpty) 'restType': restType,
+    if (stopType.isNotEmpty) 'stopType': stopType,
   };
 
   TravelStop copyWith({
@@ -103,6 +112,7 @@ class TravelStop {
     List<TravelSegment>? segments,
     bool? isRestStop,
     String? restType,
+    String? stopType,
   }) => TravelStop(
     destinationId: destinationId ?? this.destinationId,
     place: place ?? this.place,
@@ -121,6 +131,7 @@ class TravelStop {
     segments: segments ?? this.segments,
     isRestStop: isRestStop ?? this.isRestStop,
     restType: restType ?? this.restType,
+    stopType: stopType ?? this.stopType,
   );
 }
 
@@ -181,6 +192,44 @@ class TravelDay {
   };
 }
 
+class TravelReturnLeg {
+  final String from;
+  final String to;
+  final double distanceKm;
+  final int estimatedMinutes;
+  final double estimatedCost;
+  final String mode;
+
+  const TravelReturnLeg({
+    required this.from,
+    required this.to,
+    required this.distanceKm,
+    required this.estimatedMinutes,
+    required this.estimatedCost,
+    required this.mode,
+  });
+
+  factory TravelReturnLeg.fromJson(Map<String, dynamic> j) => TravelReturnLeg(
+    from: '${j['from'] ?? ''}',
+    to: '${j['to'] ?? ''}',
+    distanceKm: _number(j['distanceKm'] ?? j['distance_km'] ?? j['km']),
+    estimatedMinutes: _number(
+      j['estimatedMinutes'] ?? j['estimated_minutes'],
+    ).round(),
+    estimatedCost: _number(j['estimatedCost'] ?? j['estimated_cost']),
+    mode: '${j['mode'] ?? 'car'}',
+  );
+
+  Map<String, dynamic> toJson() => {
+    'from': from,
+    'to': to,
+    'distanceKm': distanceKm,
+    'estimatedMinutes': estimatedMinutes,
+    'estimatedCost': estimatedCost,
+    'mode': mode,
+  };
+}
+
 class TravelPlan {
   final int tripId;
 
@@ -196,6 +245,14 @@ class TravelPlan {
   /// คำเตือนจากระบบจัดตาราง (วันแน่น/ระยะไกลเกิน) — server คำนวณให้
   /// แผนเก่าที่ไม่มี field นี้ถือว่าไม่มีคำเตือน
   final List<String> warnings;
+
+  /// วันที่เริ่มทริป "YYYY-MM-DD" จากคอลัมน์ trips.start_date — '' คือไม่ระบุ
+  /// client ส่ง start_date ตอน POST /trips; server ส่งกลับใน GET /trips/:id ข้าง plan_data
+  /// ใช้แสดงหัวข้อแต่ละวันเป็นวันที่จริง (start + day - 1) แม้เปิดแผนเก่าจาก Profile
+  final String startDate;
+
+  /// ขากลับจากจุดสุดท้ายไปยังจุดเริ่มต้น — null คือแผนเก่าที่ server ยังไม่ได้คำนวณ
+  final TravelReturnLeg? returnLeg;
   const TravelPlan({
     required this.tripId,
     this.title = '',
@@ -205,6 +262,8 @@ class TravelPlan {
     required this.days,
     required this.tips,
     this.warnings = const [],
+    this.startDate = '',
+    this.returnLeg,
   });
 
   TravelPlan copyWith({
@@ -216,6 +275,8 @@ class TravelPlan {
     List<TravelDay>? days,
     List<String>? tips,
     List<String>? warnings,
+    String? startDate,
+    TravelReturnLeg? returnLeg,
   }) => TravelPlan(
     tripId: tripId ?? this.tripId,
     title: title ?? this.title,
@@ -225,11 +286,14 @@ class TravelPlan {
     days: days ?? this.days,
     tips: tips ?? this.tips,
     warnings: warnings ?? this.warnings,
+    startDate: startDate ?? this.startDate,
+    returnLeg: returnLeg ?? this.returnLeg,
   );
   factory TravelPlan.fromJson(
     Map<String, dynamic> j, {
     int tripId = 0,
     String title = '',
+    String startDate = '',
   }) {
     final rawBudget = Map<String, dynamic>.from(
       j['budgetBreakdown'] as Map? ?? {},
@@ -237,6 +301,8 @@ class TravelPlan {
     return TravelPlan(
       tripId: tripId,
       title: title,
+      // server ส่ง start_date มาข้าง plan_data (GET /trips/:id) — fallback เป็นค่าที่ caller ส่งมา
+      startDate: '${j['start_date'] ?? j['startDate'] ?? startDate}',
       summary: '${j['summary'] ?? ''}',
       totalEstimatedCost: _number(j['totalEstimatedCost']),
       budgetBreakdown: rawBudget.map((k, v) => MapEntry(k, _number(v))),
@@ -248,6 +314,11 @@ class TravelPlan {
       warnings: ((j['warnings'] as List?) ?? const [])
           .map((e) => '$e')
           .toList(),
+      returnLeg: (j['returnLeg'] as Map?) == null
+          ? null
+          : TravelReturnLeg.fromJson(
+              Map<String, dynamic>.from(j['returnLeg'] as Map),
+            ),
     );
   }
 
@@ -258,6 +329,7 @@ class TravelPlan {
     'days': days.map((e) => e.toJson()).toList(),
     'tips': tips,
     'warnings': warnings,
+    if (returnLeg != null) 'returnLeg': returnLeg!.toJson(),
   };
 
   /// มุมมองแบบแบนสำหรับ Map/Navigation ที่ไม่ต้องสนใจการแบ่งวัน

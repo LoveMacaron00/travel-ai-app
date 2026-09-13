@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -33,6 +35,15 @@ class MapScreenState extends State<MapScreen> {
   LatLng? _currentPosition;
   PlaceMarker? _selectedMarker;
   bool _isLocating = false;
+
+  // เส้นทาง GPS → สถานที่ที่เลือกบนแผนที่หลัก (วาดด้วย PolylineLayer ใน map_view.dart)
+  // ใช้ _gpsRouteRequestId กันผลลัพธ์เก่าทับของใหม่ — ตอนเคลียร์ก็ bump กันเส้นเก่าโผล่กลับมา
+  List<LatLng> _gpsRoute = [];
+  int _gpsRouteRequestId = 0;
+
+  /// ระยะห่างขั้นต่ำ (เมตร) ที่ต้องขยับก่อนวาดเส้น GPS ใหม่ — กัน GPS jitter รีเฟรชถี่ยิบ
+  static const double _gpsRouteRefreshThresholdMeters = 50;
+  LatLng? _gpsRouteFrom;
 
   List<PlaceMarker> _places = [];
   List<PlaceMarker> _filteredPlaces = [];
@@ -100,6 +111,14 @@ class MapScreenState extends State<MapScreen> {
     if (!mounted) return;
     final previousPosition = _currentPosition;
     final nextPosition = _locationService.currentPosition;
+    final movedFar = previousPosition != null &&
+        nextPosition != null &&
+        const Distance().as(
+              LengthUnit.Meter,
+              previousPosition,
+              nextPosition,
+            ) >=
+            _gpsRouteRefreshThresholdMeters;
     setState(() {
       _currentPosition = nextPosition;
       _isLocating = _locationService.isLoading;
@@ -108,6 +127,10 @@ class MapScreenState extends State<MapScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _mapController.move(nextPosition, 15.0);
       });
+    }
+    // GPS ขยับเกิน threshold ระหว่างเลือกหมุดอยู่ → วาดเส้นใหม่จากจุดปัจจุบัน
+    if (movedFar && _selectedMarker != null) {
+      unawaited(_buildGpsRoute(_selectedMarker!));
     }
     if (_searchFocus.hasFocus) {
       _updateSearchSuggestions();
@@ -281,11 +304,65 @@ class MapScreenState extends State<MapScreen> {
         _mapController.move(LatLng(place.latitude, place.longitude), 16.0);
       }
     });
+    unawaited(_buildGpsRoute(place));
+  }
+
+  /// เคลียร์เส้นทาง GPS → สถานที่ พร้อม bump request id กันผลลัพธ์เก่าโผล่กลับมา
+  void _clearGpsRoute() {
+    _gpsRouteRequestId++;
+    if (_gpsRoute.isEmpty && _gpsRouteFrom == null) return;
+    setState(() {
+      _gpsRoute = [];
+      _gpsRouteFrom = null;
+    });
+  }
+
+  /// วาดเส้นจากจุด GPS ปัจจุบันไปหาสถานที่ที่เลือก — ขอเส้นทางถนนจริงจาก OSRM
+  /// (car profile) ถ้าขอไม่ได้ fallback เป็นเส้นตรง หน้าจอจะยังแสดงหมุดได้
+  /// ถ้าไม่มี GPS หรือ GPS เท่าเดิมกับรอบก่อน จะใช้เส้นเดิม/ไม่วาดเส้น ไม่ทิ้ง error
+  Future<void> _buildGpsRoute(PlaceMarker place) async {
+    final requestId = ++_gpsRouteRequestId;
+    final from = _currentPosition;
+    if (from == null) {
+      if (mounted && requestId == _gpsRouteRequestId) {
+        setState(() {
+          _gpsRoute = [];
+          _gpsRouteFrom = null;
+        });
+      }
+      return;
+    }
+    // กันพิกัดเพี้ยน
+    if (place.latitude.isNaN ||
+        place.longitude.isNaN ||
+        place.latitude < -90 ||
+        place.latitude > 90 ||
+        place.longitude < -180 ||
+        place.longitude > 180) {
+      return;
+    }
+    final to = LatLng(place.latitude, place.longitude);
+    if (_gpsRouteFrom == from && _gpsRoute.isNotEmpty) return;
+    final raw = await AppServices.trips.getRoadRoute(
+      fromLat: from.latitude,
+      fromLng: from.longitude,
+      toLat: to.latitude,
+      toLng: to.longitude,
+      mode: 'car',
+    );
+    if (!mounted || requestId != _gpsRouteRequestId) return;
+    setState(() {
+      _gpsRouteFrom = from;
+      _gpsRoute = raw.isEmpty
+          ? [from, to]
+          : raw.map((p) => LatLng(p[0], p[1])).toList();
+    });
   }
 
   void _clearSearch() {
     _searchController.clear();
     _searchFocus.unfocus();
+    _clearGpsRoute();
     setState(() {
       _suggestions = [];
       _showSuggestions = false;
@@ -386,6 +463,7 @@ class MapScreenState extends State<MapScreen> {
         );
       }
     });
+    unawaited(_buildGpsRoute(selectedPlace));
   }
 
   void _navigateTo(PlaceMarker place) {
@@ -530,6 +608,7 @@ class MapScreenState extends State<MapScreen> {
       onTap: () {
         setState(() => _selectedMarker = place);
         _mapController.move(LatLng(place.latitude, place.longitude), 16.0);
+        unawaited(_buildGpsRoute(place));
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,

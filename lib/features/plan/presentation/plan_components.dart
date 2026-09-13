@@ -52,10 +52,33 @@ extension _PlanComponents on _PlanScreenState {
             ),
           ),
         ),
+        // ขากลับวันสุดท้าย (ถ้า server คำนวณมา): จากสถานที่ปลายทางกลับจุดเริ่มต้น
+        if (plan.returnLeg != null) _returnLegLine(plan.returnLeg!),
         const SizedBox(height: 10),
         Text(
           context.l10n.estimateDisclaimer,
           style: const TextStyle(color: Colors.black38, fontSize: 11),
+        ),
+      ],
+    ),
+  );
+
+  // บรรทัดเดียวสั้น ๆ ใต้ยอดรวม: ขากลับจากปลายทางสู่จุดเริ่มต้น
+  // ตัวเลขตรงจาก planData.returnLeg ฝั่ง server (กม./นาที/บาท) ไม่คำนวณซ้ำ
+  Widget _returnLegLine(TravelReturnLeg leg) => Padding(
+    padding: const EdgeInsets.only(top: 6),
+    child: Row(
+      children: [
+        const Icon(Icons.keyboard_return, size: 15, color: Colors.black45),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            'กลับ ${leg.from} → ${leg.to} · '
+            '${leg.distanceKm.toStringAsFixed(1)} กม. · '
+            '${leg.estimatedMinutes} ${context.l10n.minutesShort} · '
+            '฿${_money(leg.estimatedCost)}',
+            style: const TextStyle(color: Colors.black54, fontSize: 12),
+          ),
         ),
       ],
     ),
@@ -764,6 +787,34 @@ extension _PlanComponents on _PlanScreenState {
     ),
   );
   String _date(DateTime d) => '${d.day}/${d.month}/${d.year}';
+
+  // ป้ายวันที่ของหัวข้อแต่ละวัน — " · 12/9/2026" หรือ '' ถ้าไม่มีวันเริ่มทริป
+  // ทริปใหม่ใช้ช่วงที่เลือกในฟอร์ม (_dates) แผนเก่าจาก Profile ใช้ start_date ที่ server เก็บไว้
+  // ไม่มีทั้งคู่ (auto_days เก่า) คืน '' ให้โชว์แค่ "วันที่ N" — ไม่มีวันไหนหาย/ซ้ำกัน
+  String _dayDateLabel(TravelPlan plan, int dayNumber) {
+    final fromForm = _dates?.start;
+    if (fromForm != null) {
+      return ' · ${_date(fromForm.add(Duration(days: dayNumber - 1)))}';
+    }
+    final stored = _parsePlanStartDate(plan.startDate);
+    if (stored != null) {
+      return ' · ${_date(stored.add(Duration(days: dayNumber - 1)))}';
+    }
+    return '';
+  }
+
+  // "YYYY-MM-DD" จาก trips.start_date → DateTime — ใช้ไม่ได้คืน null (โชว์แค่เลขวัน)
+  DateTime? _parsePlanStartDate(String value) {
+    final parts = value.trim().split('-');
+    if (parts.length < 3) return null;
+    final year = int.tryParse(parts[0]);
+    final month = int.tryParse(parts[1]);
+    final day = int.tryParse(parts[2].substring(0, 2));
+    if (year == null || month == null || day == null) return null;
+    if (year < 2000 || year > 2100 || month < 1 || month > 12) return null;
+    if (day < 1 || day > 31) return null;
+    return DateTime(year, month, day);
+  }
   String _money(num n) => n.round().toString().replaceAllMapped(
     RegExp(r'\B(?=(\d{3})+(?!\d))'),
     (m) => ',',
@@ -771,6 +822,8 @@ extension _PlanComponents on _PlanScreenState {
 
   // ป้ายโซ่เวลาของจุดแวะ: "ถึง HH:MM · เที่ยว N นาที · ออก HH:MM"
   // + ถ้ามีขาเข้า (segments) ต่อท้าย "· เดินทาง M นาที" ให้เห็นที่มาของเวลานั้น
+  // จุดแรกของวันที่มีขาเข้า (departure→stop0): day start คือ DEPARTURE
+  // จึงนำหน้าด้วย "ออก HH:MM · เดินทาง M นาที" (ออก = ถึง − เดินทาง)
   String _stopChainLabel(TravelStop stop, int selectedDayOrder) {
     final arrive = stop.arrivalTime;
     final leave =
@@ -779,8 +832,14 @@ extension _PlanComponents on _PlanScreenState {
         '${context.l10n.arriveLabel} $arrive · ${context.l10n.visitLabel} '
         '${stop.durationMinutes} ${context.l10n.minutesShort} · '
         '${context.l10n.leaveLabel} $leave';
-    if (stop.segments.isEmpty || selectedDayOrder <= 1) return visit;
+    if (stop.segments.isEmpty) return visit;
     final leg = stop.segments.first.estimatedMinutes;
+    if (selectedDayOrder <= 1) {
+      final depart = _clockFromMinutes(_clockToMinutes(arrive) - leg);
+      return '${context.l10n.leaveLabel} $depart · '
+          '${context.l10n.travelLabel} $leg ${context.l10n.minutesShort} · '
+          '$visit';
+    }
     return '$visit · ${context.l10n.travelLabel} $leg ${context.l10n.minutesShort}';
   }
   String _modeLabel(String value) {

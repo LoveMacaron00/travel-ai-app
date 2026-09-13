@@ -497,7 +497,10 @@ extension _PlanMainView on _PlanScreenState {
                         children: [
                           Expanded(
                             child: Text(
-                              '${context.l10n.day} ${selectedDay.day} · ${selectedDay.theme.toUpperCase()}',
+                              // วันที่ของวันนี้ = วันเริ่มทริป + (เลขวัน - 1)
+                              // ทริปใหม่ใช้ช่วงที่เลือกในฟอร์ม แผนเก่าใช้ start_date ที่ server เก็บไว้
+                              // ไม่มีทั้งคู่ก็โชว์แค่เลขวัน — ไม่มีวันไหนหาย/ซ้ำกัน
+                              '${context.l10n.day} ${selectedDay.day}${_dayDateLabel(plan, selectedDay.day)} · ${selectedDay.theme.toUpperCase()}',
                               style: const TextStyle(
                                 color: Color(0xff9a6b00),
                                 fontWeight: FontWeight.w800,
@@ -797,12 +800,16 @@ extension _PlanMainView on _PlanScreenState {
                     children: [
                       CircleAvatar(
                         radius: 15,
-                        backgroundColor: stop.isRestStop
+                        backgroundColor: stop.isOvernight
+                            ? const Color(0xff7b2cbf)
+                            : stop.isRestStop
                             ? const Color(0xff2d7dd2)
                             : _gold,
                         foregroundColor: Colors.white,
                         child: Icon(
-                          stop.isRestStop
+                          stop.isOvernight
+                              ? Icons.hotel
+                              : stop.isRestStop
                               ? _restStopIcon(stop.restType)
                               : Icons.attractions,
                           size: 16,
@@ -815,14 +822,20 @@ extension _PlanMainView on _PlanScreenState {
                             ? Container(
                                 width: 76,
                                 height: 76,
-                                color: stop.isRestStop
+                                color: stop.isOvernight
+                                    ? const Color(0xfff1e8fb)
+                                    : stop.isRestStop
                                     ? const Color(0xffe8f1fb)
                                     : const Color(0xffeee7da),
                                 child: Icon(
-                                  stop.isRestStop
+                                  stop.isOvernight
+                                      ? Icons.hotel
+                                      : stop.isRestStop
                                       ? _restStopIcon(stop.restType)
                                       : Icons.landscape,
-                                  color: stop.isRestStop
+                                  color: stop.isOvernight
+                                      ? const Color(0xff7b2cbf)
+                                      : stop.isRestStop
                                       ? const Color(0xff2d7dd2)
                                       : null,
                                 ),

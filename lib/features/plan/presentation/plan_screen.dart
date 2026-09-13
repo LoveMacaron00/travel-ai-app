@@ -187,6 +187,7 @@ class _PlanScreenState extends State<PlanScreen> {
         raw,
         tripId: tripId,
         title: '${trip['title'] ?? ''}',
+        startDate: '${trip['start_date'] ?? ''}',
       );
       // trips.days คือจำนวนวันที่ resolve แล้ว (auto_days คำนวณมากี่วันก็เก็บเท่านั้น)
       // sync กลับเข้าฟอร์มให้ตรง — กดสร้างแผนใหม่จะเริ่มจากจำนวนวันจริงของแผนนี้
@@ -314,13 +315,21 @@ class _PlanScreenState extends State<PlanScreen> {
   }
 
   // ตำแหน่ง GPS เปลี่ยน (มาจาก service กลาง) — sync พิกัดที่แสดงบนฟอร์ม
+  // ถ้ามีผลลัพธ์แผนอยู่แล้วและยังอยู่หน้า day 1 (มีขา GPS → สถานที่แรก) ให้วาดเส้นใหม่ด้วย
   void _onSharedLocationChanged() {
     if (!mounted) return;
+    final plan = _plan;
+    final onFirstDay = plan != null &&
+        plan.days.isNotEmpty &&
+        (_selectedDayFor(plan)?.day == 1);
     setState(() {
       _position = _locationService.currentPosition;
       _locating = _locationService.isLoading;
       if (_locationService.error == null) _error = null;
     });
+    if (plan != null && onFirstDay && _startPoint != null) {
+      unawaited(_buildRoute(plan));
+    }
   }
 
   /// โหลดรายการสถานที่ทั้งหมดจาก server มาเก็บเป็น PlaceMarker
@@ -407,12 +416,22 @@ class _PlanScreenState extends State<PlanScreen> {
     );
     if (!mounted || result == null) return;
     setState(() => _customStartPoint = result);
+    final plan = _plan;
+    // ปักจุดเริ่มใหม่ระหว่างดูแผน day 1 → วาดขา GPS/จุดปัก → สถานที่แรกใหม่ทันที
+    if (plan != null && _selectedDayFor(plan)?.day == 1) {
+      unawaited(_buildRoute(plan));
+    }
   }
 
   // ล้างจุดที่ปักเอง กลับไปใช้ GPS ปัจจุบัน
   void _clearCustomStart() {
     if (_customStartPoint == null) return;
     setState(() => _customStartPoint = null);
+    final plan = _plan;
+    // ล้างจุดปักระหว่างดูแผน day 1 → ขาแรกกลับไปเริ่มจาก GPS ปัจจุบันทันที
+    if (plan != null && _selectedDayFor(plan)?.day == 1) {
+      unawaited(_buildRoute(plan));
+    }
     _showPlanSnack(context.l10n.startPointCleared);
   }
 
@@ -444,6 +463,10 @@ class _PlanScreenState extends State<PlanScreen> {
       if (!_autoDays && days != null) 'days': days,
       'auto_days': _autoDays,
       'start_time': _clockOf(_startTime),
+      // start_date "YYYY-MM-DD" — server เก็บลง trips.start_date เพื่อให้แผนเก่าโชว์วันที่จริงได้
+      if (_dates != null)
+        'start_date':
+            '${_dates!.start.year.toString().padLeft(4, '0')}-${_dates!.start.month.toString().padLeft(2, '0')}-${_dates!.start.day.toString().padLeft(2, '0')}',
       'budget': _budget.round(),
       'currency': 'THB',
       'interests': _interests.map((e) => e.toLowerCase()).toList(),
@@ -461,7 +484,6 @@ class _PlanScreenState extends State<PlanScreen> {
           )
           .toList(),
       'excluded_places': _excluded.toList(),
-      if (_dates != null) 'start_date': _dates!.start.toIso8601String(),
     };
   }
 
@@ -491,6 +513,11 @@ class _PlanScreenState extends State<PlanScreen> {
           raw,
           tripId: tripId,
           title: '${trip['title'] ?? _planNameInput}',
+          // ทริปใหม่: server เก็บ start_date จาก _input() แล้ว — ใช้ช่วงที่ผู้ใช้เลือกไว้ก่อน
+          // (GET จะส่ง start_date มาด้วยสำหรับทริปเก่า ดู _loadExistingPlan)
+          startDate: _dates == null
+              ? ''
+              : '${_dates!.start.year.toString().padLeft(4, '0')}-${_dates!.start.month.toString().padLeft(2, '0')}-${_dates!.start.day.toString().padLeft(2, '0')}',
         ),
       );
       // sync จำนวนวันที่ server resolve กลับเข้าฟอร์ม (auto หรือยังไม่เลือกวัน)
@@ -557,6 +584,8 @@ class _PlanScreenState extends State<PlanScreen> {
       days: days,
       tips: plan.tips,
       warnings: plan.warnings,
+      startDate: plan.startDate,
+      returnLeg: plan.returnLeg,
     );
   }
 
@@ -663,12 +692,43 @@ class _PlanScreenState extends State<PlanScreen> {
     return 'place:${_placeKey(stop.place)}';
   }
 
+  // สร้างขาเข้า departure→stop0 ให้จุดแรกของวันแรกจากจุดเริ่มต้นจริง (GPS/จุดปัก)
+  // (server contract: start_time คือ DEPARTURE ไม่ใช่ arrival,
+  // stops[0].segments[0] คือขา departure→stop0 เมื่อมี)
+  // นาที/ค่าประมาณด้วยคณิตเดียวกับขา day-1 GPS ฝั่ง client
+  // (haversine × 2 นาที/กม. + estimateTransportCost) — _buildRoute ขอ road route
+  // แบบ async จึงใช้ในโซ่ sync นี้ไม่ได้
+  TravelStop _departureLeg(LatLng start, TravelStop stop) {
+    final to = LatLng(stop.latitude, stop.longitude);
+    final km = const Distance().as(LengthUnit.Kilometer, start, to);
+    final minutes = (km * 2).round().clamp(5, 720);
+    final cost = _estimateTransportCost(start, to, stop.transportMode);
+    return stop.copyWith(
+      transportCost: cost,
+      segments: [
+        TravelSegment(
+          mode: stop.transportMode,
+          from: _customStartPoint != null
+              ? context.l10n.startPointCustom
+              : context.l10n.startPointGps,
+          to: stop.place,
+          estimatedMinutes: minutes,
+          estimatedCost: cost,
+        ),
+      ],
+    );
+  }
+
   /// คำนวณค่าเดินทางใหม่เฉพาะขาที่เปลี่ยน (จุดก่อนหน้าเปลี่ยนจากการลบ/สลับ)
   /// ขาเดิมคงค่า AI ไว้ทั้งหมด กันยอดรวมร่วงทั้งก้อนทั้งที่จุดที่ลบค่าเดินทางเป็น 0
+  /// จุดแรกของวัน: day start input คือ DEPARTURE — คงขาเข้าไว้ทั้ง minutes
+  /// และ cost ห้าม zero (arrival0 = departure + leg ใน _rechainDay);
+  /// ถ้าขาเข้าว่างและเป็นวันแรก ให้เติมขา departure→stop0 จากจุดเริ่มต้นจริง
   List<TravelStop> _recalculatedStopsPreservingCosts(
     List<TravelStop> oldStops,
-    List<TravelStop> newStops,
-  ) {
+    List<TravelStop> newStops, {
+    bool isFirstDay = false,
+  }) {
     if (newStops.isEmpty) return newStops;
     // จุดก่อนหน้าของแต่ละ stop ใน list เดิม
     final oldPrevByStop = <String, String?>{};
@@ -696,9 +756,21 @@ class _PlanScreenState extends State<PlanScreen> {
         );
         continue;
       }
-      // กลายเป็นจุดแรกของวัน (ไม่มีขาเข้า) → ไม่มีค่าเดินทาง
+      // กลายเป็นจุดแรกของวัน (ไม่มีขาเข้า) — มีขาอยู่แล้ว (จาก server
+      // หรือรอบก่อน) ให้คงไว้ทั้ง minutes/cost ห้าม zero;
+      // ถ้าขาเข้าว่างและเป็นวันแรกที่มีจุดเริ่ม ให้เติมขา
+      // departure→stop0; วันอื่นหรือไม่มีจุดเริ่มคงพฤติกรรมเดิม
       if (i == 0) {
-        updated.add(stop.copyWith(transportCost: 0, segments: const []));
+        if (stop.segments.isNotEmpty) {
+          updated.add(stop);
+        } else {
+          final start = _startPoint;
+          if (isFirstDay && start != null) {
+            updated.add(_departureLeg(start, stop));
+          } else {
+            updated.add(stop.copyWith(transportCost: 0, segments: const []));
+          }
+        }
         continue;
       }
       // ขาใหม่ (จุดก่อนหน้าเปลี่ยน) → ประมาณเฉพาะขานี้ขาเดียว
@@ -720,12 +792,19 @@ class _PlanScreenState extends State<PlanScreen> {
     return updated;
   }
 
-  // ต่อโซ่ arrivalTime ใหม่ทั้งวันตามลำดับปัจจุบัน — จุดแรกยึดเวลาเดิมไว้
-  // (ออก = ถึง + เที่ยว, ถึงถัดไป = ออก + เดินทางจาก segments)
+  // ต่อโซ่ arrivalTime ใหม่ทั้งวันตามลำดับปัจจุบัน
+  // day start input คือ DEPARTURE (ไม่ใช่ arrival): จุดแรกถ้ามีขาเข้า
+  // (stops[0].segments[0], minutes > 0) ให้ arrival0 = departure + leg
+  // โดยคง minutes/cost เดิม ห้าม zero; ไม่มีขาเข้าถือว่า arrival0 = departure
+  // จุดถัดไป: arrival = prev leave + segments (พฤติกรรมเดิม)
   // กันเวลาค้างตามลำดับเก่าหลังลบ/สลับจุด — server จะคำนวณเวลาจริงซ้ำตอน PUT อีกที
   List<TravelStop> _rechainDay(List<TravelStop> stops) {
-    if (stops.length < 2) return stops;
-    final chained = <TravelStop>[stops.first];
+    if (stops.isEmpty) return stops;
+    final chained = <TravelStop>[
+      stops.first.copyWith(
+        arrivalTime: _firstStopArrival(stops.first),
+      ),
+    ];
     for (var i = 1; i < stops.length; i++) {
       final prev = chained[i - 1];
       final leg =
@@ -748,6 +827,16 @@ class _PlanScreenState extends State<PlanScreen> {
       );
     }
     return chained;
+  }
+
+  // arrival ของจุดแรกของวัน: departure + ขาเข้าเมื่อมี
+  // ไม่มีขาเข้าหรือ leg <= 0 → arrival = departure (เวลาเริ่มที่ผู้ใช้เลือก)
+  String _firstStopArrival(TravelStop first) {
+    final departure = _clockOf(_startTime);
+    if (first.segments.isEmpty) return departure;
+    final leg = first.segments.first.estimatedMinutes;
+    if (leg <= 0) return departure;
+    return _clockFromMinutes(_clockToMinutes(departure) + leg);
   }
 
   /// ปรับงบแบบ delta จากของเดิม (ไม่คำนวณใหม่จากศูนย์ เพราะ total ของ AI
@@ -798,6 +887,8 @@ class _PlanScreenState extends State<PlanScreen> {
       days: newDays,
       tips: plan.tips,
       warnings: plan.warnings,
+      startDate: plan.startDate,
+      returnLeg: plan.returnLeg,
     );
   }
 
@@ -914,7 +1005,10 @@ class _PlanScreenState extends State<PlanScreen> {
   Future<void> _buildRoute(TravelPlan plan) async {
     final requestId = ++_routeRequestId;
     final day = _selectedDayFor(plan);
-    if (day == null || day.stops.length < 2) {
+    // วันแรกเริ่มออกจากจุดเริ่มต้นจริง (GPS/จุดที่ปักเอง) — ขาแรกคือ GPS → สถานที่แรก
+    // วันอื่นเริ่มจากที่พักค้างคืนซึ่งอยู่ใกล้จุดสุดท้ายของเมื่อวาน ใช้ลำดับ stops อย่างเดียว
+    final includeStart = day?.day == 1 && _startPoint != null;
+    if (day == null || day.stops.length < (includeStart ? 1 : 2)) {
       if (mounted && requestId == _routeRequestId) {
         setState(() => _route = []);
       }
@@ -922,8 +1016,10 @@ class _PlanScreenState extends State<PlanScreen> {
     }
 
     final legs = <_PlanRouteLeg>[];
-    var from = LatLng(day.stops.first.latitude, day.stops.first.longitude);
-    for (final stop in day.stops.skip(1)) {
+    var from = includeStart
+        ? _startPoint!
+        : LatLng(day.stops.first.latitude, day.stops.first.longitude);
+    for (final stop in (includeStart ? day.stops : day.stops.skip(1))) {
       final to = LatLng(stop.latitude, stop.longitude);
       final mode = stop.transportMode.toLowerCase();
       final usesRoadRoute = mode == 'car' || mode == 'walking' || mode == 'bus';
@@ -1103,10 +1199,23 @@ class _PlanScreenState extends State<PlanScreen> {
           ),
         ];
       }
-      final newStop = rawNew.copyWith(
+      var newStop = rawNew.copyWith(
         transportCost: estimated,
         segments: newSegments.isEmpty ? rawNew.segments : newSegments,
       );
+      // แปะเป็นที่แรกของวันแรกโดยตรง (วันว่าง) — ขาเข้าว่างให้เติมขา
+      // departure→stop0 จากจุดเริ่มต้นจริงเหมือนกติกาวันแรกข้ออื่น
+      // (arrival0 = departure + leg ไม่ใช่ departure เฉย ๆ)
+      if (prev == null &&
+          plan.days[selectedIndex].day == 1 &&
+          newStop.segments.isEmpty) {
+        final start = _startPoint;
+        if (start != null) {
+          final filled = _departureLeg(start, newStop);
+          newStop = filled.copyWith(arrivalTime: _firstStopArrival(filled));
+          estimated = newStop.transportCost;
+        }
+      }
       recalculatedStops = [...oldStops, newStop];
 
       final days = [
@@ -1139,12 +1248,18 @@ class _PlanScreenState extends State<PlanScreen> {
         days: days,
         tips: plan.tips,
         warnings: plan.warnings,
+        startDate: plan.startDate,
+        returnLeg: plan.returnLeg,
       );
     } else {
       // ลบ/สลับลำดับ → ประมาณใหม่เฉพาะขาที่เปลี่ยน ที่เหลือคงค่า AI เดิม
-      // แล้วต่อโซ่เวลาใหม่ทั้งวันให้ตรงลำดับปัจจุบัน (จุดแรกยึดเวลาเดิมไว้)
+      // จุดแรกของวันยึด departure semantics (arrival0 = departure + leg)
       recalculatedStops = _rechainDay(
-        _recalculatedStopsPreservingCosts(oldStops, stops),
+        _recalculatedStopsPreservingCosts(
+          oldStops,
+          stops,
+          isFirstDay: plan.days[selectedIndex].day == 1,
+        ),
       );
       final days = [
         for (var index = 0; index < plan.days.length; index++)
@@ -1223,16 +1338,7 @@ class _PlanScreenState extends State<PlanScreen> {
     if (result['success'] == true) {
       _planNameController.text = name;
       setState(() {
-        _plan = TravelPlan(
-          tripId: plan.tripId,
-          title: name,
-          summary: plan.summary,
-          totalEstimatedCost: plan.totalEstimatedCost,
-          budgetBreakdown: plan.budgetBreakdown,
-          days: plan.days,
-          tips: plan.tips,
-          warnings: plan.warnings,
-        );
+        _plan = plan.copyWith(title: name);
       });
       _showPlanSnack(context.l10n.planRenamed);
     } else {
@@ -1288,6 +1394,8 @@ class _PlanScreenState extends State<PlanScreen> {
       raw,
       tripId: plan.tripId,
       title: plan.title,
+      // reset ย้อนแค่ stops — วันที่เริ่มทริปของ session นี้ยังใช้ต่อได้
+      startDate: plan.startDate,
     );
     final saveResult = await AppServices.trips.updateTravelPlan(
       plan.tripId,
