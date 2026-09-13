@@ -250,6 +250,31 @@
   "travelDates": "วันที่เดินทาง",
   "chooseDates": "เลือกวันที่เดินทาง",
   "days": "วัน",
+  "tripStartTime": "เวลาเริ่มเดินทาง",
+  "tripLength": "จำนวนวัน",
+  "autoDays": "อัตโนมัติ",
+  "autoDaysHint": "AI ประเมินจำนวนวันที่เหมาะสมจากสถานที่และระยะทางให้เอง",
+  "farPlaceWarning": "สถานที่ที่เลือกอยู่ไกลจากจุดเริ่มต้น ~{distance} กม. ใช้เวลาเดินทาง ~{hours} ชม. ด้วย{mode} — ควรเพิ่มวันหรือเลือกสถานที่ใกล้ขึ้น",
+  "@farPlaceWarning": {
+    "placeholders": {
+      "distance": {"type": "int"},
+      "hours": {"type": "String"},
+      "mode": {"type": "String"}
+    }
+  },
+  "tightDaysWarning": "กำหนด {days} วัน แต่อาจต้องใช้ ~{recommended} วัน (ระยะไกลสุด ~{distance} กม.) — แผนอาจแน่นเกินไป",
+  "@tightDaysWarning": {
+    "placeholders": {
+      "days": {"type": "int"},
+      "recommended": {"type": "int"},
+      "distance": {"type": "int"}
+    }
+  },
+  "planWarningsTitle": "ข้อควรรู้ก่อนเดินทาง",
+  "leaveLabel": "ออก",
+  "arriveLabel": "ถึง",
+  "visitLabel": "เที่ยว",
+  "travelLabel": "เดินทาง",
   "estimatedBudget": "งบประมาณ",
   "whatDoYouEnjoy": "เลือกสิ่งที่คุณสนใจ",
   "howCanYouTravel": "คุณเดินทางแบบใดได้บ้าง",
@@ -288,6 +313,12 @@
   "estimatedTripCost": "ค่าใช้จ่ายทริปโดยประมาณ",
   "estimateDisclaimer": "ราคาอาจเปลี่ยนตามจำนวนที่ว่าง ฤดูกาล และการจราจร",
   "currentGpsLocation": "ตำแหน่ง GPS ปัจจุบัน",
+  "startPoint": "จุดเริ่มต้น",
+  "startPointGps": "ตำแหน่ง GPS",
+  "startPointCustom": "ตำแหน่งที่ปักหมุด",
+  "startPointHint": "แตะเพื่อปักหมุดจุดเริ่มต้นเองบนแผนที่",
+  "startPointMapHint": "แตะบนแผนที่เพื่อปักหมุดจุดเริ่มต้น",
+  "startPointCleared": "รีเซ็ตจุดเริ่มต้นกลับเป็นตำแหน่ง GPS แล้ว",
   "findingLocation": "กำลังค้นหาตำแหน่ง…",
   "locationUnavailable": "ไม่พบตำแหน่ง",
   "searchPlacesThailand": "ค้นหาสถานที่ในประเทศไทย",

@@ -65,6 +65,7 @@ extension _PlanComponents on _PlanScreenState {
     required int number,
     required String title,
     String? subtitle,
+    Widget? trailing,
     required Widget child,
   }) => Container(
     margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
@@ -109,6 +110,10 @@ extension _PlanComponents on _PlanScreenState {
                 ],
               ),
             ),
+            if (trailing != null) ...[
+              const SizedBox(width: 8),
+              trailing,
+            ],
           ],
         ),
         const SizedBox(height: 16),
@@ -117,39 +122,65 @@ extension _PlanComponents on _PlanScreenState {
     ),
   );
 
-  Widget _locationTile() => Container(
-    padding: const EdgeInsets.all(13),
-    decoration: BoxDecoration(
-      color: const Color(0xfffff6d7),
+  Widget _locationTile() {
+    final start = _startPoint;
+    final isCustom = _customStartPoint != null;
+    return InkWell(
       borderRadius: BorderRadius.circular(15),
-    ),
-    child: Row(
-      children: [
-        const Icon(Icons.my_location, color: _gold),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                context.l10n.currentGpsLocation,
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-              Text(
-                _position == null
-                    ? (_locating
-                          ? context.l10n.findingLocation
-                          : context.l10n.locationUnavailable)
-                    : '${_position!.latitude.toStringAsFixed(5)}, ${_position!.longitude.toStringAsFixed(5)}',
-                style: const TextStyle(color: Colors.black45, fontSize: 12),
-              ),
-            ],
-          ),
+      onTap: _pickCustomStart,
+      child: Container(
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: const Color(0xfffff6d7),
+          borderRadius: BorderRadius.circular(15),
         ),
-        IconButton(onPressed: _getLocation, icon: const Icon(Icons.refresh)),
-      ],
-    ),
-  );
+        child: Row(
+          children: [
+            Icon(
+              isCustom ? Icons.location_on : Icons.my_location,
+              color: _gold,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isCustom
+                        ? context.l10n.startPointCustom
+                        : context.l10n.startPointGps,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  Text(
+                    start == null
+                        ? (_locating
+                              ? context.l10n.findingLocation
+                              : context.l10n.locationUnavailable)
+                        : '${start.latitude.toStringAsFixed(5)}, ${start.longitude.toStringAsFixed(5)}',
+                    style: const TextStyle(color: Colors.black45, fontSize: 12),
+                  ),
+                  Text(
+                    context.l10n.startPointHint,
+                    style: const TextStyle(color: Colors.black38, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            if (isCustom)
+              IconButton(
+                tooltip: context.l10n.startPointCleared,
+                onPressed: _clearCustomStart,
+                icon: const Icon(Icons.close),
+              ),
+            IconButton(
+              onPressed: _getLocation,
+              icon: const Icon(Icons.refresh),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _optionIcon(String? iconUrl, IconData fallbackIcon) {
     if (iconUrl != null && iconUrl.isNotEmpty) {
@@ -274,9 +305,77 @@ extension _PlanComponents on _PlanScreenState {
     if (picked != null) {
       _updateState(() {
         _dates = picked;
-        _days = picked.duration.inDays + 1;
+        // จำนวนวันมีแหล่งเดียวคือช่วงวันที่ — ยาวเท่าไหร่ส่งเท่านั้น (clamp 1..7)
+        _days = (picked.duration.inDays + 1).clamp(1, 7);
       });
     }
+  }
+
+  // จุด 2: เลือกเวลาเริ่มออกเดินทางของทุกวัน — default 09:00 ตรงกับ server
+  Future<void> _pickStartTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _startTime,
+    );
+    if (picked != null) {
+      _updateState(() => _startTime = picked);
+    }
+  }
+
+  // แถวจำนวนวันใต้ช่องวันที่ (โหมด manual อย่างเดียว — อ่านอย่างเดียว)
+  // โหมด Auto ช่องวันที่แสดง hint อยู่แล้ว จึงคืน shrink กันข้อความซ้ำสองที่
+  Widget _daysStepper() {
+    if (_autoDays) return const SizedBox.shrink();
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            context.l10n.tripLength,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ),
+        Text(
+          _dates == null
+              ? '– ${context.l10n.days}'
+              : '$_days ${context.l10n.days}',
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+        ),
+      ],
+    );
+  }
+
+  // จุด 3-4: แบนเนอร์เตือนทันทีที่ฟอร์ม เมื่อสถานที่ไกลเกินจำนวนวันที่กำหนด
+  // คำนวณคร่าว ๆ ฝั่ง client — คำเตือนจริงมากับผลลัพธ์จาก server อีกที
+  Widget _feasibilityBanner() {
+    final warning = _feasibilityWarning();
+    if (warning == null) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xfffff4d2),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xffffd76a)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Color(0xff9a6b00)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              warning,
+              style: const TextStyle(
+                color: Color(0xff684d0a),
+                fontSize: 12,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showPlacePicker() {
@@ -294,7 +393,7 @@ extension _PlanComponents on _PlanScreenState {
         builder: (context, setSheet) => AnimatedBuilder(
           animation: _locationService,
           builder: (context, _) {
-            final origin = _position;
+            final origin = _startPoint;
             final queryLower = query.toLowerCase();
             final matches = _places
                 .where(
@@ -669,6 +768,21 @@ extension _PlanComponents on _PlanScreenState {
     RegExp(r'\B(?=(\d{3})+(?!\d))'),
     (m) => ',',
   );
+
+  // ป้ายโซ่เวลาของจุดแวะ: "ถึง HH:MM · เที่ยว N นาที · ออก HH:MM"
+  // + ถ้ามีขาเข้า (segments) ต่อท้าย "· เดินทาง M นาที" ให้เห็นที่มาของเวลานั้น
+  String _stopChainLabel(TravelStop stop, int selectedDayOrder) {
+    final arrive = stop.arrivalTime;
+    final leave =
+        _clockFromMinutes(_clockToMinutes(arrive) + stop.durationMinutes);
+    final visit =
+        '${context.l10n.arriveLabel} $arrive · ${context.l10n.visitLabel} '
+        '${stop.durationMinutes} ${context.l10n.minutesShort} · '
+        '${context.l10n.leaveLabel} $leave';
+    if (stop.segments.isEmpty || selectedDayOrder <= 1) return visit;
+    final leg = stop.segments.first.estimatedMinutes;
+    return '$visit · ${context.l10n.travelLabel} $leg ${context.l10n.minutesShort}';
+  }
   String _modeLabel(String value) {
     // ใช้ label จาก DB ก่อน (รองรับ mode ใหม่ที่ admin เพิ่ม) แล้วค่อย fallback เป็น l10n
     final keyLower = value.toLowerCase();

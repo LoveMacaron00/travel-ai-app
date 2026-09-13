@@ -250,6 +250,31 @@
   "travelDates": "Travel dates",
   "chooseDates": "Choose travel dates",
   "days": "days",
+  "tripStartTime": "Start time",
+  "tripLength": "Trip length",
+  "autoDays": "Auto",
+  "autoDaysHint": "AI estimates the right number of days from your places and distances",
+  "farPlaceWarning": "The selected place is ~{distance} km from your start (~{hours} h by {mode}) — consider adding days or choosing closer places",
+  "@farPlaceWarning": {
+    "placeholders": {
+      "distance": {"type": "int"},
+      "hours": {"type": "String"},
+      "mode": {"type": "String"}
+    }
+  },
+  "tightDaysWarning": "Your {days}-day plan may be too tight — about {recommended} days fit better (furthest place ~{distance} km)",
+  "@tightDaysWarning": {
+    "placeholders": {
+      "days": {"type": "int"},
+      "recommended": {"type": "int"},
+      "distance": {"type": "int"}
+    }
+  },
+  "planWarningsTitle": "Heads-up",
+  "leaveLabel": "Leave",
+  "arriveLabel": "Arrive",
+  "visitLabel": "visit",
+  "travelLabel": "travel",
   "estimatedBudget": "Budget",
   "whatDoYouEnjoy": "What are you interested in?",
   "howCanYouTravel": "How can you travel?",
@@ -288,6 +313,12 @@
   "estimatedTripCost": "Estimated trip cost",
   "estimateDisclaimer": "Estimates may change with availability, season, and traffic.",
   "currentGpsLocation": "Current GPS location",
+  "startPoint": "Start point",
+  "startPointGps": "GPS location",
+  "startPointCustom": "Pinned location",
+  "startPointHint": "Set your own start on the map",
+  "startPointMapHint": "Tap on the map to set your start",
+  "startPointCleared": "Start point reset to your GPS location",
   "findingLocation": "Finding your location…",
   "locationUnavailable": "Location unavailable",
   "searchPlacesThailand": "Search places in Thailand",

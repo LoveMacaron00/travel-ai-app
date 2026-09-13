@@ -672,6 +672,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String get days => 'days';
 
   @override
+  String get tripStartTime => 'Start time';
+
+  @override
+  String get tripLength => 'Trip length';
+
+  @override
+  String get autoDays => 'Auto';
+
+  @override
+  String get autoDaysHint =>
+      'AI estimates the right number of days from your places and distances';
+
+  @override
+  String farPlaceWarning(int distance, String hours, String mode) {
+    return 'The selected place is ~$distance km from your start (~$hours h by $mode) — consider adding days or choosing closer places';
+  }
+
+  @override
+  String tightDaysWarning(int days, int recommended, int distance) {
+    return 'Your $days-day plan may be too tight — about $recommended days fit better (furthest place ~$distance km)';
+  }
+
+  @override
+  String get planWarningsTitle => 'Heads-up';
+
+  @override
+  String get leaveLabel => 'Leave';
+
+  @override
+  String get arriveLabel => 'Arrive';
+
+  @override
+  String get visitLabel => 'visit';
+
+  @override
+  String get travelLabel => 'travel';
+
+  @override
   String get estimatedBudget => 'Budget';
 
   @override
@@ -766,6 +804,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get currentGpsLocation => 'Current GPS location';
+
+  @override
+  String get startPoint => 'Start point';
+
+  @override
+  String get startPointGps => 'GPS location';
+
+  @override
+  String get startPointCustom => 'Pinned location';
+
+  @override
+  String get startPointHint => 'Set your own start on the map';
+
+  @override
+  String get startPointMapHint => 'Tap on the map to set your start';
+
+  @override
+  String get startPointCleared => 'Start point reset to your GPS location';
 
   @override
   String get findingLocation => 'Finding your location…';

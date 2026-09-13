@@ -7,6 +7,15 @@
 
 # บรรทัดต่อไปนี้เปิดใช้ชุดกฎ lint ที่แนะนำสำหรับแอป Flutter
 # แพ็กเกจ และปลั๊กอิน เพื่อส่งเสริมแนวทางการเขียนโค้ดที่ดี
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 include: package:flutter_lints/flutter.yaml
 
 linter:

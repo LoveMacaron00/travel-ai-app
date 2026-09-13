@@ -176,6 +176,10 @@ class TravelPlan {
   final Map<String, double> budgetBreakdown;
   final List<TravelDay> days;
   final List<String> tips;
+
+  /// คำเตือนจากระบบจัดตาราง (วันแน่น/ระยะไกลเกิน) — server คำนวณให้
+  /// แผนเก่าที่ไม่มี field นี้ถือว่าไม่มีคำเตือน
+  final List<String> warnings;
   const TravelPlan({
     required this.tripId,
     this.title = '',
@@ -184,7 +188,28 @@ class TravelPlan {
     required this.budgetBreakdown,
     required this.days,
     required this.tips,
+    this.warnings = const [],
   });
+
+  TravelPlan copyWith({
+    int? tripId,
+    String? title,
+    String? summary,
+    double? totalEstimatedCost,
+    Map<String, double>? budgetBreakdown,
+    List<TravelDay>? days,
+    List<String>? tips,
+    List<String>? warnings,
+  }) => TravelPlan(
+    tripId: tripId ?? this.tripId,
+    title: title ?? this.title,
+    summary: summary ?? this.summary,
+    totalEstimatedCost: totalEstimatedCost ?? this.totalEstimatedCost,
+    budgetBreakdown: budgetBreakdown ?? this.budgetBreakdown,
+    days: days ?? this.days,
+    tips: tips ?? this.tips,
+    warnings: warnings ?? this.warnings,
+  );
   factory TravelPlan.fromJson(
     Map<String, dynamic> j, {
     int tripId = 0,
@@ -204,6 +229,9 @@ class TravelPlan {
           .map((e) => TravelDay.fromJson(Map<String, dynamic>.from(e)))
           .toList(),
       tips: ((j['tips'] as List?) ?? const []).map((e) => '$e').toList(),
+      warnings: ((j['warnings'] as List?) ?? const [])
+          .map((e) => '$e')
+          .toList(),
     );
   }
 
@@ -213,6 +241,7 @@ class TravelPlan {
     'budgetBreakdown': budgetBreakdown,
     'days': days.map((e) => e.toJson()).toList(),
     'tips': tips,
+    'warnings': warnings,
   };
 
   /// มุมมองแบบแบนสำหรับ Map/Navigation ที่ไม่ต้องสนใจการแบ่งวัน

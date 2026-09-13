@@ -1328,6 +1328,72 @@ abstract class AppLocalizations {
   /// **'days'**
   String get days;
 
+  /// No description provided for @tripStartTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Start time'**
+  String get tripStartTime;
+
+  /// No description provided for @tripLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip length'**
+  String get tripLength;
+
+  /// No description provided for @autoDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get autoDays;
+
+  /// No description provided for @autoDaysHint.
+  ///
+  /// In en, this message translates to:
+  /// **'AI estimates the right number of days from your places and distances'**
+  String get autoDaysHint;
+
+  /// No description provided for @farPlaceWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected place is ~{distance} km from your start (~{hours} h by {mode}) — consider adding days or choosing closer places'**
+  String farPlaceWarning(int distance, String hours, String mode);
+
+  /// No description provided for @tightDaysWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Your {days}-day plan may be too tight — about {recommended} days fit better (furthest place ~{distance} km)'**
+  String tightDaysWarning(int days, int recommended, int distance);
+
+  /// No description provided for @planWarningsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Heads-up'**
+  String get planWarningsTitle;
+
+  /// No description provided for @leaveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get leaveLabel;
+
+  /// No description provided for @arriveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrive'**
+  String get arriveLabel;
+
+  /// No description provided for @visitLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'visit'**
+  String get visitLabel;
+
+  /// No description provided for @travelLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'travel'**
+  String get travelLabel;
+
   /// No description provided for @estimatedBudget.
   ///
   /// In en, this message translates to:
@@ -1501,6 +1567,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Current GPS location'**
   String get currentGpsLocation;
+
+  /// No description provided for @startPoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Start point'**
+  String get startPoint;
+
+  /// No description provided for @startPointGps.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS location'**
+  String get startPointGps;
+
+  /// No description provided for @startPointCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned location'**
+  String get startPointCustom;
+
+  /// No description provided for @startPointHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Set your own start on the map'**
+  String get startPointHint;
+
+  /// No description provided for @startPointMapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap on the map to set your start'**
+  String get startPointMapHint;
+
+  /// No description provided for @startPointCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Start point reset to your GPS location'**
+  String get startPointCleared;
 
   /// No description provided for @findingLocation.
   ///

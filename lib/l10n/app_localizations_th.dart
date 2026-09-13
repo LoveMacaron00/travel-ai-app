@@ -660,6 +660,44 @@ class AppLocalizationsTh extends AppLocalizations {
   String get days => 'วัน';
 
   @override
+  String get tripStartTime => 'เวลาเริ่มเดินทาง';
+
+  @override
+  String get tripLength => 'จำนวนวัน';
+
+  @override
+  String get autoDays => 'อัตโนมัติ';
+
+  @override
+  String get autoDaysHint =>
+      'AI ประเมินจำนวนวันที่เหมาะสมจากสถานที่และระยะทางให้เอง';
+
+  @override
+  String farPlaceWarning(int distance, String hours, String mode) {
+    return 'สถานที่ที่เลือกอยู่ไกลจากจุดเริ่มต้น ~$distance กม. ใช้เวลาเดินทาง ~$hours ชม. ด้วย$mode — ควรเพิ่มวันหรือเลือกสถานที่ใกล้ขึ้น';
+  }
+
+  @override
+  String tightDaysWarning(int days, int recommended, int distance) {
+    return 'กำหนด $days วัน แต่อาจต้องใช้ ~$recommended วัน (ระยะไกลสุด ~$distance กม.) — แผนอาจแน่นเกินไป';
+  }
+
+  @override
+  String get planWarningsTitle => 'ข้อควรรู้ก่อนเดินทาง';
+
+  @override
+  String get leaveLabel => 'ออก';
+
+  @override
+  String get arriveLabel => 'ถึง';
+
+  @override
+  String get visitLabel => 'เที่ยว';
+
+  @override
+  String get travelLabel => 'เดินทาง';
+
+  @override
   String get estimatedBudget => 'งบประมาณ';
 
   @override
@@ -753,6 +791,24 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get currentGpsLocation => 'ตำแหน่ง GPS ปัจจุบัน';
+
+  @override
+  String get startPoint => 'จุดเริ่มต้น';
+
+  @override
+  String get startPointGps => 'ตำแหน่ง GPS';
+
+  @override
+  String get startPointCustom => 'ตำแหน่งที่ปักหมุด';
+
+  @override
+  String get startPointHint => 'แตะเพื่อปักหมุดจุดเริ่มต้นเองบนแผนที่';
+
+  @override
+  String get startPointMapHint => 'แตะบนแผนที่เพื่อปักหมุดจุดเริ่มต้น';
+
+  @override
+  String get startPointCleared => 'รีเซ็ตจุดเริ่มต้นกลับเป็นตำแหน่ง GPS แล้ว';
 
   @override
   String get findingLocation => 'กำลังค้นหาตำแหน่ง…';

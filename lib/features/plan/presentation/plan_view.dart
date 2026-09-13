@@ -119,21 +119,64 @@ extension _PlanMainView on _PlanScreenState {
                 }),
               ),
               const SizedBox(height: 12),
+              // วันที่ + จำนวนวันรวมเป็นบล็อกเดียว (แหล่งค่าที่เดียว):
+              // manual = เลือกช่วงวันที่ จำนวนวันตามช่วงอัตโนมัติ (อ่านอย่างเดียว)
+              // Auto = ปิดช่องวันที่ ให้ AI ประเมินจำนวนวันเอง
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      context.l10n.travelDates,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  FilterChip(
+                    label: Text(context.l10n.autoDays),
+                    selected: _autoDays,
+                    selectedColor: const Color(0xffffe7a0),
+                    checkmarkColor: const Color(0xff986b00),
+                    onSelected: (on) => _updateState(() => _autoDays = on),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
               InkWell(
-                onTap: _pickDates,
+                onTap: _autoDays ? null : _pickDates,
                 borderRadius: BorderRadius.circular(16),
                 child: InputDecorator(
                   decoration: _inputDecoration(
                     null,
                     Icons.calendar_today_outlined,
-                  ),
-                  child: Text(
-                    _dates == null
-                        ? context.l10n.chooseDates
-                        : '${_date(_dates!.start)} – ${_date(_dates!.end)} · $_days ${context.l10n.days}',
-                  ),
+                  ).copyWith(enabled: !_autoDays),
+                  child: _autoDays
+                      ? Text(
+                          context.l10n.autoDaysHint,
+                          style: const TextStyle(color: Colors.black45),
+                        )
+                      : Text(
+                          _dates == null
+                              ? context.l10n.chooseDates
+                              : '${_date(_dates!.start)} – ${_date(_dates!.end)}',
+                        ),
                 ),
               ),
+              const SizedBox(height: 4),
+              _daysStepper(),
+              const SizedBox(height: 12),
+              // เวลาเริ่มเดินทาง (TimePicker) — มีผลรอบสร้างแผนถัดไป
+              InkWell(
+                onTap: _pickStartTime,
+                borderRadius: BorderRadius.circular(16),
+                child: InputDecorator(
+                  decoration: _inputDecoration(
+                    context.l10n.tripStartTime,
+                    Icons.schedule_outlined,
+                  ),
+                  child: Text(_clockOf(_startTime)),
+                ),
+              ),
+              const SizedBox(height: 4),
+              _feasibilityBanner(),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -177,6 +220,18 @@ extension _PlanMainView on _PlanScreenState {
           number: 4,
           title: context.l10n.mustVisitPlaces,
           subtitle: context.l10n.mustVisitOptional,
+          // ตัวนับเหมือน counter ของ TextField (0/120) — บอก limit 5 ที่ก่อนกดเพิ่ม
+          trailing: Text(
+            '${_mustVisit.length}/${_PlanScreenState._maxMustVisitPlaces}',
+            style: TextStyle(
+              color: _mustVisit.length >=
+                      _PlanScreenState._maxMustVisitPlaces
+                  ? Colors.redAccent
+                  : Colors.black45,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -399,6 +454,10 @@ extension _PlanMainView on _PlanScreenState {
                     ),
                   ),
                 ),
+                // จุด 3 + 5: คำเตือนจากระบบจัดตาราง (วันแน่น/ระยะไกล/ข้ามเกาะ)
+                // มาจาก plan_data.warnings ที่ server คำนวณ — แยกจาก disclaimer ถาวร
+                if (plan.warnings.isNotEmpty)
+                  SliverToBoxAdapter(child: _planWarningsBanner(plan)),
                 SliverToBoxAdapter(
                   child: Container(
                     margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -514,11 +573,78 @@ extension _PlanMainView on _PlanScreenState {
     );
   }
 
+  // แบนเนอร์คำเตือนตารางเวลา — แสดงรายการ warnings จาก server ทีละข้อ
+  // (อยู่เหนือ disclaimer ถาวรซึ่งเตือนเรื่องความคลาดเคลื่อนของ AI ทั่วไป)
+  Widget _planWarningsBanner(TravelPlan plan) => Container(
+    margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: const Color(0xfffdeeda),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: const Color(0xfff0b429)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.schedule_outlined,
+              color: Color(0xff9a5b00),
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              context.l10n.planWarningsTitle,
+              style: const TextStyle(
+                color: Color(0xff9a5b00),
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ...plan.warnings.map(
+          (warning) => Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '• ',
+                  style: TextStyle(
+                    color: Color(0xff684d0a),
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    warning,
+                    style: const TextStyle(
+                      color: Color(0xff684d0a),
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+
   Widget _planMap(TravelPlan plan, {bool fullScreen = false}) {
     final day = _selectedDayFor(plan);
     final stops = day?.stops ?? const <TravelStop>[];
+    // day 1 ใช้จุดเริ่มต้นจริงเป็นจุดแรก — วันถัดไปพักค้างที่จุดสุดท้ายของวันก่อน
+    final start = _startPoint;
+    final showStartPin = day?.day == 1 && start != null;
     final mapPoints = [
-      if (_position != null) LatLng(_position!.latitude, _position!.longitude),
+      if (showStartPin) start,
       ...stops.map((stop) => LatLng(stop.latitude, stop.longitude)),
     ];
     return Container(
@@ -570,9 +696,11 @@ extension _PlanMainView on _PlanScreenState {
                 ),
               MarkerLayer(
                 markers: [
-                  if (_position != null)
+                  // หมุดจุดเริ่มต้นแสดงเฉพาะวันแรก (ตรงกับ day-1 anchor ฝั่ง server)
+                  // วันอื่นเริ่มจากจุดสุดท้ายของวันก่อน ใช้หมุด stop เลข 1 แทน
+                  if (showStartPin)
                     Marker(
-                      point: LatLng(_position!.latitude, _position!.longitude),
+                      point: start,
                       width: 46,
                       height: 46,
                       child: Center(
@@ -580,15 +708,19 @@ extension _PlanMainView on _PlanScreenState {
                           width: 34,
                           height: 34,
                           decoration: BoxDecoration(
-                            color: const Color(0xff1877f2),
+                            color: _customStartPoint != null
+                                ? const Color(0xffe9ad0c)
+                                : const Color(0xff1877f2),
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 3),
                             boxShadow: const [
                               BoxShadow(color: Colors.black26, blurRadius: 5),
                             ],
                           ),
-                          child: const Icon(
-                            Icons.my_location,
+                          child: Icon(
+                            _customStartPoint != null
+                                ? Icons.location_on
+                                : Icons.my_location,
                             size: 18,
                             color: Colors.white,
                           ),
@@ -616,12 +748,9 @@ extension _PlanMainView on _PlanScreenState {
               shape: const CircleBorder(),
               child: IconButton(
                 tooltip: context.l10n.currentGpsLocation,
-                onPressed: _position == null
+                onPressed: start == null
                     ? null
-                    : () => _map.move(
-                        LatLng(_position!.latitude, _position!.longitude),
-                        15,
-                      ),
+                    : () => _map.move(start, 15),
                 icon: const Icon(Icons.my_location, color: Color(0xff1877f2)),
               ),
             ),
@@ -736,8 +865,11 @@ extension _PlanMainView on _PlanScreenState {
                                   ],
                                 ),
                               ),
+                            // จุด 2 + 6: โซ่เวลา ถึง→เที่ยว→ออก ต่อเนื่องทั้งวัน
+                            // ถึง = arrivalTime, ออก = ถึง + เที่ยว, ขาเข้าอยู่ใน segments
+                            // number เริ่มที่ 1 — จุดแรกของวันไม่มีขาเข้าจึงไม่แสดงเวลาเดินทาง
                             Text(
-                              '${stop.arrivalTime} · ${stop.durationMinutes} ${context.l10n.minutesShort}',
+                              _stopChainLabel(stop, number),
                               style: const TextStyle(
                                 color: Colors.black45,
                                 fontSize: 12,

@@ -10,7 +10,7 @@ class TripService {
   final ApiClient _client;
 
   // POST /api/trips — สั่งสร้างแผนเที่ยวจาก AI (รับ input จากฟอร์มหน้า Plan)
-  // server ตอบกลับเป็น SSE stream อ่าน event done/error จนได้ tripId
+  // server ตอบกลับเป็น SSE stream อ่าน event done/error/warning จนได้ tripId
   // แล้วตามด้วย GET /api/trips/:tripId เพื่อเอา plan_data ฉบับเต็ม
   // ใช้โดย: plan_screen.dart (_generate)
   Future<Map<String, dynamic>> createTravelPlan(
@@ -33,6 +33,7 @@ class TripService {
 
       int? tripId;
       String? error;
+      List<String> streamedWarnings = const [];
       await for (final line
           in response.stream
               .transform(utf8.decoder)
@@ -43,6 +44,11 @@ class TripService {
           if (event['type'] == 'done') {
             tripId = int.tryParse('${event['tripId']}');
           }
+          if (event['type'] == 'warning') {
+            streamedWarnings = ((event['warnings'] as List?) ?? const [])
+                .map((e) => '$e')
+                .toList();
+          }
           if (event['type'] == 'error') error = '${event['message']}';
         } on FormatException {
           // ข้ามเฉพาะ SSE event ที่ถูกตัดกลางบรรทัด
@@ -51,7 +57,11 @@ class TripService {
       if (tripId == null) {
         return {'success': false, 'message': error ?? 'Plan generation failed'};
       }
-      return getTravelPlan(tripId);
+      final planResult = await getTravelPlan(tripId);
+      if (planResult['success'] == true && streamedWarnings.isNotEmpty) {
+        planResult['warnings'] = streamedWarnings;
+      }
+      return planResult;
     } catch (error) {
       return {'success': false, 'message': 'Network error: $error'};
     }
@@ -73,6 +83,7 @@ class TripService {
 
   // PUT /api/trips/:tripId/plan — บันทึกการแก้ไขแผน (ลบ/เพิ่ม/สลับลำดับสถานที่)
   // ส่ง plan_data ทั้งก้อนกลับ server เพื่อ upsert ลง trip_plans
+  // server เดินโซ่เวลาใหม่แบบคงลำดับเดิมแล้วคืน warnings ใน {message, warnings}
   // ใช้โดย: plan_screen.dart (_savePlanChanges)
   Future<Map<String, dynamic>> updateTravelPlan(
     int tripId,
@@ -89,7 +100,11 @@ class TripService {
           ),
         };
       }
-      return {'success': true};
+      final decoded = ApiClient.decodeMap(response.body);
+      final warnings = ((decoded?['warnings'] as List?) ?? const [])
+          .map((e) => '$e')
+          .toList();
+      return {'success': true, 'warnings': warnings};
     } catch (error) {
       return {'success': false, 'message': 'Network error: $error'};
     }

@@ -16,6 +16,7 @@ import 'package:myapp/core/utils/destination_display.dart';
 import 'package:myapp/core/widgets/media_image.dart';
 import 'package:myapp/features/plan/widgets/plan_day_selector.dart';
 import 'package:myapp/features/plan/widgets/province_selector.dart';
+import 'package:myapp/features/map/presentation/map_picker_screen.dart';
 
 part 'plan_view.dart';
 part 'plan_details.dart';
@@ -75,7 +76,14 @@ class _PlanScreenState extends State<PlanScreen> {
   DateTimeRange? _dates;
   double _budget = 30000;
   int _days = 3;
+  // จุด 2: เวลาเริ่มเดินทาง + โหมดให้ AI ประเมินจำนวนวัน
+  // _startTime เริ่ม 09:00 ตรงกับ DEFAULT_DAY_START_MINUTES ฝั่ง server
+  TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
+  bool _autoDays = false;
   LatLng? _position;
+  // จุดเริ่มต้นที่ผู้ใช้ปักเองบนแผนที่ (null = ใช้ GPS ปัจจุบัน)
+  // มีผลกับ: _input() start_lat/lng, การเตือนระยะทาง, การเรียง place picker, หมุด/แผนที่หน้าผลลัพธ์
+  LatLng? _customStartPoint;
   bool _locating = false;
   bool _loadingProvinces = false;
   bool _generating = false;
@@ -98,6 +106,10 @@ class _PlanScreenState extends State<PlanScreen> {
   bool _resettingPlan = false;
   Map<String, dynamic>? _originalPlanJson;
   late String _loadedLanguage;
+
+  // จุดเริ่มต้นจริงที่ใช้ทั้งฟอร์ม — ปักเองมาก่อน GPS เสมอ
+  // (GPS แค่ fallback ตอนยังไม่ปัก — ปักแล้ว device ขยับก็ไม่หลุด)
+  LatLng? get _startPoint => _customStartPoint ?? _position;
 
   // extension view เรียกผ่าน wrapper นี้แทน protected State.setState โดยตรง
   void _updateState(VoidCallback update) => setState(update);
@@ -171,11 +183,20 @@ class _PlanScreenState extends State<PlanScreen> {
     if (result['success'] == true) {
       final trip = Map<String, dynamic>.from(result['data']);
       final raw = Map<String, dynamic>.from(trip['plan_data'] as Map? ?? {});
-      final plan = TravelPlan.fromJson(
+      var plan = TravelPlan.fromJson(
         raw,
         tripId: tripId,
         title: '${trip['title'] ?? ''}',
       );
+      // trips.days คือจำนวนวันที่ resolve แล้ว (auto_days คำนวณมากี่วันก็เก็บเท่านั้น)
+      // sync กลับเข้าฟอร์มให้ตรง — กดสร้างแผนใหม่จะเริ่มจากจำนวนวันจริงของแผนนี้
+      final storedDays = int.tryParse('${trip['days'] ?? ''}');
+      if (storedDays != null && storedDays >= 1 && storedDays <= 7) {
+        _days = storedDays;
+      }
+      // start_time ที่เก็บไว้ ("HH:MM") — sync เข้า TimePicker ของฟอร์มด้วย
+      final storedStart = _parseStoredClock('${trip['start_time'] ?? ''}');
+      if (storedStart != null) _startTime = storedStart;
 
       // เปิดแผนเก่า: เก็บ snapshot ตอนเปิดไว้ — reset จะย้อนการแก้ของ session นี้
       // (trip เก่าไม่มี snapshot แผนแรกใน memory/server แล้วเพราะทุกการแก้ save ทับ)
@@ -194,6 +215,16 @@ class _PlanScreenState extends State<PlanScreen> {
         _error = '${result['message'] ?? context.l10n.couldNotCreatePlan}';
       });
     }
+  }
+
+  // "HH:MM" จาก trips.start_time → TimeOfDay — ใช้ไม่ได้คืน null (คงค่าเดิมในฟอร์ม)
+  TimeOfDay? _parseStoredClock(String clock) {
+    final parts = clock.split(':');
+    final hour = int.tryParse(parts.firstOrNull ?? '');
+    final minute = int.tryParse(parts.length > 1 ? parts[1] : '');
+    if (hour == null || minute == null) return null;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+    return TimeOfDay(hour: hour, minute: minute);
   }
 
   /// โหลดตัวเลือกความสนใจ/พาหนะจาก DB — ไม่มี hardcode fallback
@@ -365,6 +396,26 @@ class _PlanScreenState extends State<PlanScreen> {
     });
   }
 
+  // เลือกจุดเริ่มต้นเองบนแผนที่ (diary _pickLocation pattern) — ใช้ State context
+  // ที่ stable ของ PlanScreen แทน context ของ bottom sheet ข้างใน
+  Future<void> _pickCustomStart() async {
+    final result = await Navigator.push<LatLng>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MapPickerScreen(initialLocation: _startPoint),
+      ),
+    );
+    if (!mounted || result == null) return;
+    setState(() => _customStartPoint = result);
+  }
+
+  // ล้างจุดที่ปักเอง กลับไปใช้ GPS ปัจจุบัน
+  void _clearCustomStart() {
+    if (_customStartPoint == null) return;
+    setState(() => _customStartPoint = null);
+    _showPlanSnack(context.l10n.startPointCleared);
+  }
+
   // ชื่อแผนที่ผู้ใช้กรอกในฟอร์ม — trim แล้วตัดให้ไม่เกิน limit ก่อนส่ง
   String get _planNameInput {
     final name = _planNameController.text.trim();
@@ -375,34 +426,54 @@ class _PlanScreenState extends State<PlanScreen> {
   }
 
   /// รวมทุก input บนฟอร์มเป็น JSON body สำหรับยิงสร้างแผน
-  Map<String, dynamic> _input() => {
-    if (_planNameInput.isNotEmpty) 'title': _planNameInput,
-    'destination': _selectedProvince,
-    'province': _selectedProvince,
-    'days': _days,
-    'budget': _budget.round(),
-    'currency': 'THB',
-    'interests': _interests.map((e) => e.toLowerCase()).toList(),
-    'transport_modes': _modes.toList(),
-    'start_latitude': _position?.latitude,
-    'start_longitude': _position?.longitude,
-    'must_visit': _mustVisit
-        .map(
-          (p) => {
-            'id': p.id,
-            'name': p.title,
-            'latitude': p.latitude,
-            'longitude': p.longitude,
-          },
-        )
-        .toList(),
-    'excluded_places': _excluded.toList(),
-    if (_dates != null) 'start_date': _dates!.start.toIso8601String(),
-  };
+  ///
+  /// จำนวนวันมีแหล่งเดียวคือช่วงวันที่ (_dates → _days อัตโนมัติ)
+  /// 'auto_days: true' = ไม่ส่ง days ให้ server ประเมินเองจากสถานที่/ระยะทาง
+  /// 'start_time' เป็น "HH:MM" — ส่งเสมอ (เวลาเลือกในฟอร์ม) เพื่อให้ AI
+  /// กระจาย arrivalTime ตั้งแต่วันแรก และเป็น anchor เวลาเริ่มของทุกวัน
+  /// start_lat/lng ใช้จุดที่ปักเองก่อน (_customStartPoint) — GPS เป็นแค่ fallback
+  Map<String, dynamic> _input() {
+    final start = _startPoint;
+    final days = _dates == null
+        ? null // ยังไม่เลือกวัน = ให้ server ประเมิน (เหมือน auto) กันค้าง 3 วันมั่ว ๆ
+        : (_dates!.duration.inDays + 1).clamp(1, 7);
+    return {
+      if (_planNameInput.isNotEmpty) 'title': _planNameInput,
+      'destination': _selectedProvince,
+      'province': _selectedProvince,
+      if (!_autoDays && days != null) 'days': days,
+      'auto_days': _autoDays,
+      'start_time': _clockOf(_startTime),
+      'budget': _budget.round(),
+      'currency': 'THB',
+      'interests': _interests.map((e) => e.toLowerCase()).toList(),
+      'transport_modes': _modes.toList(),
+      'start_latitude': start?.latitude,
+      'start_longitude': start?.longitude,
+      'must_visit': _mustVisit
+          .map(
+            (p) => {
+              'id': p.id,
+              'name': p.title,
+              'latitude': p.latitude,
+              'longitude': p.longitude,
+            },
+          )
+          .toList(),
+      'excluded_places': _excluded.toList(),
+      if (_dates != null) 'start_date': _dates!.start.toIso8601String(),
+    };
+  }
 
   /// กดปุ่มสร้างแผน — ยิงให้ AI สร้างแผนจาก _input() แล้วแปลง plan_data
   /// เป็น TravelPlan, เติม must-visit ที่หายไป, สลับไปหน้าผลลัพธ์ และวาดเส้นทาง
+  /// โหมด manual ต้องเลือกช่วงวันที่ก่อน — ยังไม่เลือกถือว่าให้ AI ประเมินไม่ได้
+  /// ต้องเลือกเอง (กันส่ง days ค้าง 3 วันมั่ว ๆ แทนช่วงที่ผู้ใช้ตั้งใจ)
   Future<void> _generate() async {
+    if (!_autoDays && _dates == null) {
+      _showPlanSnack(context.l10n.chooseDates);
+      return;
+    }
     setState(() {
       _generating = true;
       _error = null;
@@ -415,13 +486,28 @@ class _PlanScreenState extends State<PlanScreen> {
       final raw = Map<String, dynamic>.from(trip['plan_data'] as Map? ?? {});
       final tripId = int.tryParse('${trip['id']}') ?? 0;
       _storeOriginalPlan(raw);
-      final next = _ensureMustVisitStops(
+      var next = _ensureMustVisitStops(
         TravelPlan.fromJson(
           raw,
           tripId: tripId,
           title: '${trip['title'] ?? _planNameInput}',
         ),
       );
+      // sync จำนวนวันที่ server resolve กลับเข้าฟอร์ม (auto หรือยังไม่เลือกวัน)
+      // ให้ช่องวันที่/ตัวนับตรงกับแผนจริง — กดสร้างใหม่จะเริ่มจากจำนวนวันจริงของแผนนี้
+      final resolvedDays = next.days.length;
+      if ((_autoDays || _dates == null) && resolvedDays >= 1 && resolvedDays <= 7) {
+        _days = resolvedDays;
+      }
+      // SSE warning event (ข้าง plan_data) — รวมเข้ากับ warnings ใน model
+      // ให้แบนเนอร์หน้าผลลัพธ์แสดง แม้ plan_data เก่าจะไม่มี field นี้
+      final streamed =
+          ((result['warnings'] as List?) ?? const []).map((e) => '$e').toList();
+      if (streamed.isNotEmpty) {
+        next = next.copyWith(
+          warnings: {...next.warnings, ...streamed}.toList(),
+        );
+      }
       setState(() {
         _plan = next;
         _planNameController.text = next.title;
@@ -459,7 +545,7 @@ class _PlanScreenState extends State<PlanScreen> {
     for (final place in _mustVisit) {
       if (_planContainsPlace(days, place)) continue;
       final day = _targetDayForMustVisit(days);
-      day.stops.add(_mustVisitStop(place, day.stops.length));
+      day.stops.add(_mustVisitStop(place, day.stops));
     }
 
     return TravelPlan(
@@ -470,6 +556,7 @@ class _PlanScreenState extends State<PlanScreen> {
       budgetBreakdown: plan.budgetBreakdown,
       days: days,
       tips: plan.tips,
+      warnings: plan.warnings,
     );
   }
 
@@ -504,7 +591,9 @@ class _PlanScreenState extends State<PlanScreen> {
 
   // สร้าง TravelStop จาก PlaceMarker ที่ผู้ใช้เลือก — ใช้ทั้งตอน AI ลืมใส่
   // และตอนผู้ใช้กดเพิ่มที่เองหลังสร้างแผนแล้ว (ค่าใช้จ่ายปล่อยเป็น 0 ให้ AI/ระบบคิด)
-  TravelStop _mustVisitStop(PlaceMarker place, int stopIndex) {
+  // arrivalTime ต่อโซ่จากจุดก่อนหน้าใน existingStops — เวลาจริง server
+  // จะเดินโซ่ใหม่แบบคงลำดับตอน PUT แล้ว UI ใช้อันนั้นเป็นหลัก
+  TravelStop _mustVisitStop(PlaceMarker place, List<TravelStop> existingStops) {
     final activity = stripHtmlText(place.description).trim();
     return TravelStop(
       destinationId: place.id,
@@ -514,7 +603,10 @@ class _PlanScreenState extends State<PlanScreen> {
       latitude: place.latitude,
       longitude: place.longitude,
       imageUrl: place.imageUrl,
-      arrivalTime: _arrivalTimeForStopIndex(stopIndex),
+      arrivalTime: _chainArrivalAfter(
+        existingStops,
+        LatLng(place.latitude, place.longitude),
+      ),
       durationMinutes: 90,
       entryCost: 0,
       foodCost: 0,
@@ -625,6 +717,36 @@ class _PlanScreenState extends State<PlanScreen> {
     return updated;
   }
 
+  // ต่อโซ่ arrivalTime ใหม่ทั้งวันตามลำดับปัจจุบัน — จุดแรกยึดเวลาเดิมไว้
+  // (ออก = ถึง + เที่ยว, ถึงถัดไป = ออก + เดินทางจาก segments)
+  // กันเวลาค้างตามลำดับเก่าหลังลบ/สลับจุด — server จะคำนวณเวลาจริงซ้ำตอน PUT อีกที
+  List<TravelStop> _rechainDay(List<TravelStop> stops) {
+    if (stops.length < 2) return stops;
+    final chained = <TravelStop>[stops.first];
+    for (var i = 1; i < stops.length; i++) {
+      final prev = chained[i - 1];
+      final leg =
+          stops[i].segments.isNotEmpty
+              ? stops[i].segments.first.estimatedMinutes
+              : (const Distance().as(
+                        LengthUnit.Kilometer,
+                        LatLng(prev.latitude, prev.longitude),
+                        LatLng(stops[i].latitude, stops[i].longitude),
+                      ) *
+                      2)
+                  .round()
+                  .clamp(5, 720);
+      chained.add(
+        stops[i].copyWith(
+          arrivalTime: _clockFromMinutes(
+            _clockToMinutes(prev.arrivalTime) + prev.durationMinutes + leg,
+          ),
+        ),
+      );
+    }
+    return chained;
+  }
+
   /// ปรับงบแบบ delta จากของเดิม (ไม่คำนวณใหม่จากศูนย์ เพราะ total ของ AI
   /// อาจไม่เท่ากับผลรวม breakdown พอดี) ลบจุดออกยอดลดแค่ค่าของจุดนั้น
   /// + ส่วนต่างของขาที่เปลี่ยนเท่านั้น
@@ -672,14 +794,111 @@ class _PlanScreenState extends State<PlanScreen> {
       budgetBreakdown: newBreakdown,
       days: newDays,
       tips: plan.tips,
+      warnings: plan.warnings,
     );
   }
 
-  // ช่วงเวลาถึงของจุดแวะที่แทรกเอง — กระจายเข้า slot มาตรฐานของวัน
-  String _arrivalTimeForStopIndex(int stopIndex) {
-    const slots = ['09:00', '11:00', '13:30', '15:30', '17:00'];
-    final index = stopIndex.clamp(0, slots.length - 1).toInt();
-    return slots[index];
+  // ช่วงเวลาถึงของจุดแวะที่แทรกเอง — ต่อโซ่จาก list จุดก่อนหน้าที่ให้มา
+  // (ออก = ถึง + เที่ยว, ถึงใหม่ = ออก + เดินทาง) แทน slot ตายตัวแบบเดิม
+  // server จะคำนวณเวลาจริงซ้ำแบบคงลำดับตอน PUT แล้ว UI ใช้อันนั้นเป็นหลัก
+  String _chainArrivalAfter(List<TravelStop> stops, LatLng to) {
+    if (stops.isEmpty) return _clockOf(_startTime);
+    final prev = stops.last;
+    final cursor = _clockToMinutes(prev.arrivalTime) + prev.durationMinutes;
+    final from = LatLng(prev.latitude, prev.longitude);
+    final km = const Distance().as(LengthUnit.Kilometer, from, to);
+    // heuristic เดียวกับ estimatedMinutes ตอน append (2 นาที/กม.) กันเวลากระโดด
+    final travel = (km * 2).round().clamp(5, 720);
+    return _clockFromMinutes(cursor + travel);
+  }
+
+  // TimeOfDay → "HH:MM" สำหรับส่ง start_time ให้ server
+  String _clockOf(TimeOfDay time) =>
+      '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+
+  // "HH:MM" → นาทีตั้งแต่เที่ยงคืน — แปลงไม่ได้ถือว่าเป็นเวลาเริ่มที่ผู้ใช้เลือก
+  int _clockToMinutes(String clock) {
+    final parts = clock.split(':');
+    final hour = int.tryParse(parts.firstOrNull ?? '');
+    final minute = int.tryParse(parts.length > 1 ? parts[1] : '');
+    if (hour == null || minute == null) {
+      return _startTime.hour * 60 + _startTime.minute;
+    }
+    return (hour.clamp(0, 23)) * 60 + minute.clamp(0, 59);
+  }
+
+  // นาทีตั้งแต่เที่ยงคืน → "HH:MM" (วนรอบ 24 ชม. กันทริปข้ามวัน)
+  String _clockFromMinutes(int totalMinutes) {
+    final wrapped = totalMinutes % 1440;
+    final hour = wrapped ~/ 60;
+    final minute = wrapped % 60;
+    return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+  }
+
+  // จุด 4: เตือนทันทีเมื่อเลือกสถานที่ไกล (place-first ก่อนกดสร้างแผน)
+  // ใช้ Haversine + ความเร็วคร่าว ๆ ต่อพาหนะหลักที่เลือก — เตือนเมื่อขาเดียว
+  // กินเวลากว่าครึ่งหนึ่งของกรอบวัน (~5 ชม.) หรือไกลเกิน ~200 กม.
+  String? _feasibilityWarning() {
+    final start = _startPoint;
+    if (start == null || _mustVisit.isEmpty) return null;
+    final from = start;
+    double farthestKm = 0;
+    for (final place in _mustVisit) {
+      final km = const Distance().as(
+        LengthUnit.Kilometer,
+        from,
+        LatLng(place.latitude, place.longitude),
+      );
+      if (km > farthestKm) farthestKm = km;
+    }
+    if (farthestKm <= 0) return null;
+    final mode = _modes.firstOrNull ?? 'car';
+    final hours = _roughTravelHours(farthestKm, mode);
+    if (hours <= 5 && farthestKm <= 200) return null;
+    if (_autoDays) {
+      // โหมดอัตโนมัติจัดวันเพิ่มให้อยู่แล้ว — เตือนเฉพาะกรณีไกลมากจริง ๆ
+      if (hours <= 8) return null;
+      return context.l10n.farPlaceWarning(
+        farthestKm.round(),
+        hours.toStringAsFixed(1),
+        _modeLabel(mode),
+      );
+    }
+    // โหมดกำหนดวันเอง — เทียบวันคร่าว ๆ จากระยะ (ทุก ~200 กม. ควรมีวันเพิ่ม)
+    final roughRecommended = (farthestKm / 200).ceil().clamp(1, 7);
+    if (_days >= roughRecommended) {
+      return context.l10n.farPlaceWarning(
+        farthestKm.round(),
+        hours.toStringAsFixed(1),
+        _modeLabel(mode),
+      );
+    }
+    return context.l10n.tightDaysWarning(
+      _days,
+      roughRecommended,
+      farthestKm.round(),
+    );
+  }
+
+  // ประมาณชั่วโมงเดินทางขาเดียวจากระยะทาง — heuristic ฝั่ง client สำหรับเตือนล่วงหน้า
+  // เวลาจริง server คำนวณด้วย planScheduler (ความเร็ว + overhead + พัก) ตอนสร้างแผน
+  double _roughTravelHours(double km, String mode) {
+    final speed = switch (mode.toLowerCase()) {
+      'walking' => 5.0,
+      'bus' => 40.0,
+      'train' => 70.0,
+      'ferry' => 28.0,
+      'flight' => 550.0,
+      _ => 50.0,
+    };
+    final overhead = switch (mode.toLowerCase()) {
+      'bus' => 10 / 60,
+      'train' => 0.5,
+      'ferry' => 0.5,
+      'flight' => 2.0,
+      _ => 0.0,
+    };
+    return km / speed + overhead;
   }
 
   // normalize ชื่อสถานที่เพื่อใช้เทียบ (ตัด space, ลowercase ทั้งหมด)
@@ -762,6 +981,7 @@ class _PlanScreenState extends State<PlanScreen> {
   }
 
   // ลากสลับลำดับจุดแวะในวันที่เลือก (มาจาก SliverReorderableList)
+  // เวลาของแต่ละจุดจะต่อโซ่ใหม่ให้ตรงลำดับใหม่ทันที — ไม่ต้องรอ server
   void _reorderStops(int oldIndex, int newIndex) {
     final plan = _plan;
     if (plan == null) return;
@@ -774,7 +994,7 @@ class _PlanScreenState extends State<PlanScreen> {
     final stops = List<TravelStop>.from(day.stops);
     final stop = stops.removeAt(oldIndex);
     stops.insert(newIndex, stop);
-    _replaceSelectedDayStops(stops);
+    _replaceSelectedDayStops(_rechainDay(stops));
   }
 
   // แจ้งเตือนสั้น ๆ ผ่าน SnackBar — ใช้ State.context (Scaffold) เสมอ
@@ -833,7 +1053,7 @@ class _PlanScreenState extends State<PlanScreen> {
 
     _replaceSelectedDayStops([
       ...day.stops,
-      _mustVisitStop(place, day.stops.length),
+      _mustVisitStop(place, day.stops),
     ]);
     return true;
   }
@@ -915,10 +1135,14 @@ class _PlanScreenState extends State<PlanScreen> {
         budgetBreakdown: newBreakdown,
         days: days,
         tips: plan.tips,
+        warnings: plan.warnings,
       );
     } else {
       // ลบ/สลับลำดับ → ประมาณใหม่เฉพาะขาที่เปลี่ยน ที่เหลือคงค่า AI เดิม
-      recalculatedStops = _recalculatedStopsPreservingCosts(oldStops, stops);
+      // แล้วต่อโซ่เวลาใหม่ทั้งวันให้ตรงลำดับปัจจุบัน (จุดแรกยึดเวลาเดิมไว้)
+      recalculatedStops = _rechainDay(
+        _recalculatedStopsPreservingCosts(oldStops, stops),
+      );
       final days = [
         for (var index = 0; index < plan.days.length; index++)
           TravelDay(
@@ -942,16 +1166,42 @@ class _PlanScreenState extends State<PlanScreen> {
 
   /// บันทึกการแก้ไขสถานที่ (ลบ/เพิ่ม/สลับลำดับ) กลับลง server
   /// เพื่อให้เปิดแผนเดิมจาก Profile ได้ตรงกับที่ผู้ใช้แก้ไขล่าสุด
+  ///
+  /// จุด 6: server เดินโซ่เวลาใหม่แบบคงลำดับเดิม (chainAllDaysPreservingOrder)
+  /// แล้วคืน warnings — ถ้าส่งเวลากลับมาจะ sync เข้า state ให้ตรงกันทันที
+  /// ส่ง start_time เสริมด้วยเพื่อให้โซ่เวลาของวันเริ่มจากเวลาที่ผู้ใช้เลือกเหมือนตอนสร้าง
   Future<void> _savePlanChanges(TravelPlan plan) async {
     if (plan.tripId <= 0) return;
     final result = await AppServices.trips.updateTravelPlan(
       plan.tripId,
-      plan.toJson(),
+      {...plan.toJson(), 'start_time': _clockOf(_startTime)},
     );
-    if (!mounted || result['success'] == true) return;
+    if (!mounted) return;
+    if (result['success'] == true) {
+      final warnings =
+          ((result['warnings'] as List?) ?? const []).map((e) => '$e').toList();
+      if (warnings.isNotEmpty &&
+          !_sameStringList(warnings, _plan?.warnings ?? const [])) {
+        setState(() {
+          _plan = _plan?.copyWith(warnings: warnings);
+        });
+        _showPlanSnack(warnings.first);
+      }
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('${result['message'] ?? 'บันทึกแผนไม่สำเร็จ'}')),
     );
+  }
+
+  // เทียบ list คำเตือนแบบไม่สนลำดับ — กัน SnackBar เด้งซ้ำทั้งที่ warnings เท่าเดิม
+  bool _sameStringList(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    final rest = List<String>.from(b);
+    for (final item in a) {
+      if (!rest.remove(item)) return false;
+    }
+    return true;
   }
 
   // เปลี่ยนชื่อแผนเที่ยวจากหัวข้อหน้าผลลัพธ์ — PATCH /trips/:id
@@ -978,6 +1228,7 @@ class _PlanScreenState extends State<PlanScreen> {
           budgetBreakdown: plan.budgetBreakdown,
           days: plan.days,
           tips: plan.tips,
+          warnings: plan.warnings,
         );
       });
       _showPlanSnack(context.l10n.planRenamed);
@@ -1037,7 +1288,7 @@ class _PlanScreenState extends State<PlanScreen> {
     );
     final saveResult = await AppServices.trips.updateTravelPlan(
       plan.tripId,
-      restored.toJson(),
+      {...restored.toJson(), 'start_time': _clockOf(_startTime)},
     );
     if (!mounted) return;
     if (saveResult['success'] != true) {

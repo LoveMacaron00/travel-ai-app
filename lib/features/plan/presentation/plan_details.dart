@@ -116,8 +116,9 @@ extension _PlanDetailsView on _PlanScreenState {
                     ),
                   ],
                   const SizedBox(height: 4),
+                  // โซ่เวลาเดียวกับการ์ด: ถึง → เที่ยว → ออก (+ เวลาเดินทางขาเข้า)
                   Text(
-                    '${stop.arrivalTime} · ${stop.durationMinutes} ${context.l10n.minutesShort} · ${_modeLabel(stop.transportMode)}',
+                    _stopChainLabel(stop, number),
                     style: const TextStyle(color: Colors.black54),
                   ),
                   const SizedBox(height: 12),
