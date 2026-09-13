@@ -427,7 +427,6 @@ class ProfileScreenState extends State<ProfileScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
         elevation: 1,
         shadowColor: Colors.black.withValues(alpha: 0.08),
