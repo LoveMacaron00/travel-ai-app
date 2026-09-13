@@ -3,7 +3,8 @@ part of 'plan_screen.dart';
 // Bottom sheet รายละเอียดสถานที่และกติกาแสดงค่าเข้าชม
 extension _PlanDetailsView on _PlanScreenState {
   void _showStopDetails(TravelStop stop, int number) {
-    final destinationId = int.tryParse(stop.destinationId);
+    // จุดแวะพัก OSM ไม่มี destination detail ใน DB — ใช้ข้อมูลในตัว stop เลย ไม่ยิง API
+    final destinationId = stop.isRestStop ? null : int.tryParse(stop.destinationId);
     final detailFuture = destinationId == null
         ? null
         : _loadStopDetails(destinationId);
@@ -358,6 +359,51 @@ extension _PlanDetailsView on _PlanScreenState {
   );
 
   Widget _buildPlanStopMarker(TravelStop stop, int number) {
+    // จุดแวะพัก OSM ใช้หมุดเล็กสีฟ้าแยกจากหมุดทองของสถานที่ท่องเที่ยว
+    if (stop.isRestStop) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: const Color(0xff2d7dd2),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Icon(_restStopIcon(stop.restType), color: Colors.white, size: 18),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            constraints: const BoxConstraints(maxWidth: 128),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xffe8f1fb),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xff2d7dd2)),
+            ),
+            child: Text(
+              stop.place,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: Color(0xff1f5f9f),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -421,4 +467,16 @@ extension _PlanDetailsView on _PlanScreenState {
       ],
     );
   }
+
+  /// ไอคอนหมุดตามประเภทจุดแวะพัก OSM
+  IconData _restStopIcon(String restType) => switch (restType.toLowerCase()) {
+    'fuel' => Icons.local_gas_station,
+    'cafe' => Icons.local_cafe,
+    'restaurant' => Icons.restaurant,
+    'hotel' => Icons.hotel,
+    'parking' => Icons.local_parking,
+    'toilets' => Icons.wc,
+    'rest_area' => Icons.landscape,
+    _ => Icons.store,
+  };
 }

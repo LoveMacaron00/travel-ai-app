@@ -16,6 +16,11 @@ class TravelStop {
   final String tip;
   final List<TravelSegment> segments;
 
+  /// จุดแวะพักระหว่างทางจาก OpenStreetMap (osm:...) — ไม่ใช่ destinations ใน DB
+  /// UI ใช้แยกหมุด/ซ่อนปุ่มนำทางแบบเก็บค่าใช้จ่าย ส่วน PUT กลับ server ใช้คง flag ผ่าน toJson
+  final bool isRestStop;
+  final String restType;
+
   const TravelStop({
     required this.destinationId,
     required this.place,
@@ -32,6 +37,8 @@ class TravelStop {
     required this.transportCost,
     required this.tip,
     required this.segments,
+    this.isRestStop = false,
+    this.restType = '',
   });
 
   factory TravelStop.fromJson(Map<String, dynamic> j) => TravelStop(
@@ -53,6 +60,9 @@ class TravelStop {
         .whereType<Map>()
         .map((e) => TravelSegment.fromJson(Map<String, dynamic>.from(e)))
         .toList(),
+    isRestStop:
+        j['isRestStop'] == true || '${j['destinationId'] ?? ''}'.startsWith('osm:'),
+    restType: '${j['restType'] ?? ''}',
   );
 
   Map<String, dynamic> toJson() => {
@@ -71,6 +81,8 @@ class TravelStop {
     'transportCost': transportCost,
     'tip': tip,
     'segments': segments.map((e) => e.toJson()).toList(),
+    if (isRestStop) 'isRestStop': true,
+    if (restType.isNotEmpty) 'restType': restType,
   };
 
   TravelStop copyWith({
@@ -89,6 +101,8 @@ class TravelStop {
     double? transportCost,
     String? tip,
     List<TravelSegment>? segments,
+    bool? isRestStop,
+    String? restType,
   }) => TravelStop(
     destinationId: destinationId ?? this.destinationId,
     place: place ?? this.place,
@@ -105,6 +119,8 @@ class TravelStop {
     transportCost: transportCost ?? this.transportCost,
     tip: tip ?? this.tip,
     segments: segments ?? this.segments,
+    isRestStop: isRestStop ?? this.isRestStop,
+    restType: restType ?? this.restType,
   );
 }
 

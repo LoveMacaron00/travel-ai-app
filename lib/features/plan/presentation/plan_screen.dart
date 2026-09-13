@@ -654,9 +654,12 @@ class _PlanScreenState extends State<PlanScreen> {
   }
 
   // identity ของ stop สำหรับเทียบตอนลบ/สลับ — ใช้ id ถ้ามี ไม่มีค่อยใช้ชื่อที่ normalize
+  // จุดแวะพัก OSM เติม suffix กันชนกับ destinations ใน DB ที่ชื่อซ้ำกันพอดี
   String _stopIdentity(TravelStop stop) {
     final id = stop.destinationId.trim();
-    if (id.isNotEmpty) return 'id:$id';
+    if (id.isNotEmpty) {
+      return stop.isRestStop ? 'rest:$id' : 'id:$id';
+    }
     return 'place:${_placeKey(stop.place)}';
   }
 

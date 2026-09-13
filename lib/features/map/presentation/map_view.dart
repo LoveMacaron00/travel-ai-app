@@ -26,6 +26,14 @@ extension _MapView on MapScreenState {
                 urlTemplate: AppConfig.mapTileUrl,
                 userAgentPackageName: 'com.example.myapp',
               ),
+              // เครดิตข้อมูลแผนที่ตามข้อกำหนด ODbL ของ OpenStreetMap
+              const RichAttributionWidget(
+                attributions: [
+                  TextSourceAttribution(
+                    '© OpenStreetMap contributors',
+                  ),
+                ],
+              ),
               MarkerLayer(
                 markers: _filteredPlaces.map((place) {
                   return Marker(

@@ -679,6 +679,14 @@ extension _PlanMainView on _PlanScreenState {
                 urlTemplate: AppConfig.mapTileUrl,
                 userAgentPackageName: 'com.example.myapp',
               ),
+              // เครดิตข้อมูลแผนที่ตามข้อกำหนด ODbL ของ OpenStreetMap
+              const RichAttributionWidget(
+                attributions: [
+                  TextSourceAttribution(
+                    '© OpenStreetMap contributors',
+                  ),
+                ],
+              ),
               if (_route.isNotEmpty)
                 PolylineLayer(
                   polylines: _route
@@ -789,9 +797,16 @@ extension _PlanMainView on _PlanScreenState {
                     children: [
                       CircleAvatar(
                         radius: 15,
-                        backgroundColor: _gold,
+                        backgroundColor: stop.isRestStop
+                            ? const Color(0xff2d7dd2)
+                            : _gold,
                         foregroundColor: Colors.white,
-                        child: Text('$number'),
+                        child: Icon(
+                          stop.isRestStop
+                              ? _restStopIcon(stop.restType)
+                              : Icons.attractions,
+                          size: 16,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       ClipRRect(
@@ -800,8 +815,17 @@ extension _PlanMainView on _PlanScreenState {
                             ? Container(
                                 width: 76,
                                 height: 76,
-                                color: const Color(0xffeee7da),
-                                child: const Icon(Icons.landscape),
+                                color: stop.isRestStop
+                                    ? const Color(0xffe8f1fb)
+                                    : const Color(0xffeee7da),
+                                child: Icon(
+                                  stop.isRestStop
+                                      ? _restStopIcon(stop.restType)
+                                      : Icons.landscape,
+                                  color: stop.isRestStop
+                                      ? const Color(0xff2d7dd2)
+                                      : null,
+                                ),
                               )
                             : mediaNetworkImage(
                                 AppServices.media.fullUrl(stop.imageUrl),
