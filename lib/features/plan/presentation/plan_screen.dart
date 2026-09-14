@@ -17,6 +17,8 @@ import 'package:myapp/core/widgets/media_image.dart';
 import 'package:myapp/features/plan/widgets/plan_day_selector.dart';
 import 'package:myapp/features/plan/widgets/province_selector.dart';
 import 'package:myapp/features/map/presentation/map_picker_screen.dart';
+import 'package:myapp/core/utils/place_category.dart';
+import 'package:myapp/core/widgets/place_category_chips.dart';
 
 part 'plan_view.dart';
 part 'plan_details.dart';

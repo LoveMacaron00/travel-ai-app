@@ -141,15 +141,16 @@ extension _MapView on MapScreenState {
                   ),
                 ),
 
-                // หมวดหมู่
+                // หมวดหมู่ — รายการ+ป้าย/สี/ไอคอนจาก helper กลางชุดเดียวกับ
+                // place picker + ดูสถานที่ทั้งหมด (place_category.dart)
                 const SizedBox(height: 10),
                 SizedBox(
                   height: 36,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    itemCount: _categories.length,
+                    itemCount: placeCategoryFilters.length,
                     itemBuilder: (context, index) {
-                      final catId = _categories[index];
+                      final catId = placeCategoryFilters[index];
                       final isSelected = _selectedCategory == catId;
                       return Padding(
                         padding: const EdgeInsets.only(right: 8.0),

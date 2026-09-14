@@ -3,6 +3,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/features/destinations/presentation/destination_detail_screen.dart';
 import 'package:myapp/core/di/app_services.dart';
+import 'package:myapp/core/utils/place_category.dart';
+import 'package:myapp/core/widgets/place_category_chips.dart';
 import 'package:myapp/features/map/data/location_service.dart';
 import 'package:myapp/core/widgets/media_image.dart';
 
@@ -20,6 +22,7 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
   late String _loadedLanguage;
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
+  String _selectedCategory = 'all';
   LatLng? _position;
 
   @override
@@ -135,6 +138,15 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
               ),
             ),
           ),
+          // กรองหมวดหมู่ — ชุดเดียวกับแผนที่ + ตัวเลือกสถานที่ในแผน
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: PlaceCategoryChips(
+              selected: _selectedCategory,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              onSelected: (key) => setState(() => _selectedCategory = key),
+            ),
+          ),
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
               future: _destinationsFuture,
@@ -160,12 +172,17 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
                   );
                 }
                 final matches =
-                    destinations.where(_matchesSearch).toList()
+                    destinations
+                        .where(_matchesCategory)
+                        .where(_matchesSearch)
+                        .toList()
                       ..sort((a, b) => _distanceKm(a).compareTo(_distanceKm(b)));
                 if (matches.isEmpty) {
                   return _message(
                     icon: Icons.search_off_rounded,
-                    title: l10n.noPlacesFound(_query),
+                    title: _query.isEmpty
+                        ? l10n.noResults
+                        : l10n.noPlacesFound(_query),
                   );
                 }
                 return RefreshIndicator(
@@ -186,6 +203,14 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
       ),
     );
   }
+
+  // กรองหมวดหมู่ก่อนค้นหาข้อความ — alias เดียวกับแผนที่
+  // (accommodation ควบ hotel, '' ถือเป็น other)
+  bool _matchesCategory(Map<String, dynamic> destination) =>
+      matchesPlaceCategory(
+        normalizePlaceCategory('${destination['category'] ?? ''}'),
+        _selectedCategory,
+      );
 
   bool _matchesSearch(Map<String, dynamic> destination) {
     if (_query.isEmpty) return true;

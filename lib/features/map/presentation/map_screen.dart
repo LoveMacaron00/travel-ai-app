@@ -12,6 +12,7 @@ import 'package:myapp/features/plan/presentation/plan_navigation_screen.dart';
 import 'package:myapp/core/di/app_services.dart';
 import 'package:myapp/features/map/data/location_service.dart';
 import 'package:myapp/core/widgets/media_image.dart';
+import 'package:myapp/core/utils/place_category.dart';
 
 part 'map_view.dart';
 
@@ -53,14 +54,6 @@ class MapScreenState extends State<MapScreen> {
   late String _loadedLanguage;
 
   String _selectedCategory = 'all';
-  final List<String> _categories = [
-    'all',
-    'attraction',
-    'accommodation',
-    'restaurant',
-    'shop',
-    'other',
-  ];
 
   @override
   void initState() {
@@ -226,23 +219,11 @@ class MapScreenState extends State<MapScreen> {
   void _applyFilters() {
     if (!mounted) return;
     // sync เขียนที่พักเป็น category='hotel' ส่วน admin เพิ่มเองใช้ 'accommodation'
-    // (alias เดียวกับ admin filter + overnight lookup) — จับทั้งสองค่าเสมอ
-    final selected = _selectedCategory.toLowerCase();
-    final byCategory = selected == 'all'
-        ? List<PlaceMarker>.from(_places)
-        : _places.where((p) {
-            final c = p.category.toLowerCase();
-            if (selected == 'accommodation') {
-              return c == 'accommodation' || c == 'hotel';
-            }
-            if (selected == 'other') {
-              return c == 'other' ||
-                  c == 'service' ||
-                  c == 'activity' ||
-                  c == 'general';
-            }
-            return c == selected;
-          }).toList();
+    // — จับทั้งสองค่าผ่าน matchesPlaceCategory (ใช้ร่วมกับ place picker +
+    // ดูสถานที่ทั้งหมด) กัน alias หลุดไม่ตรงกัน
+    final byCategory = _places
+        .where((p) => matchesPlaceCategory(p.category, _selectedCategory))
+        .toList();
     final query = _searchController.text.trim().toLowerCase();
     List<PlaceMarker> newSuggestions = [];
     bool show = false;
@@ -530,65 +511,16 @@ class MapScreenState extends State<MapScreen> {
 
   void _resetRotation() => _mapController.rotate(0.0);
 
-  String _getCategoryLabel(String category) {
-    switch (category.toLowerCase()) {
-      case 'all':
-        return context.l10n.categoryAll;
-      case 'attraction':
-        return context.l10n.categoryAttraction;
-      case 'accommodation':
-      case 'hotel':
-        return context.l10n.categoryAccommodation;
-      case 'restaurant':
-        return context.l10n.categoryRestaurant;
-      case 'shop':
-        return context.l10n.categoryShop;
-      case 'other':
-        return context.l10n.categoryOther;
-      default:
-        return category;
-    }
-  }
+  // ป้าย/สี/ไอคอนหมวดหมู่ — ใช้ helper กลางร่วมกับ place picker +
+  // ดูสถานที่ทั้งหมด (map_view เรียกผ่าน wrapper นี้)
+  String _getCategoryLabel(String category) =>
+      placeCategoryLabel(context.l10n, normalizePlaceCategory(category));
 
-  Color _getCategoryColor(String category) {
-    switch (category.toLowerCase()) {
-      case 'all':
-        return Colors.grey.shade700;
-      case 'attraction':
-        return Colors.redAccent;
-      case 'accommodation':
-      case 'hotel':
-        return Colors.blueAccent;
-      case 'restaurant':
-        return Colors.orange;
-      case 'shop':
-        return Colors.green;
-      case 'other':
-        return Colors.purple;
-      default:
-        return Colors.grey;
-    }
-  }
+  Color _getCategoryColor(String category) =>
+      placeCategoryColor(normalizePlaceCategory(category));
 
-  IconData _getCategoryIcon(String category) {
-    switch (category.toLowerCase()) {
-      case 'all':
-        return Icons.apps;
-      case 'attraction':
-        return Icons.attractions;
-      case 'accommodation':
-      case 'hotel':
-        return Icons.hotel;
-      case 'restaurant':
-        return Icons.restaurant;
-      case 'shop':
-        return Icons.shopping_bag;
-      case 'other':
-        return Icons.category;
-      default:
-        return Icons.place;
-    }
-  }
+  IconData _getCategoryIcon(String category) =>
+      placeCategoryIcon(normalizePlaceCategory(category));
 
   String _distanceText(PlaceMarker place) {
     final pos = _currentPosition;

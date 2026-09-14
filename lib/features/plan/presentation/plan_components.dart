@@ -408,6 +408,7 @@ extension _PlanComponents on _PlanScreenState {
     }
 
     String query = '';
+    String selectedCategory = 'all';
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -421,9 +422,10 @@ extension _PlanComponents on _PlanScreenState {
             final matches = _places
                 .where(
                   (p) =>
-                      query.isEmpty ||
-                      p.title.toLowerCase().contains(queryLower) ||
-                      p.province.toLowerCase().contains(queryLower),
+                      matchesPlaceCategory(p.category, selectedCategory) &&
+                      (query.isEmpty ||
+                          p.title.toLowerCase().contains(queryLower) ||
+                          p.province.toLowerCase().contains(queryLower)),
                 )
                 .toList();
             if (origin != null) {
@@ -461,7 +463,7 @@ extension _PlanComponents on _PlanScreenState {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                     child: TextField(
                       onChanged: (v) => setSheet(() => query = v),
                       decoration: _inputDecoration(
@@ -470,6 +472,13 @@ extension _PlanComponents on _PlanScreenState {
                       ),
                     ),
                   ),
+                  // กรองหมวดหมู่ — ชุดเดียวกับแผนที่ + ดูสถานที่ทั้งหมด
+                  PlaceCategoryChips(
+                    selected: selectedCategory,
+                    onSelected: (key) =>
+                        setSheet(() => selectedCategory = key),
+                  ),
+                  const SizedBox(height: 8),
                   Expanded(
                     child: filtered.isEmpty
                         ? ListView(
