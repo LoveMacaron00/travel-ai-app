@@ -805,6 +805,38 @@ class AppLocalizationsTh extends AppLocalizations {
   String get removeFromPlan => 'นำออกจากแผน';
 
   @override
+  String get addDay => 'เพิ่มวัน';
+
+  @override
+  String dayAdded(int day) {
+    return 'เพิ่มวันที่ $day แล้ว';
+  }
+
+  @override
+  String dayRemoved(int day) {
+    return 'ลบวันที่ $day แล้ว';
+  }
+
+  @override
+  String get removeDay => 'ลบวันนี้';
+
+  @override
+  String removeDayConfirmation(int day, int count) {
+    return 'ลบวันที่ $day และสถานที่ $count แห่งใช่ไหม? วันที่เหลือจะถูกเรียงเลขใหม่';
+  }
+
+  @override
+  String get removeDayDisabled =>
+      'ต้องเหลืออย่างน้อย 1 วัน — เพิ่มสถานที่หรือรีเซ็ตแผนแทน';
+
+  @override
+  String get maxDaysReached => 'แผนจำกัดสูงสุด 7 วัน';
+
+  @override
+  String get emptyDayHint =>
+      'วันนี้ยังว่างอยู่ — เพิ่มสถานที่ด้วยปุ่มด้านล่างได้เลย';
+
+  @override
   String get estimatedTripCost => 'ค่าใช้จ่ายทริปโดยประมาณ';
 
   @override

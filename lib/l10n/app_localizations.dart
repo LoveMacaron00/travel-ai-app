@@ -1586,6 +1586,54 @@ abstract class AppLocalizations {
   /// **'Remove from plan'**
   String get removeFromPlan;
 
+  /// No description provided for @addDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Add day'**
+  String get addDay;
+
+  /// No description provided for @dayAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day} added'**
+  String dayAdded(int day);
+
+  /// No description provided for @dayRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day} removed'**
+  String dayRemoved(int day);
+
+  /// No description provided for @removeDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this day'**
+  String get removeDay;
+
+  /// No description provided for @removeDayConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Day {day} and its {count} places? The other days will be renumbered.'**
+  String removeDayConfirmation(int day, int count);
+
+  /// No description provided for @removeDayDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'You need at least 1 day — add more places or reset the plan instead'**
+  String get removeDayDisabled;
+
+  /// No description provided for @maxDaysReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Plans are limited to 7 days'**
+  String get maxDaysReached;
+
+  /// No description provided for @emptyDayHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This day is empty — add places with the button below'**
+  String get emptyDayHint;
+
   /// No description provided for @estimatedTripCost.
   ///
   /// In en, this message translates to:

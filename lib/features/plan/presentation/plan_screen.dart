@@ -1096,6 +1096,102 @@ class _PlanScreenState extends State<PlanScreen> {
     _replaceSelectedDayStops(_rechainDay(stops));
   }
 
+  // เพิ่มวันเปล่าต่อท้ายแผน (สูงสุด 7 วันตาม limit ฝั่ง server)
+  // วันใหม่เริ่มว่าง — user เติมสถานที่ด้วยปุ่มเพิ่มสถานที่ของวันนั้น
+  // เลขวันเรียงใหม่ 1..N ให้ตรงกับที่ server คาดหวัง แล้ว save กลับทันที
+  void _addPlanDay() {
+    final plan = _plan;
+    if (plan == null || plan.tripId <= 0) return;
+    if (plan.days.length >= 7) {
+      _showPlanSnack(context.l10n.maxDaysReached);
+      return;
+    }
+    final days = [
+      for (final day in plan.days)
+        TravelDay(
+          day: day.day,
+          theme: day.theme,
+          stops: List<TravelStop>.from(day.stops),
+        ),
+      TravelDay(day: plan.days.length + 1, theme: '', stops: <TravelStop>[]),
+    ];
+    final updated = plan.copyWith(days: _renumberPlanDays(days));
+    setState(() {
+      _plan = updated;
+      _selectedDayIndex = updated.days.length - 1;
+      _route = [];
+    });
+    _showPlanSnack(context.l10n.dayAdded(updated.days.length));
+    unawaited(_savePlanChanges(updated));
+    unawaited(_buildRoute(updated));
+  }
+
+  // ลบวันที่เลือกอยู่หลัง user ยืนยัน — เหลือวันเดียวลบไม่ได้ (server ต้องการ ≥1 วัน)
+  // สถานที่ในวันที่ลบจะหายไปด้วย (budget ปรับแบบ delta เหมือนลบจุดทีละจุด)
+  Future<void> _confirmRemovePlanDay(TravelPlan plan) async {
+    final index = _selectedDayIndex.clamp(0, plan.days.length - 1);
+    if (plan.days.length <= 1) {
+      _showPlanSnack(context.l10n.removeDayDisabled);
+      return;
+    }
+    final day = plan.days[index];
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.removeDay),
+        content: Text(
+          dialogContext.l10n.removeDayConfirmation(day.day, day.stops.length),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(dialogContext.l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(dialogContext.l10n.removeDay),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    final current = _plan;
+    if (current == null) return;
+    final safeIndex = _selectedDayIndex.clamp(0, current.days.length - 1);
+    final days = [
+      for (var i = 0; i < current.days.length; i++)
+        if (i != safeIndex)
+          TravelDay(
+            day: current.days[i].day,
+            theme: current.days[i].theme,
+            stops: List<TravelStop>.from(current.days[i].stops),
+          ),
+    ];
+    final updated = _withDeltaBudget(
+      current,
+      _renumberPlanDays(days),
+    );
+    setState(() {
+      _plan = updated;
+      _selectedDayIndex = _selectedDayIndex.clamp(0, updated.days.length - 1);
+      _route = [];
+    });
+    _showPlanSnack(context.l10n.dayRemoved(day.day));
+    unawaited(_savePlanChanges(updated));
+    unawaited(_buildRoute(updated));
+  }
+
+  // เรียงเลขวันใหม่ 1..N หลังเพิ่ม/ลบวัน — กันเลขกระโดดที่ server ไม่คาดหวัง
+  List<TravelDay> _renumberPlanDays(List<TravelDay> days) {
+    final renumbered = <TravelDay>[];
+    for (var i = 0; i < days.length; i++) {
+      renumbered.add(
+        TravelDay(day: i + 1, theme: days[i].theme, stops: days[i].stops),
+      );
+    }
+    return renumbered;
+  }
+
   // แจ้งเตือนสั้น ๆ ผ่าน SnackBar — ใช้ State.context (Scaffold) เสมอ
   // เพื่อให้เรียกหลัง Navigator.pop(sheet) ได้โดยไม่พัง
   void _showPlanSnack(String message) {

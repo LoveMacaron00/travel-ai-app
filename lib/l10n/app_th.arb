@@ -322,6 +322,26 @@
   "day": "วันที่",
   "addAnotherPlace": "เพิ่มสถานที่อีกแห่ง",
   "removeFromPlan": "นำออกจากแผน",
+  "addDay": "เพิ่มวัน",
+  "dayAdded": "เพิ่มวันที่ {day} แล้ว",
+  "@dayAdded": {
+    "placeholders": {"day": {"type": "int"}}
+  },
+  "dayRemoved": "ลบวันที่ {day} แล้ว",
+  "@dayRemoved": {
+    "placeholders": {"day": {"type": "int"}}
+  },
+  "removeDay": "ลบวันนี้",
+  "removeDayConfirmation": "ลบวันที่ {day} และสถานที่ {count} แห่งใช่ไหม? วันที่เหลือจะถูกเรียงเลขใหม่",
+  "@removeDayConfirmation": {
+    "placeholders": {
+      "day": {"type": "int"},
+      "count": {"type": "int"}
+    }
+  },
+  "removeDayDisabled": "ต้องเหลืออย่างน้อย 1 วัน — เพิ่มสถานที่หรือรีเซ็ตแผนแทน",
+  "maxDaysReached": "แผนจำกัดสูงสุด 7 วัน",
+  "emptyDayHint": "วันนี้ยังว่างอยู่ — เพิ่มสถานที่ด้วยปุ่มด้านล่างได้เลย",
   "estimatedTripCost": "ค่าใช้จ่ายทริปโดยประมาณ",
   "estimateDisclaimer": "ราคาอาจเปลี่ยนตามจำนวนที่ว่าง ฤดูกาล และการจราจร",
   "currentGpsLocation": "ตำแหน่ง GPS ปัจจุบัน",

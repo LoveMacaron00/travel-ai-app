@@ -411,6 +411,9 @@ extension _PlanMainView on _PlanScreenState {
                         ),
                         dayLabel: context.l10n.day,
                         onSelected: _selectDay,
+                        onAddDay: _addPlanDay,
+                        onRemoveDay: () => _confirmRemovePlanDay(plan),
+                        canRemoveDay: plan.days.length > 1,
                       ),
                     ),
                   ),
@@ -546,6 +549,25 @@ extension _PlanMainView on _PlanScreenState {
                       ),
                     ),
                   ),
+                  if (selectedDay.stops.isEmpty)
+                    SliverToBoxAdapter(
+                      child: Container(
+                        margin: const EdgeInsets.fromLTRB(16, 5, 16, 7),
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: const Color(0xffeadcc2),
+                          ),
+                        ),
+                        child: Text(
+                          context.l10n.emptyDayHint,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.black45),
+                        ),
+                      ),
+                    ),
                   SliverReorderableList(
                     itemCount: selectedDay.stops.length,
                     onReorder: _reorderStops,

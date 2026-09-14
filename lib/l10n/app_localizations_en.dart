@@ -818,6 +818,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeFromPlan => 'Remove from plan';
 
   @override
+  String get addDay => 'Add day';
+
+  @override
+  String dayAdded(int day) {
+    return 'Day $day added';
+  }
+
+  @override
+  String dayRemoved(int day) {
+    return 'Day $day removed';
+  }
+
+  @override
+  String get removeDay => 'Remove this day';
+
+  @override
+  String removeDayConfirmation(int day, int count) {
+    return 'Remove Day $day and its $count places? The other days will be renumbered.';
+  }
+
+  @override
+  String get removeDayDisabled =>
+      'You need at least 1 day — add more places or reset the plan instead';
+
+  @override
+  String get maxDaysReached => 'Plans are limited to 7 days';
+
+  @override
+  String get emptyDayHint =>
+      'This day is empty — add places with the button below';
+
+  @override
   String get estimatedTripCost => 'Estimated trip cost';
 
   @override
