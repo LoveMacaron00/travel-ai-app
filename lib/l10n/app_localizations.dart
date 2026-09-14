@@ -1931,7 +1931,7 @@ abstract class AppLocalizations {
   /// No description provided for @planNameOptional.
   ///
   /// In en, this message translates to:
-  /// **'Optional — shown in your saved plans'**
+  /// **'Optional'**
   String get planNameOptional;
 
   /// No description provided for @renamePlan.

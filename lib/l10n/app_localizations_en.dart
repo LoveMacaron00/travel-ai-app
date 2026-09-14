@@ -1010,7 +1010,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planNameHint => 'e.g. Weekend in Chiang Mai';
 
   @override
-  String get planNameOptional => 'Optional — shown in your saved plans';
+  String get planNameOptional => 'Optional';
 
   @override
   String get renamePlan => 'Rename plan';

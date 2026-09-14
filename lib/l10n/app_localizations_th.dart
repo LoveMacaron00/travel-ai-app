@@ -997,7 +997,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get planNameHint => 'เช่น เที่ยวเชียงใหม่สุดสัปดาห์';
 
   @override
-  String get planNameOptional => 'ไม่บังคับ — แสดงในแผนที่บันทึกไว้';
+  String get planNameOptional => 'ไม่บังคับ';
 
   @override
   String get renamePlan => 'เปลี่ยนชื่อแผน';

@@ -406,7 +406,7 @@
   "deletePlanConfirmation": "คุณแน่ใจหรือไม่ว่าต้องการลบแผนที่บันทึกไว้นี้?",
   "planNameLabel": "ชื่อแผน",
   "planNameHint": "เช่น เที่ยวเชียงใหม่สุดสัปดาห์",
-  "planNameOptional": "ไม่บังคับ — แสดงในแผนที่บันทึกไว้",
+  "planNameOptional": "ไม่บังคับ",
   "renamePlan": "เปลี่ยนชื่อแผน",
   "planRenamed": "เปลี่ยนชื่อแผนแล้ว",
   "planNameEmpty": "กรุณาตั้งชื่อแผน",
