@@ -203,22 +203,18 @@ extension _MapView on MapScreenState {
                 ),
 
                 // รายการคำแนะนำแบบเลื่อนลง
+                // ใช้ Material (แทน Container+ClipRRect) เป็นพื้นหลัง —
+                // ListTile วาด ink splash บน Material ancestor ที่ใกล้สุด
+                // ถ้าใช้ Container สีขาวครอบ splash จะโดนบังแล้ว framework ฟ้อง
                 if (_showSuggestions)
-                  Container(
-                    margin: const EdgeInsets.only(top: 4.0),
-                    decoration: BoxDecoration(
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Material(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16.0),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 10.0,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16.0),
+                      elevation: 4,
+                      shadowColor: Colors.black26,
+                      clipBehavior: Clip.antiAlias,
                       child: ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
