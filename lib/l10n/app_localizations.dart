@@ -974,6 +974,42 @@ abstract class AppLocalizations {
   /// **'See on arrival'**
   String get seeOnArrival;
 
+  /// No description provided for @roomPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Room price'**
+  String get roomPrice;
+
+  /// No description provided for @roomPricePerNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Room price/night'**
+  String get roomPricePerNight;
+
+  /// No description provided for @hotelStar.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}-star'**
+  String hotelStar(String count);
+
+  /// No description provided for @checkIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in'**
+  String get checkIn;
+
+  /// No description provided for @checkOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-out'**
+  String get checkOut;
+
+  /// No description provided for @roomCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} rooms'**
+  String roomCount(String count);
+
   /// No description provided for @openingHours.
   ///
   /// In en, this message translates to:

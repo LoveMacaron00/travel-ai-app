@@ -126,6 +126,50 @@ String _formatOpeningTimeRange(String open, String close) => [
   close,
 ].where((time) => time.isNotEmpty && time != '00:00').join(' – ');
 
+String _moneyText(Object? value) {
+  final parsed = double.tryParse('$value');
+  if (parsed == null) return '$value';
+  final rounded = parsed.round();
+  return rounded
+      .toString()
+      .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',');
+}
+
+/// เลือกราคาที่พัก (ต่อคืน) จาก admission fee ที่ sync พับ TAT minPrice/maxPrice
+/// ลง roomMinPrice/roomMaxPrice — คืนข้อความช่วงราคา หรือค่าว่างเมื่อไม่มี
+String resolveRoomPriceText(Map<dynamic, dynamic> fee) {
+  final min = fee['roomMinPrice'] ?? fee['room_min_price'];
+  final max = fee['roomMaxPrice'] ?? fee['room_max_price'];
+  final minText = min == null || '$min'.isEmpty ? '' : _moneyText(min);
+  final maxText = max == null || '$max'.isEmpty ? '' : _moneyText(max);
+  if (minText.isNotEmpty && maxText.isNotEmpty && minText != maxText) {
+    return '฿$minText – ฿$maxText';
+  }
+  final single = minText.isNotEmpty ? minText : maxText;
+  return single.isEmpty ? '' : '฿$single';
+}
+
+/// เช็คว่า detail นี้เป็นหมวดที่พักจาก category หรือคีย์ราคาห้องใน admission fee
+bool isLodgingDetail(Map<String, dynamic> detail) {
+  final category = '${detail['category'] ?? ''}'.toLowerCase();
+  if (category == 'hotel' || category == 'accommodation') return true;
+  final fee = detail['admission_fee'];
+  if (fee is! Map) return false;
+  for (final key in const [
+    'roomMinPrice',
+    'room_min_price',
+    'roomMaxPrice',
+    'room_max_price',
+    'hotelStar',
+    'hotel_star',
+  ]) {
+    if (fee[key] != null && '${fee[key]}'.isNotEmpty) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /// เลือกค่า admission fee ตามลำดับความน่าเชื่อถือ:
 /// ค่าที่แอดมินบันทึก > TAT information.fee > TAT fee แบบเก่า
 Map<dynamic, dynamic>? resolveAdmissionFee(Map<String, dynamic> detail) {

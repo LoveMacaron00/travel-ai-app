@@ -191,6 +191,18 @@
   "checkBeforeVisiting": "Check before visiting",
   "admission": "Admission",
   "seeOnArrival": "See on arrival",
+  "roomPrice": "Room price",
+  "roomPricePerNight": "Room price/night",
+  "hotelStar": "{count}-star",
+  "@hotelStar": {
+    "placeholders": {"count": {"type": "String"}}
+  },
+  "checkIn": "Check-in",
+  "checkOut": "Check-out",
+  "roomCount": "{count} rooms",
+  "@roomCount": {
+    "placeholders": {"count": {"type": "String"}}
+  },
   "openingHours": "Opening hours",
   "admissionFee": "Admission fee",
   "aboutThisPlace": "About this place",

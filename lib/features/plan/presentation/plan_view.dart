@@ -974,7 +974,9 @@ extension _PlanMainView on _PlanScreenState {
                   Row(
                     children: [
                       _price(
-                        Icons.confirmation_number_outlined,
+                        stop.isOvernight
+                            ? Icons.hotel_outlined
+                            : Icons.confirmation_number_outlined,
                         stop.entryCost,
                       ),
                       const SizedBox(width: 8),

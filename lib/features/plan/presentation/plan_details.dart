@@ -168,8 +168,12 @@ extension _PlanDetailsView on _PlanScreenState {
                   ),
                   const SizedBox(height: 10),
                   _detailCostRow(
-                    Icons.confirmation_number_outlined,
-                    context.l10n.admission,
+                    stop.isOvernight
+                        ? Icons.hotel_outlined
+                        : Icons.confirmation_number_outlined,
+                    stop.isOvernight
+                        ? context.l10n.roomPricePerNight
+                        : context.l10n.admission,
                     stop.entryCost,
                   ),
                   if (admissionDetails.isNotEmpty)
@@ -184,7 +188,9 @@ extension _PlanDetailsView on _PlanScreenState {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            context.l10n.admissionDetailsTat,
+                            stop.isOvernight
+                                ? context.l10n.roomPricePerNight
+                                : context.l10n.admissionDetailsTat,
                             style: const TextStyle(
                               color: Color(0xff876100),
                               fontSize: 12,
@@ -304,6 +310,20 @@ extension _PlanDetailsView on _PlanScreenState {
 
   List<String> _formatAdmissionFee(Map fee) {
     final lines = <String>[];
+    // ที่พักค้างคืน: sync พับ TAT minPrice/maxPrice ลง roomMinPrice/roomMaxPrice
+    // แสดงราคาห้อง + ดาว/เช็คอิน-เอาต์ก่อนค่าเข้าชม (ถ้ามีปนกันก็แสดงทั้งคู่)
+    final roomPrice = resolveRoomPriceText(fee);
+    if (roomPrice.isNotEmpty) {
+      lines.add('${context.l10n.roomPricePerNight}: $roomPrice');
+    }
+    final star = '${fee['hotelStar'] ?? fee['hotel_star'] ?? ''}';
+    if (star.isNotEmpty) lines.add(context.l10n.hotelStar(star));
+    final rooms = '${fee['numberOfRooms'] ?? ''}';
+    if (rooms.isNotEmpty) lines.add(context.l10n.roomCount(rooms));
+    final checkIn = '${fee['checkInTime'] ?? ''}';
+    if (checkIn.isNotEmpty) lines.add('${context.l10n.checkIn}: $checkIn');
+    final checkOut = '${fee['checkOutTime'] ?? ''}';
+    if (checkOut.isNotEmpty) lines.add('${context.l10n.checkOut}: $checkOut');
     if (fee['thaiAdult'] != null) {
       lines.add(
         '${context.l10n.thaiAdult}: ฿${_money(double.tryParse('${fee['thaiAdult']}') ?? 0)}',

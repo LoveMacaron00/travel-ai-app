@@ -225,13 +225,24 @@ class MapScreenState extends State<MapScreen> {
 
   void _applyFilters() {
     if (!mounted) return;
-    final byCategory = _selectedCategory == 'all'
+    // sync เขียนที่พักเป็น category='hotel' ส่วน admin เพิ่มเองใช้ 'accommodation'
+    // (alias เดียวกับ admin filter + overnight lookup) — จับทั้งสองค่าเสมอ
+    final selected = _selectedCategory.toLowerCase();
+    final byCategory = selected == 'all'
         ? List<PlaceMarker>.from(_places)
-        : _places
-              .where(
-                (p) => p.category.toLowerCase() == _selectedCategory.toLowerCase(),
-              )
-              .toList();
+        : _places.where((p) {
+            final c = p.category.toLowerCase();
+            if (selected == 'accommodation') {
+              return c == 'accommodation' || c == 'hotel';
+            }
+            if (selected == 'other') {
+              return c == 'other' ||
+                  c == 'service' ||
+                  c == 'activity' ||
+                  c == 'general';
+            }
+            return c == selected;
+          }).toList();
     final query = _searchController.text.trim().toLowerCase();
     List<PlaceMarker> newSuggestions = [];
     bool show = false;
@@ -526,6 +537,7 @@ class MapScreenState extends State<MapScreen> {
       case 'attraction':
         return context.l10n.categoryAttraction;
       case 'accommodation':
+      case 'hotel':
         return context.l10n.categoryAccommodation;
       case 'restaurant':
         return context.l10n.categoryRestaurant;
@@ -545,6 +557,7 @@ class MapScreenState extends State<MapScreen> {
       case 'attraction':
         return Colors.redAccent;
       case 'accommodation':
+      case 'hotel':
         return Colors.blueAccent;
       case 'restaurant':
         return Colors.orange;
@@ -564,6 +577,7 @@ class MapScreenState extends State<MapScreen> {
       case 'attraction':
         return Icons.attractions;
       case 'accommodation':
+      case 'hotel':
         return Icons.hotel;
       case 'restaurant':
         return Icons.restaurant;

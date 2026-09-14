@@ -118,6 +118,8 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
           final hours = formatDestinationOpeningHours(detail);
           final hoursSummary = formatDestinationOpeningTimeSummary(detail);
           final fee = _fee(detail);
+          final isLodging = isLodgingDetail(detail);
+          final roomPrice = isLodging ? _roomPrice(detail) : '';
 
           return CustomScrollView(
             slivers: [
@@ -348,11 +350,19 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                             ),
                             Expanded(
                               child: _quickFact(
-                                Icons.confirmation_number_outlined,
-                                context.l10n.admission,
-                                fee.isEmpty
-                                    ? context.l10n.seeOnArrival
-                                    : fee.values.first,
+                                isLodging
+                                    ? Icons.hotel_outlined
+                                    : Icons.confirmation_number_outlined,
+                                isLodging
+                                    ? context.l10n.roomPrice
+                                    : context.l10n.admission,
+                                isLodging
+                                    ? (roomPrice.isEmpty
+                                          ? context.l10n.seeOnArrival
+                                          : roomPrice)
+                                    : (fee.isEmpty
+                                          ? context.l10n.seeOnArrival
+                                          : fee.values.first),
                               ),
                             ),
                           ],
@@ -383,6 +393,17 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                               color: Colors.black87,
                               height: 1.45,
                             ),
+                          ),
+                        ],
+                        if (isLodging && roomPrice.isNotEmpty) ...[
+                          const SizedBox(height: 30),
+                          _sectionTitle(
+                            Icons.hotel_outlined,
+                            context.l10n.roomPricePerNight,
+                          ),
+                          const SizedBox(height: 10),
+                          ..._roomRows(detail).entries.map(
+                            (entry) => _feeRow(entry.key, entry.value),
                           ),
                         ],
                         if (fee.isNotEmpty) ...[
@@ -568,6 +589,14 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
   Map<String, String> _fee(Map<String, dynamic> detail) {
     final fee = resolveAdmissionFee(detail);
     if (fee == null) return const {};
+    // ที่พัก: ราคาห้อง/ดาว/เช็คอิน-เอาต์แยกไป section ห้องพักแล้ว
+    // ไม่แสดงซ้ำใน section ค่าเข้าชม — กันคีย์ room* หลุดมาตีเลขค่าเข้า
+    if (isLodgingDetail(detail)) {
+      final values = <String, String>{};
+      final detailText = stripHtmlText('${fee['detail'] ?? ''}');
+      if (detailText.isNotEmpty) values[context.l10n.conditions] = detailText;
+      return values;
+    }
     final values = <String, String>{};
     final labels = {
       'thaiAdult': context.l10n.thaiAdult,
@@ -582,5 +611,36 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
     final detailText = stripHtmlText('${fee['detail'] ?? ''}');
     if (detailText.isNotEmpty) values[context.l10n.conditions] = detailText;
     return values;
+  }
+
+  // ราคาห้อง + ข้อมูลโรงแรมต่อหมวดที่พักจาก admission fee (sync พับ TAT ลงคีย์นี้)
+  String _roomPrice(Map<String, dynamic> detail) {
+    final fee = resolveAdmissionFee(detail);
+    if (fee == null) return '';
+    return resolveRoomPriceText(fee);
+  }
+
+  Map<String, String> _roomRows(Map<String, dynamic> detail) {
+    final fee = resolveAdmissionFee(detail);
+    if (fee == null) return const {};
+    final rows = <String, String>{};
+    final price = resolveRoomPriceText(fee);
+    final extras = <String>[];
+    final star = '${fee['hotelStar'] ?? fee['hotel_star'] ?? ''}';
+    if (star.isNotEmpty) extras.add(context.l10n.hotelStar(star));
+    final rooms = '${fee['numberOfRooms'] ?? ''}';
+    if (rooms.isNotEmpty) extras.add(context.l10n.roomCount(rooms));
+    final priceWithExtras = [
+      price,
+      ...extras,
+    ].where((part) => part.isNotEmpty).join(' · ');
+    if (priceWithExtras.isNotEmpty) {
+      rows[context.l10n.roomPrice] = priceWithExtras;
+    }
+    final checkIn = '${fee['checkInTime'] ?? ''}';
+    if (checkIn.isNotEmpty) rows[context.l10n.checkIn] = checkIn;
+    final checkOut = '${fee['checkOutTime'] ?? ''}';
+    if (checkOut.isNotEmpty) rows[context.l10n.checkOut] = checkOut;
+    return rows;
   }
 }

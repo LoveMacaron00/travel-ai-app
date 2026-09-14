@@ -478,6 +478,28 @@ class AppLocalizationsTh extends AppLocalizations {
   String get seeOnArrival => 'ตรวจสอบเมื่อเดินทางถึง';
 
   @override
+  String get roomPrice => 'ราคาห้องพัก';
+
+  @override
+  String get roomPricePerNight => 'ราคาห้องพัก/คืน';
+
+  @override
+  String hotelStar(String count) {
+    return '$count ดาว';
+  }
+
+  @override
+  String get checkIn => 'เช็คอิน';
+
+  @override
+  String get checkOut => 'เช็คเอาต์';
+
+  @override
+  String roomCount(String count) {
+    return '$count ห้อง';
+  }
+
+  @override
   String get openingHours => 'เวลาเปิดทำการ';
 
   @override

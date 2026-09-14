@@ -191,6 +191,18 @@
   "checkBeforeVisiting": "โปรดตรวจสอบก่อนเดินทาง",
   "admission": "ค่าเข้าชม",
   "seeOnArrival": "ตรวจสอบเมื่อเดินทางถึง",
+  "roomPrice": "ราคาห้องพัก",
+  "roomPricePerNight": "ราคาห้องพัก/คืน",
+  "hotelStar": "{count} ดาว",
+  "@hotelStar": {
+    "placeholders": {"count": {"type": "String"}}
+  },
+  "checkIn": "เช็คอิน",
+  "checkOut": "เช็คเอาต์",
+  "roomCount": "{count} ห้อง",
+  "@roomCount": {
+    "placeholders": {"count": {"type": "String"}}
+  },
   "openingHours": "เวลาเปิดทำการ",
   "admissionFee": "ค่าเข้าชม",
   "aboutThisPlace": "เกี่ยวกับสถานที่นี้",

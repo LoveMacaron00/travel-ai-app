@@ -484,6 +484,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get seeOnArrival => 'See on arrival';
 
   @override
+  String get roomPrice => 'Room price';
+
+  @override
+  String get roomPricePerNight => 'Room price/night';
+
+  @override
+  String hotelStar(String count) {
+    return '$count-star';
+  }
+
+  @override
+  String get checkIn => 'Check-in';
+
+  @override
+  String get checkOut => 'Check-out';
+
+  @override
+  String roomCount(String count) {
+    return '$count rooms';
+  }
+
+  @override
   String get openingHours => 'Opening hours';
 
   @override
