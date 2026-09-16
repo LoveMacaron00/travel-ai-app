@@ -165,6 +165,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get diaryCalendar => 'Memory calendar';
+
+  @override
+  String get diaryPickDate => 'Memory date';
+
+  @override
+  String get diaryAddForDay => 'Add memory for selected day';
+
+  @override
+  String get diaryNoEntriesOnDay => 'No memories on the selected day';
+
+  @override
+  String get diaryShowAll => 'Show all';
+
+  @override
   String get addMemory => 'Add memory';
 
   @override

@@ -66,6 +66,11 @@
       "minutes": {"type": "int"}
     }
   },
+  "diaryCalendar": "ปฏิทินความทรงจำ",
+  "diaryPickDate": "วันที่บันทึก",
+  "diaryAddForDay": "เพิ่มบันทึกวันที่เลือก",
+  "diaryNoEntriesOnDay": "ยังไม่มีบันทึกในวันที่เลือก",
+  "diaryShowAll": "แสดงทั้งหมด",
   "addMemory": "เพิ่มความทรงจำ",
   "noDiaryEntries": "ยังไม่มีบันทึกการเดินทาง",
   "noDiaryEntriesDescription": "เพิ่มรูปและข้อความจากทริปของคุณ พิกัด GPS จะถูกบันทึกให้อัตโนมัติ",

@@ -18,6 +18,7 @@ class DiaryManualResult {
     required this.selectedLocation,
     required this.removeExistingImage,
     required this.existingImageUrls,
+    this.entryDate,
   });
 
   final String title;
@@ -27,6 +28,9 @@ class DiaryManualResult {
   final LatLng? selectedLocation;
   final bool removeExistingImage;
   final List<String> existingImageUrls;
+
+  /// วันที่ผู้ใช้เลือกจากปฏิทินในฟอร์ม — null = ใช้วันปัจจุบัน (พฤติกรรมเดิม)
+  final DateTime? entryDate;
 }
 
 const _sheetGold = Color(0xfff4b400);
@@ -43,6 +47,8 @@ Future<DiaryManualResult?> showDiaryManualSheet({
   List<String> initialImageUrls = const [],
   LatLng? initialLocation,
   bool isEdit = false,
+  // วันที่ตั้งต้นของฟอร์ม — กรอกใหม่จากปฏิทินจะส่งวันที่เลือกมาให้เลย
+  DateTime? initialDate,
 }) {
   return showModalBottomSheet<DiaryManualResult>(
     context: context,
@@ -69,6 +75,7 @@ Future<DiaryManualResult?> showDiaryManualSheet({
       initialImageUrls: initialImageUrls,
       initialLocation: initialLocation,
       isEdit: isEdit,
+      initialDate: initialDate,
     ),
   );
 }
@@ -81,6 +88,7 @@ class _DiaryManualSheetContent extends StatefulWidget {
     required this.initialImageUrls,
     required this.initialLocation,
     required this.isEdit,
+    this.initialDate,
   });
 
   final String? initialTitle;
@@ -89,6 +97,7 @@ class _DiaryManualSheetContent extends StatefulWidget {
   final List<String> initialImageUrls;
   final LatLng? initialLocation;
   final bool isEdit;
+  final DateTime? initialDate;
 
   @override
   State<_DiaryManualSheetContent> createState() => _DiaryManualSheetContentState();
@@ -103,6 +112,8 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
   LatLng? _selectedLocation;
   bool _removeExistingImage = false;
   late List<String> _existingImageUrls;
+  // วันที่ของบันทึก — กรอกใหม่ตั้งจากปฏิทินได้, แก้ไขคงวันเดิม (ไม่แก้)
+  DateTime? _entryDate;
 
   @override
   void initState() {
@@ -112,6 +123,9 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
     _noteCtrl = TextEditingController(text: widget.initialNote ?? '');
     _selectedLocation = widget.initialLocation;
     _existingImageUrls = List<String>.from(widget.initialImageUrls);
+    _entryDate = widget.initialDate != null
+        ? DateUtils.dateOnly(widget.initialDate!)
+        : null;
   }
 
   @override
@@ -147,6 +161,37 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
     );
     if (!mounted) return;
     if (result != null) setState(() => _selectedLocation = result);
+  }
+
+  // ปฏิทินเลือกวันที่ของบันทึก — บล็อกวันอนาคต (บันทึกย้อนหลังได้อย่างเดียว)
+  Future<void> _pickEntryDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _entryDate ?? DateUtils.dateOnly(now),
+      firstDate: DateTime(2000),
+      lastDate: DateUtils.dateOnly(now),
+    );
+    if (!mounted) return;
+    if (picked != null) setState(() => _entryDate = DateUtils.dateOnly(picked));
+  }
+
+  // ป้ายวันที่ — ปี พ.ศ. เมื่อภาษาไทย, ค.ศ. เมื่อภาษาอังกฤษ
+  // แยกเป็น method เพื่อไม่ให้ Localizations.localeOf อยู่ใน string interpolation
+  Widget _entryDateLabel() {
+    final picked = _entryDate;
+    if (picked == null) {
+      return Text(
+        context.l10n.diaryPickDate,
+        style: const TextStyle(color: Colors.grey, fontSize: 14),
+      );
+    }
+    final year = picked.year +
+        (Localizations.localeOf(context).languageCode == 'th' ? 543 : 0);
+    return Text(
+      '${context.l10n.diaryPickDate}: ${picked.day}/${picked.month}/$year',
+      style: const TextStyle(color: Colors.black87, fontSize: 14),
+    );
   }
 
   @override
@@ -357,6 +402,42 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
               ),
             ),
             const SizedBox(height: 14),
+            // วันที่ของบันทึก — กรอกใหม่เท่านั้นที่แก้ได้ ผ่านปฏิทิน (ย้อนหลังได้อย่างเดียว)
+            if (!widget.isEdit)
+              InkWell(
+                onTap: _pickEntryDate,
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: _entryDate != null ? _sheetGold : Colors.grey,
+                      width: _entryDate != null ? 2 : 1,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    color: _entryDate != null ? _sheetPaleGold : Colors.white,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.calendar_month_outlined,
+                          color: _entryDate != null ? _sheetGold : Colors.grey),
+                      const SizedBox(width: 12),
+                      Expanded(child: _entryDateLabel()),
+                      if (_entryDate != null)
+                        GestureDetector(
+                          onTap: () => setState(() => _entryDate = null),
+                          child: const Padding(
+                            padding: EdgeInsets.only(left: 8),
+                            child: Icon(Icons.clear, size: 18, color: Colors.black45),
+                          ),
+                        )
+                      else
+                        const Icon(Icons.chevron_right, color: Colors.grey),
+                    ],
+                  ),
+                ),
+              ),
+            if (!widget.isEdit) const SizedBox(height: 14),
             InkWell(
               onTap: _pickLocation,
               borderRadius: BorderRadius.circular(14),
@@ -427,6 +508,7 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                   selectedLocation: _selectedLocation,
                   removeExistingImage: _removeExistingImage,
                   existingImageUrls: _existingImageUrls,
+                  entryDate: _entryDate,
                 );
                 Navigator.pop(context, result);
               },

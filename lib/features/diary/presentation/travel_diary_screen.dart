@@ -11,6 +11,7 @@ import 'package:myapp/features/media/data/image_upload.dart';
 import 'package:myapp/features/map/data/location_service.dart';
 import 'package:myapp/features/diary/data/travel_diary_automation_service.dart';
 import 'package:myapp/features/diary/data/travel_diary_service.dart';
+import 'package:myapp/features/diary/widgets/diary_calendar_card.dart';
 import 'package:myapp/features/diary/widgets/diary_manual_sheet.dart';
 import 'package:myapp/core/widgets/media_image.dart';
 
@@ -38,6 +39,9 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
   Timer? _locationReloadTimer;
   List<TravelDiaryEntry> _entries = [];
   bool _loading = true;
+  // ปฏิทินกรองตามวัน — null = แสดงทั้งหมด
+  DateTime? _selectedCalendarDay;
+  DateTime _calendarMonth = DateTime.now();
 
   @override
   void initState() {
@@ -80,6 +84,19 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     setState(() {
       _entries = entries;
       _loading = false;
+      // เดือนปฏิทินตามวันที่เลือกไว้ — ถ้ายังไม่เลือกใช้เดือนปัจจุบัน
+      final anchor = _selectedCalendarDay ?? DateTime.now();
+      _calendarMonth = DateTime(anchor.year, anchor.month);
+      // ถ้าวันที่เลือกไว้ไม่มี entry แล้ว (เช่นลบไป) ให้ล้างฟิลเตอร์
+      if (_selectedCalendarDay != null &&
+          !_entries.any(
+            (e) => DateUtils.isSameDay(
+              DateUtils.dateOnly(e.date),
+              _selectedCalendarDay,
+            ),
+          )) {
+        _selectedCalendarDay = null;
+      }
     });
   }
 
@@ -139,8 +156,13 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
 
   /// เพิ่มบันทึกเองจากฟอร์ม — อัปโหลดรูปก่อน (ถ้ามี) แล้วจึงบันทึก entry
   /// รูปไม่สำเร็จก็ยังบันทึกข้อความได้ แค่ไม่มีรูปประกอบ
-  Future<void> _addManualDiary() async {
-    final result = await showDiaryManualSheet(context: context, isEdit: false);
+  /// [forDay] คือวันที่เลือกจากปฏิทิน — บันทึกจะลงวันนั้นแทนวันปัจจุบัน
+  Future<void> _addManualDiary({DateTime? forDay}) async {
+    final result = await showDiaryManualSheet(
+      context: context,
+      isEdit: false,
+      initialDate: forDay,
+    );
     if (!mounted) return;
     if (result == null) return;
     if (result.title.isEmpty && result.province.isEmpty && result.note.isEmpty && result.pickedImage == null) return;
@@ -166,10 +188,21 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
 
     if (!mounted) return;
     final now = DateTime.now();
+    // วันที่ของบันทึก: ที่เลือกจากปฏิทินในฟอร์ม > วันที่แตะบนปฏิทินเดือน > ปัจจุบัน
+    final pickedDay = result.entryDate ?? forDay;
+    final entryDate = pickedDay != null
+        ? DateTime(
+            pickedDay.year,
+            pickedDay.month,
+            pickedDay.day,
+            now.hour,
+            now.minute,
+          )
+        : now;
     final position = LocationService.instance.currentPosition;
     final entry = TravelDiaryEntry(
       id: 'manual_${now.microsecondsSinceEpoch}',
-      date: now,
+      date: entryDate,
       title: result.title,
       note: result.note,
       province: result.province,
@@ -181,6 +214,11 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     final ok = await _diary.upsert(entry);
     if (!mounted) return;
     if (ok) {
+      // บันทึกลงวันที่เลือก — เลื่อนปฏิทินไปเดือนนั้นแล้วกรองให้เห็นทันที
+      if (pickedDay != null) {
+        _selectedCalendarDay = DateUtils.dateOnly(pickedDay);
+        _calendarMonth = DateTime(pickedDay.year, pickedDay.month);
+      }
       await _loadEntries();
       if (mounted) {
         final l10n = context.l10n;
@@ -279,6 +317,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
   /// เลขวัน (Day 1, 2, ...) นับจากเก่าสุด แต่ลิสต์ที่ได้เรียงใหม่สุดก่อน
   /// ภายในวันเดียวเรียงเก่า → ใหม่ ส่วนชื่อสถานที่ของวันใช้จังหวัดสูงสุด 2 ที่
   /// ถ้าไม่มีจังหวัดใช้ชื่อ entry แรกแทน
+  /// ถ้าเลือกวันจากปฏิทิน (_selectedCalendarDay) กรองเฉพาะวันนั้น
   List<_DiaryDay> get _days {
     final grouped = <DateTime, List<TravelDiaryEntry>>{};
     for (final entry in _entries) {
@@ -290,7 +329,12 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       for (var index = 0; index < chronological.length; index++)
         chronological[index]: index + 1,
     };
-    final newestFirst = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+    var newestFirst = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+    if (_selectedCalendarDay != null) {
+      newestFirst = newestFirst
+          .where((date) => DateUtils.isSameDay(date, _selectedCalendarDay))
+          .toList();
+    }
     return newestFirst.map((date) {
       final entries = grouped[date]!..sort((a, b) => a.date.compareTo(b.date));
       final places = entries
@@ -351,7 +395,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       actions: [
         IconButton(
           tooltip: context.l10n.addManualDiary,
-          onPressed: _addManualDiary,
+          onPressed: () => _addManualDiary(forDay: _selectedCalendarDay),
           icon: const Icon(Icons.add_circle_outline, color: _diaryGold),
         ),
         IconButton(
@@ -363,18 +407,121 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     ),
     body: _loading
         ? const Center(child: CircularProgressIndicator(color: _diaryGold))
-        : _entries.isEmpty
+        : _entries.isEmpty && _selectedCalendarDay == null
         ? _emptyState()
         : RefreshIndicator(
             color: _diaryGold,
             onRefresh: _loadEntries,
-            child: ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(0, 12, 14, 28),
-              itemCount: _days.length,
-              itemBuilder: (_, index) => _daySection(_days[index]),
-            ),
+            child: _diaryBody(),
           ),
+  );
+
+  /// ชุดวันของปฏิทิน — วันที่เคยบันทึก + รูปแรกของวันนั้น (badge ใต้เลขวัน)
+  Set<DateTime> get _calendarDays => _entries
+      .map((e) => DateUtils.dateOnly(e.date))
+      .toSet();
+
+  Map<DateTime, String> get _calendarThumbs {
+    final thumbs = <DateTime, String>{};
+    for (final entry in _entries) {
+      final day = DateUtils.dateOnly(entry.date);
+      if (thumbs.containsKey(day)) continue;
+      if (entry.imageUrls.isNotEmpty) thumbs[day] = entry.imageUrls.first;
+    }
+    return thumbs;
+  }
+
+  // แตะวันเดิมซ้ำ = ล้างฟิลเตอร์กลับทั้งหมด (เหมือนกากบาทในปฏิทิน)
+  void _onCalendarDaySelected(DateTime date) {
+    final day = DateUtils.dateOnly(date);
+    setState(() {
+      if (_selectedCalendarDay != null &&
+          DateUtils.isSameDay(_selectedCalendarDay, day)) {
+        _selectedCalendarDay = null;
+      } else {
+        _selectedCalendarDay = day;
+      }
+    });
+  }
+
+  Widget _diaryBody() {
+    final days = _days;
+    final selectedDay = _selectedCalendarDay;
+    final showPreview =
+        selectedDay != null &&
+        days.length == 1 &&
+        DateUtils.isSameDay(days.first.date, selectedDay);
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(0, 12, 14, 28),
+      itemCount:
+          1 + (showPreview ? 1 : 0) + (days.isEmpty ? 1 : days.length),
+      itemBuilder: (_, index) {
+        if (index == 0) {
+          return DiaryCalendarCard(
+            focusedMonth: _calendarMonth,
+            selectedDay: _selectedCalendarDay,
+            daysWithEntries: _calendarDays,
+            thumbnailByDay: _calendarThumbs,
+            onMonthChanged: (month) =>
+                setState(() => _calendarMonth = month),
+            onDaySelected: _onCalendarDaySelected,
+            onClearDay: () => setState(() => _selectedCalendarDay = null),
+          );
+        }
+        if (showPreview && index == 1) {
+          return DiaryDayPreviewCard(
+            date: days.first.date,
+            place: days.first.place,
+            entries: days.first.entries,
+          );
+        }
+        if (days.isEmpty) return _filteredEmptyState();
+        final day = days[showPreview ? index - 2 : index - 1];
+        return _daySection(day);
+      },
+    );
+  }
+
+  // เลือกวันแล้วไม่มีบันทึก — ชวนกรอกย้อนหลังลงวันนั้นได้เลย
+  Widget _filteredEmptyState() => Padding(
+    padding: const EdgeInsets.fromLTRB(14, 12, 0, 8),
+    child: Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _diaryBorder),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.event_note_outlined,
+            color: _diaryGold,
+            size: 36,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            context.l10n.diaryNoEntriesOnDay,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: () =>
+                _addManualDiary(forDay: _selectedCalendarDay),
+            style: FilledButton.styleFrom(
+              backgroundColor: _diaryGold,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            icon: const Icon(Icons.add),
+            label: Text(context.l10n.diaryAddForDay),
+          ),
+        ],
+      ),
+    ),
   );
 
   Widget _emptyState() => Center(

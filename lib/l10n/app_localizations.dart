@@ -386,6 +386,36 @@ abstract class AppLocalizations {
   /// **'{hours} hr {minutes} min'**
   String diaryHoursMinutes(int hours, int minutes);
 
+  /// No description provided for @diaryCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory calendar'**
+  String get diaryCalendar;
+
+  /// No description provided for @diaryPickDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory date'**
+  String get diaryPickDate;
+
+  /// No description provided for @diaryAddForDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Add memory for selected day'**
+  String get diaryAddForDay;
+
+  /// No description provided for @diaryNoEntriesOnDay.
+  ///
+  /// In en, this message translates to:
+  /// **'No memories on the selected day'**
+  String get diaryNoEntriesOnDay;
+
+  /// No description provided for @diaryShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all'**
+  String get diaryShowAll;
+
   /// No description provided for @addMemory.
   ///
   /// In en, this message translates to:

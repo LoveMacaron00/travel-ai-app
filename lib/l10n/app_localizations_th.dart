@@ -163,6 +163,21 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
+  String get diaryCalendar => 'ปฏิทินความทรงจำ';
+
+  @override
+  String get diaryPickDate => 'วันที่บันทึก';
+
+  @override
+  String get diaryAddForDay => 'เพิ่มบันทึกวันที่เลือก';
+
+  @override
+  String get diaryNoEntriesOnDay => 'ยังไม่มีบันทึกในวันที่เลือก';
+
+  @override
+  String get diaryShowAll => 'แสดงทั้งหมด';
+
+  @override
   String get addMemory => 'เพิ่มความทรงจำ';
 
   @override

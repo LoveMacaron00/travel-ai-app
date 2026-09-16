@@ -66,6 +66,11 @@
       "minutes": {"type": "int"}
     }
   },
+  "diaryCalendar": "Memory calendar",
+  "diaryPickDate": "Memory date",
+  "diaryAddForDay": "Add memory for selected day",
+  "diaryNoEntriesOnDay": "No memories on the selected day",
+  "diaryShowAll": "Show all",
   "addMemory": "Add memory",
   "noDiaryEntries": "No travel memories yet",
   "noDiaryEntriesDescription": "Add a photo and note from your trip. Your GPS location will be captured automatically.",
