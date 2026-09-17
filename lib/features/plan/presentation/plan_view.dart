@@ -121,21 +121,47 @@ extension _PlanMainView on _PlanScreenState {
               const SizedBox(height: 12),
               // วันที่ + จำนวนวันรวมเป็นบล็อกเดียว (แหล่งค่าที่เดียว):
               // manual = เลือกช่วงวันที่ จำนวนวันตามช่วงอัตโนมัติ (อ่านอย่างเดียว)
-              // Auto = ปิดช่องวันที่ ให้ AI ประเมินจำนวนวันเอง
+              // Auto = ปิดช่องวันที่ ให้ AI ประเมินจำนวนวันเอง (สวิตช์)
               Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      context.l10n.travelDates,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.l10n.travelDates,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        Text(
+                          _autoDays
+                              ? context.l10n.autoDaysHint
+                              : context.l10n.chooseDates,
+                          style: const TextStyle(
+                            color: Colors.black45,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  FilterChip(
-                    label: Text(context.l10n.autoDays),
-                    selected: _autoDays,
-                    selectedColor: const Color(0xffffe7a0),
-                    checkmarkColor: const Color(0xff986b00),
-                    onSelected: (on) => _updateState(() => _autoDays = on),
+                  Text(
+                    context.l10n.autoDays,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: _autoDays
+                          ? const Color(0xff986b00)
+                          : Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Switch(
+                    value: _autoDays,
+                    onChanged: (on) =>
+                        _updateState(() => _autoDays = on),
+                    activeTrackColor: _gold,
+                    activeThumbColor: _ink,
+                    inactiveThumbColor: Colors.white,
+                    inactiveTrackColor: const Color(0xffd8cdb8),
                   ),
                 ],
               ),
