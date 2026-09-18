@@ -1130,4 +1130,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedbackHistory => 'Feedback History';
+
+  @override
+  String get planCreatedSuccess => 'Plan created';
+
+  @override
+  String planStartsOn(String date) {
+    return 'Starts on $date';
+  }
+
+  @override
+  String get planSavedViewOnly =>
+      'Your plan is saved. Preview only — navigation unlocks on the travel date.';
+
+  @override
+  String get viewPlan => 'View plan';
+
+  @override
+  String get planBackToPlanner => 'Back to planner';
+
+  @override
+  String futureTripBanner(String date) {
+    return 'This trip starts on $date — preview only for now, navigation unlocks on the travel date.';
+  }
+
+  @override
+  String navigationLocked(String date) {
+    return 'Navigation unlocks on $date';
+  }
 }

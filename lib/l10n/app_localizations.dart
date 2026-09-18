@@ -2167,6 +2167,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Feedback History'**
   String get feedbackHistory;
+
+  /// No description provided for @planCreatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan created'**
+  String get planCreatedSuccess;
+
+  /// No description provided for @planStartsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts on {date}'**
+  String planStartsOn(String date);
+
+  /// No description provided for @planSavedViewOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan is saved. Preview only — navigation unlocks on the travel date.'**
+  String get planSavedViewOnly;
+
+  /// No description provided for @viewPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'View plan'**
+  String get viewPlan;
+
+  /// No description provided for @planBackToPlanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to planner'**
+  String get planBackToPlanner;
+
+  /// No description provided for @futureTripBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'This trip starts on {date} — preview only for now, navigation unlocks on the travel date.'**
+  String futureTripBanner(String date);
+
+  /// No description provided for @navigationLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation unlocks on {date}'**
+  String navigationLocked(String date);
 }
 
 class _AppLocalizationsDelegate

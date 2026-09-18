@@ -1116,4 +1116,32 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get feedbackHistory => 'ประวัติความคิดเห็น';
+
+  @override
+  String get planCreatedSuccess => 'สร้างแผนสำเร็จ';
+
+  @override
+  String planStartsOn(String date) {
+    return 'เริ่มต้นในวันที่ $date';
+  }
+
+  @override
+  String get planSavedViewOnly =>
+      'บันทึกแผนไว้แล้ว ดูได้อย่างเดียว นำทางได้เมื่อถึงวันเดินทาง';
+
+  @override
+  String get viewPlan => 'ดูแผน';
+
+  @override
+  String get planBackToPlanner => 'กลับไปหน้าวางแผน';
+
+  @override
+  String futureTripBanner(String date) {
+    return 'แผนนี้เริ่มวันที่ $date — ตอนนี้ดูได้อย่างเดียว นำทางได้เมื่อถึงวันเดินทาง';
+  }
+
+  @override
+  String navigationLocked(String date) {
+    return 'นำทางได้เมื่อถึงวันที่ $date';
+  }
 }

@@ -106,6 +106,9 @@ class _PlanScreenState extends State<PlanScreen> {
   int _selectedDayIndex = 0;
   int _routeRequestId = 0;
   bool _resettingPlan = false;
+  // true = สร้างแผนใหม่เสร็จแต่วันเริ่มทริปยังไม่ถึง (future trip)
+  // โชว์จอ success "เริ่มต้นในวัน XX" แทนหน้าผลลัพธ์จนกว่าจะกดดูแผน
+  bool _showCreatedSuccess = false;
   Map<String, dynamic>? _originalPlanJson;
   late String _loadedLanguage;
 
@@ -153,6 +156,7 @@ class _PlanScreenState extends State<PlanScreen> {
           _route = [];
           _selectedDayIndex = 0;
           _loadingExistingPlan = false;
+          _showCreatedSuccess = false;
           _error = null;
         });
       }
@@ -209,6 +213,7 @@ class _PlanScreenState extends State<PlanScreen> {
         _planNameController.text = plan.title;
         _selectedDayIndex = 0;
         _route = [];
+        _showCreatedSuccess = false;
         _loadingExistingPlan = false;
       });
       await _buildRoute(plan);
@@ -228,6 +233,56 @@ class _PlanScreenState extends State<PlanScreen> {
     if (hour == null || minute == null) return null;
     if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
     return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  // วันนี้แบบตัดเวลาออก — เทียบวันเดินทางแบบ date-only กัน timezone/เวลากวน
+  DateTime _todayDate() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  // วันเริ่มทริป (date-only) — ใช้ plan.startDate (server) เป็นหลัก,
+  // fallback ช่วงวันที่ในฟอร์ม (ทริปใหม่ auto ที่ยังไม่มี start_date)
+  // คืน null = ไม่ระบุวัน (auto เก่า) → ไม่ล็อกอะไรเลย
+  DateTime? _effectiveStartDate(TravelPlan plan) {
+    final stored = _parsePlanStartDate(plan.startDate);
+    if (stored != null) {
+      return DateTime(stored.year, stored.month, stored.day);
+    }
+    final form = _dates?.start;
+    if (form != null) return DateTime(form.year, form.month, form.day);
+    return null;
+  }
+
+  // ทริปอนาคต = วันนี้ยังก่อนวันเริ่มทริป → สร้างเสร็จโชว์จอ success แทน
+  bool _isFutureTrip(TravelPlan plan) {
+    final start = _effectiveStartDate(plan);
+    if (start == null) return false;
+    return _todayDate().isBefore(start);
+  }
+
+  // วันที่จริงของวันที่เลือกอยู่ = start + (day - 1) — null คือไม่ระบุวัน
+  DateTime? _selectedDayDate(TravelPlan plan) {
+    final start = _effectiveStartDate(plan);
+    if (start == null) return null;
+    final day = _selectedDayFor(plan);
+    if (day == null) return null;
+    return start.add(Duration(days: day.day - 1));
+  }
+
+  // นำทางได้เมื่อถึงวันของ day นั้นแล้ว (วันนี้ >= วันของ day) —
+  // ทริปอนาคตทุกวันล็อกหมด, ทริปกำลังดำเนินปลดเฉพาะวันถึงแล้ว/ผ่านแล้ว
+  bool _canNavigateNow(TravelPlan plan) {
+    final dayDate = _selectedDayDate(plan);
+    if (dayDate == null) return true;
+    return !_todayDate().isBefore(dayDate);
+  }
+
+  // ข้อความอธิบายปุ่มนำทางที่ล็อก — มีวันที่บอกชัดเจน
+  String _navigationLockedMessage(TravelPlan plan) {
+    final dayDate = _selectedDayDate(plan);
+    if (dayDate == null) return context.l10n.planSavedViewOnly;
+    return context.l10n.navigationLocked(_date(dayDate));
   }
 
   /// โหลดตัวเลือกความสนใจ/พาหนะจาก DB — ไม่มี hardcode fallback
@@ -543,6 +598,9 @@ class _PlanScreenState extends State<PlanScreen> {
         _selectedDayIndex = 0;
         _route = [];
         _generating = false;
+        // วันเริ่มทริปไม่ใช่ = วันนี้ → ค้างจอ success "เริ่มต้นในวัน XX" ไว้ก่อน
+        // (แผนบันทึกบน server แล้ว ดูได้อย่างเดียว นำทางได้เมื่อถึงวัน)
+        _showCreatedSuccess = _isFutureTrip(next);
       });
       AppServices.tripGenerationStatus.completeSuccess(tripId);
       await _buildRoute(next);
@@ -1542,6 +1600,7 @@ class _PlanScreenState extends State<PlanScreen> {
       _plan = null;
       _route = [];
       _selectedDayIndex = 0;
+      _showCreatedSuccess = false;
     });
   }
 

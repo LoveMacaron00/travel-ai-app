@@ -445,5 +445,21 @@
   "feedbackReplied": "Replied",
   "yourFeedback": "Your feedback",
   "adminReply": "Admin reply",
-  "feedbackHistory": "Feedback History"
+  "feedbackHistory": "Feedback History",
+  "planCreatedSuccess": "Plan created",
+  "planStartsOn": "Starts on {date}",
+  "@planStartsOn": {
+    "placeholders": {"date": {"type": "String"}}
+  },
+  "planSavedViewOnly": "Your plan is saved. Preview only — navigation unlocks on the travel date.",
+  "viewPlan": "View plan",
+  "planBackToPlanner": "Back to planner",
+  "futureTripBanner": "This trip starts on {date} — preview only for now, navigation unlocks on the travel date.",
+  "@futureTripBanner": {
+    "placeholders": {"date": {"type": "String"}}
+  },
+  "navigationLocked": "Navigation unlocks on {date}",
+  "@navigationLocked": {
+    "placeholders": {"date": {"type": "String"}}
+  }
 }

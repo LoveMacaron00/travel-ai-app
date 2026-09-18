@@ -445,5 +445,21 @@
   "feedbackReplied": "ตอบกลับแล้ว",
   "yourFeedback": "ความคิดเห็นของคุณ",
   "adminReply": "การตอบกลับจากแอดมิน",
-  "feedbackHistory": "ประวัติความคิดเห็น"
+  "feedbackHistory": "ประวัติความคิดเห็น",
+  "planCreatedSuccess": "สร้างแผนสำเร็จ",
+  "planStartsOn": "เริ่มต้นในวันที่ {date}",
+  "@planStartsOn": {
+    "placeholders": {"date": {"type": "String"}}
+  },
+  "planSavedViewOnly": "บันทึกแผนไว้แล้ว ดูได้อย่างเดียว นำทางได้เมื่อถึงวันเดินทาง",
+  "viewPlan": "ดูแผน",
+  "planBackToPlanner": "กลับไปหน้าวางแผน",
+  "futureTripBanner": "แผนนี้เริ่มวันที่ {date} — ตอนนี้ดูได้อย่างเดียว นำทางได้เมื่อถึงวันเดินทาง",
+  "@futureTripBanner": {
+    "placeholders": {"date": {"type": "String"}}
+  },
+  "navigationLocked": "นำทางได้เมื่อถึงวันที่ {date}",
+  "@navigationLocked": {
+    "placeholders": {"date": {"type": "String"}}
+  }
 }

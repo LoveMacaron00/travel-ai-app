@@ -22,10 +22,11 @@ class PlanDaySelector extends StatelessWidget {
   /// null = ซ่อนปุ่มเพิ่มวัน (เช่นยังไม่รองรับ)
   final VoidCallback? onAddDay;
 
-  /// null = ซ่อนปุ่มลบวันของวันที่เลือกอยู่
+  /// null = แตะแล้วแค่สลับวันดู (ไม่มีฟีเจอร์ลบ)
+  /// ไม่ null = แตะวันที่เลือกอยู่ซ้ำอีกทีคือลบวันนั้น (มี dialog ยืนยัน)
   final VoidCallback? onRemoveDay;
 
-  /// false = เหลือวันเดียว ลบอีกไม่ได้ (โชว์ปุ่มแบบ disabled)
+  /// false = เหลือวันเดียว ลบอีกไม่ได้ (แตะซ้ำจะขึ้น SnackBar เตือนแทน)
   final bool canRemoveDay;
 
   @override
@@ -48,23 +49,21 @@ class PlanDaySelector extends StatelessWidget {
           );
         }
         final selected = index == selectedIndex;
-        // วันที่เลือกอยู่แสดงปุ่มลบ (x) ท้าย chip — เหลือวันเดียวปุ่มจะ disabled
+        final removeDay = onRemoveDay;
         return ChoiceChip(
           key: ValueKey('plan-day-${dayNumbers[index]}'),
+          // chip ที่เลือกอยู่โชว์ไอคอนถังขยะไว้ให้รู้ว่าแตะซ้ำคือลบ
+          // (ไอคอนเป็นแค่สัญลักษณ์ เป้าแตะคือทั้ง chip ไม่ต้องเล็ง)
           label: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('$dayLabel ${dayNumbers[index]}'),
-              if (selected && onRemoveDay != null) ...[
+              if (selected && removeDay != null) ...[
                 const SizedBox(width: 4),
-                InkWell(
-                  onTap: canRemoveDay ? onRemoveDay : null,
-                  borderRadius: BorderRadius.circular(10),
-                  child: Icon(
-                    Icons.close,
-                    size: 16,
-                    color: canRemoveDay ? Colors.white70 : Colors.white38,
-                  ),
+                const Icon(
+                  Icons.close,
+                  size: 16,
+                  color: Colors.white70,
                 ),
               ],
             ],
@@ -77,7 +76,16 @@ class PlanDaySelector extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
           side: const BorderSide(color: Color(0xffdfd1b8)),
-          onSelected: (_) => onSelected(index),
+          // chip ไหนยังไม่ถูกเลือก = แตะเพื่อสลับไปดูวันนั้น
+          // chip ที่เลือกอยู่ = แตะซ้ำเพื่อลบวันนั้น (มี dialog ยืนยัน ไม่ต้องเล็งปุ่ม x)
+          // เหลือวันเดียวแตะซ้ำจะขึ้น SnackBar เตือนแทน
+          onSelected: (_) {
+            if (selected && removeDay != null) {
+              removeDay();
+            } else {
+              onSelected(index);
+            }
+          },
         );
       },
     ),

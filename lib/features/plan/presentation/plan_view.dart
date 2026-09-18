@@ -19,11 +19,131 @@ extension _PlanMainView on _PlanScreenState {
               ? const Center(child: CircularProgressIndicator(color: _gold))
               : _plan == null
               ? _buildForm()
+              // สร้างเสร็จแต่วันเริ่มยังไม่ถึง → จอ success ก่อน (ดูได้อย่างเดียว)
+              : _showCreatedSuccess
+              ? _buildCreatedSuccess(_plan!)
               : _buildResult(_plan!),
         ),
       ),
     ),
   );
+
+  // จอ "สร้างแผนสำเร็จ" สำหรับทริปอนาคต — บอกวันเริ่มชัด ๆ + ย้ำว่าบันทึกแล้ว
+  // ปุ่มหลักพาไปดูแผน (โหมดดูได้อย่างเดียว นำทางล็อก), ปุ่มรองกลับฟอร์ม
+  Widget _buildCreatedSuccess(TravelPlan plan) {
+    final start = _effectiveStartDate(plan);
+    final dateLabel = start == null ? '' : _date(start);
+    return SingleChildScrollView(
+      key: const ValueKey('created-success'),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+      child: Column(
+        children: [
+          _header(
+            context.l10n.aiGeneratedPlan,
+            plan.title.isNotEmpty ? plan.title : context.l10n.yourRoute,
+            back: _backToForm,
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xffeadcc2)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: const BoxDecoration(
+                    color: Color(0xffffe7a0),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: Color(0xff986b00),
+                    size: 40,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  context.l10n.planCreatedSuccess,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                if (dateLabel.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    context.l10n.planStartsOn(dateLabel),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xff986b00),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                Text(
+                  context.l10n.planSavedViewOnly,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.black54, height: 1.45),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _stat('${plan.allStops.length}', context.l10n.places),
+                    _stat('${plan.days.length}', context.l10n.days),
+                    _stat(
+                      '฿${_money(plan.totalEstimatedCost)}',
+                      context.l10n.estimated,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 54,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: _gold,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              onPressed: () => _updateState(() => _showCreatedSuccess = false),
+              icon: const Icon(Icons.visibility_outlined),
+              label: Text(
+                context.l10n.viewPlan,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: OutlinedButton.icon(
+              onPressed: _backToForm,
+              icon: const Icon(Icons.arrow_back),
+              label: Text(context.l10n.planBackToPlanner),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _header(
     String eyebrow,
@@ -125,23 +245,9 @@ extension _PlanMainView on _PlanScreenState {
               Row(
                 children: [
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          context.l10n.travelDates,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        Text(
-                          _autoDays
-                              ? context.l10n.autoDaysHint
-                              : context.l10n.chooseDates,
-                          style: const TextStyle(
-                            color: Colors.black45,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      context.l10n.travelDates,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
                   Text(
@@ -458,6 +564,10 @@ extension _PlanMainView on _PlanScreenState {
                     ),
                   ),
                 ),
+                // ทริปอนาคต (รวมวันที่เลือกอยู่ซึ่งยังไม่ถึง) — ดูได้อย่างเดียว
+                // แบนเนอร์บอกวันเริ่มชัด ๆ กันงงว่าทำไมปุ่มนำทางกดไม่ได้
+                if (_isFutureTrip(plan) || !_canNavigateNow(plan))
+                  SliverToBoxAdapter(child: _futureTripBanner(plan)),
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
@@ -602,6 +712,8 @@ extension _PlanMainView on _PlanScreenState {
                       i + 1,
                       key: ValueKey(selectedDay.stops[i]),
                       reorderIndex: i,
+                      canNavigate: _canNavigateNow(plan),
+                      lockedMessage: _navigationLockedMessage(plan),
                     ),
                   ),
                 ],
@@ -687,6 +799,46 @@ extension _PlanMainView on _PlanScreenState {
       ],
     ),
   );
+
+  // แบนเนอร์ทริปอนาคต — ดูได้อย่างเดียว นำทางล็อกจนถึงวันเดินทาง
+  // ใช้วันเริ่มทริปทั้งก้อน (ไม่ใช่รายวัน) กันข้อความเปลี่ยนทุกครั้งที่สลับวัน
+  Widget _futureTripBanner(TravelPlan plan) {
+    final start = _effectiveStartDate(plan);
+    final text = start == null
+        ? context.l10n.planSavedViewOnly
+        : context.l10n.futureTripBanner(_date(start));
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xffe8f1fb),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xff2d7dd2)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.lock_clock_outlined,
+            color: Color(0xff1f5f9f),
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: Color(0xff1f5f9f),
+                fontSize: 12,
+                height: 1.4,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _planMap(TravelPlan plan, {bool fullScreen = false}) {
     final day = _selectedDayFor(plan);
@@ -824,45 +976,86 @@ extension _PlanMainView on _PlanScreenState {
     int number, {
     required Key key,
     required int reorderIndex,
-  }) => KeyedSubtree(
-    key: key,
-    child: Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => _showStopDetails(stop, number),
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(16, 5, 16, 7),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xffeadcc2)),
-          ),
-          child: Stack(
-            children: [
-              Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CircleAvatar(
-                        radius: 15,
-                        backgroundColor: stop.isOvernight
-                            ? const Color(0xff7b2cbf)
-                            : stop.isRestStop
-                            ? const Color(0xff2d7dd2)
-                            : _gold,
-                        foregroundColor: Colors.white,
-                        child: Icon(
-                          stop.isOvernight
-                              ? Icons.hotel
-                              : stop.isRestStop
-                              ? _restStopIcon(stop.restType)
-                              : Icons.attractions,
-                          size: 16,
+    bool canNavigate = true,
+    String? lockedMessage,
+  }) {
+    // สีประจำประเภทจุด — ใช้ที่เดียวกันทั้งการ์ด (ขอบ+ป้ายเลข) และหมุดบนแผนที่
+    // ทอง=ที่เที่ยว / ม่วง=ที่พักค้างคืน / ฟ้า=จุดพักรายทาง
+    final typeColor = stop.isOvernight
+        ? const Color(0xff7b2cbf)
+        : stop.isRestStop
+        ? const Color(0xff2d7dd2)
+        : _gold;
+    // เลขบนพื้นทองใช้ตัวเข้ม (ขาวบนทองอ่านไม่ออก) ม่วง/ฟ้าคงตัวขาว
+    final onTypeColor = stop.isOvernight || stop.isRestStop
+        ? Colors.white
+        : _ink;
+    return KeyedSubtree(
+      key: key,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => _showStopDetails(stop, number),
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 5, 16, 7),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: typeColor, width: 1.5),
+            ),
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            CircleAvatar(
+                              radius: 15,
+                              backgroundColor: typeColor,
+                              foregroundColor: onTypeColor,
+                              child: Icon(
+                                stop.isOvernight
+                                    ? Icons.hotel
+                                    : stop.isRestStop
+                                    ? _restStopIcon(stop.restType)
+                                    : Icons.attractions,
+                                size: 16,
+                              ),
+                            ),
+                            // ป้ายเลขลำดับมุมขวาล่างของไอคอน — ตรงกับเลขบนหมุดแผนที่
+                            Positioned(
+                              right: -4,
+                              bottom: -4,
+                              child: Container(
+                                width: 18,
+                                height: 18,
+                                decoration: BoxDecoration(
+                                  color: typeColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '$number',
+                                  style: TextStyle(
+                                    color: onTypeColor,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
                       const SizedBox(width: 12),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
@@ -1038,18 +1231,48 @@ extension _PlanMainView on _PlanScreenState {
                             borderRadius: BorderRadius.circular(13),
                           ),
                         ),
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                PlanNavigationScreen(destination: stop),
-                          ),
+                        // วันเดินทางยังไม่ถึง → ดูได้อย่างเดียว นำทางล็อกไว้ก่อน
+                        onPressed: canNavigate
+                            ? () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => PlanNavigationScreen(
+                                      destination: stop,
+                                    ),
+                                  ),
+                                )
+                            : null,
+                        icon: Icon(
+                          canNavigate ? Icons.navigation : Icons.lock_outline,
+                          size: 17,
                         ),
-                        icon: const Icon(Icons.navigation, size: 17),
                         label: Text(context.l10n.navigate),
                       ),
                     ],
                   ),
+                  // อธิบายใต้ปุ่มว่าทำไมล็อก + ปลดวันไหน
+                  if (!canNavigate && lockedMessage != null) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.lock_outline,
+                          size: 13,
+                          color: Colors.black45,
+                        ),
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Text(
+                            lockedMessage,
+                            style: const TextStyle(
+                              color: Colors.black45,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
               Positioned.fill(
@@ -1070,4 +1293,5 @@ extension _PlanMainView on _PlanScreenState {
       ),
     ),
   );
+  }
 }

@@ -8,6 +8,12 @@ extension _PlanDetailsView on _PlanScreenState {
     final detailFuture = destinationId == null
         ? null
         : _loadStopDetails(destinationId);
+    // วันเดินทางของ day ที่เลือกอยู่ยังไม่ถึง → ดูรายละเอียดได้อย่างเดียว นำทางล็อก
+    final currentPlan = _plan;
+    final canNavigate =
+        currentPlan == null ? true : _canNavigateNow(currentPlan);
+    final lockedMessage =
+        currentPlan == null ? null : _navigationLockedMessage(currentPlan);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -268,17 +274,45 @@ extension _PlanDetailsView on _PlanScreenState {
                     height: 52,
                     child: FilledButton.icon(
                       style: FilledButton.styleFrom(backgroundColor: _gold),
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              PlanNavigationScreen(destination: stop),
-                        ),
+                      // วันเดินทางยังไม่ถึง → ดูได้อย่างเดียว นำทางล็อกไว้ก่อน
+                      onPressed: canNavigate
+                          ? () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PlanNavigationScreen(
+                                    destination: stop,
+                                  ),
+                                ),
+                              )
+                          : null,
+                      icon: Icon(
+                        canNavigate ? Icons.navigation : Icons.lock_outline,
                       ),
-                      icon: const Icon(Icons.navigation),
                       label: Text(context.l10n.navigateToPlace),
                     ),
                   ),
+                  if (!canNavigate && lockedMessage != null) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.lock_outline,
+                          size: 14,
+                          color: Colors.black45,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            lockedMessage,
+                            style: const TextStyle(
+                              color: Colors.black54,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             );
