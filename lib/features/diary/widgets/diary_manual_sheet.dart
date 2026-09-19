@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:myapp/l10n/l10n.dart';
+import 'package:myapp/features/map/presentation/map_picker_screen.dart';
 import 'package:myapp/core/widgets/media_image.dart';
 
 /// Result from diary manual sheet — unified for add/edit to remove duplication.
@@ -148,6 +149,17 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
     // _dependents.isEmpty assertion and use-after-dispose for controllers.
     if (!mounted) return;
     if (file != null) setState(() => _pickedImage = file);
+  }
+
+  Future<void> _pickLocation() async {
+    final result = await Navigator.push<LatLng>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MapPickerScreen(initialLocation: _selectedLocation),
+      ),
+    );
+    if (!mounted || result == null) return;
+    setState(() => _selectedLocation = result);
   }
 
   // ปฏิทินเลือกวันที่ของบันทึก — บล็อกวันอนาคต (บันทึกย้อนหลังได้อย่างเดียว)
@@ -470,6 +482,65 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                   ),
                 ),
               ),
+            const SizedBox(height: 14),
+            InkWell(
+              onTap: _pickLocation,
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 18,
+                ),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: _selectedLocation != null ? _sheetGold : Colors.grey,
+                    width: _selectedLocation != null ? 2 : 1,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  color: _selectedLocation != null
+                      ? _sheetPaleGold
+                      : Colors.white,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.map_outlined,
+                      color: _selectedLocation != null
+                          ? _sheetGold
+                          : Colors.grey,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _selectedLocation != null
+                            ? '${context.l10n.selectedLocation}: ${_selectedLocation!.latitude.toStringAsFixed(4)}, ${_selectedLocation!.longitude.toStringAsFixed(4)}'
+                            : context.l10n.selectLocationOnMap,
+                        style: TextStyle(
+                          color: _selectedLocation != null
+                              ? Colors.black87
+                              : Colors.grey,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    if (_selectedLocation != null)
+                      GestureDetector(
+                        onTap: () => setState(() => _selectedLocation = null),
+                        child: const Padding(
+                          padding: EdgeInsets.only(left: 8),
+                          child: Icon(
+                            Icons.clear,
+                            size: 18,
+                            color: Colors.black45,
+                          ),
+                        ),
+                      )
+                    else
+                      const Icon(Icons.chevron_right, color: Colors.grey),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 14),
             TextField(
               controller: _noteCtrl,
