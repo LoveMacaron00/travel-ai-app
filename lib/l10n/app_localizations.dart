@@ -2240,12 +2240,6 @@ abstract class AppLocalizations {
   /// **'No saved check-ins yet'**
   String get noCheckIns;
 
-  /// No description provided for @createCurrentCheckIn.
-  ///
-  /// In en, this message translates to:
-  /// **'Check in at current location'**
-  String get createCurrentCheckIn;
-
   /// No description provided for @diaryPhotos.
   ///
   /// In en, this message translates to:

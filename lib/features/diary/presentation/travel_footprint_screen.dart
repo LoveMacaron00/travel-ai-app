@@ -9,10 +9,6 @@ import 'package:myapp/features/diary/presentation/travel_diary_screen.dart';
 import 'package:myapp/core/di/app_services.dart';
 import 'package:myapp/features/diary/data/travel_diary_automation_service.dart';
 import 'package:myapp/features/diary/data/travel_diary_service.dart';
-import 'package:myapp/features/diary/data/travel_journey_service.dart';
-import 'package:myapp/features/diary/widgets/diary_manual_sheet.dart';
-import 'package:myapp/features/map/data/location_service.dart';
-import 'package:myapp/features/media/data/image_upload.dart';
 import 'package:myapp/core/widgets/media_image.dart';
 
 const _footprintGold = Color(0xfff4b400);
@@ -49,17 +45,11 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
   void initState() {
     super.initState();
     _diary = AppServices.diary;
-    TravelJourneyService.instance.addListener(_onJourneyUpdated);
     _loadEntries();
-  }
-
-  void _onJourneyUpdated() {
-    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    TravelJourneyService.instance.removeListener(_onJourneyUpdated);
     _mapController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -116,86 +106,6 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
       ),
     );
     await _loadEntries();
-  }
-
-  Future<void> _checkInCurrentLocation() async {
-    var pos = LocationService.instance.currentPosition;
-    if (pos == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${context.l10n.currentLocation}...'),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-      pos = await LocationService.instance.refresh();
-    }
-    if (!mounted || pos == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.gpsUnavailable)),
-        );
-      }
-      return;
-    }
-
-    final result = await showDiaryManualSheet(
-      context: context,
-      initialLocation: pos,
-      initialTitle: '',
-      isEdit: false,
-    );
-    if (!mounted || result == null) return;
-
-    String? uploadedUrl;
-    if (result.pickedImage != null) {
-      final bytes = await result.pickedImage!.readAsBytes();
-      uploadedUrl = await _diary.uploadImage(
-        ImageUpload(bytes: bytes, filename: result.pickedImage!.name),
-      );
-    }
-    if (!mounted) return;
-
-    final now = DateTime.now();
-    final initialSub = (result.note.isNotEmpty || uploadedUrl != null)
-        ? [
-            DiarySubEntry(
-              id: 'sub_${now.microsecondsSinceEpoch}',
-              time: now,
-              note: result.note,
-              imageUrls: uploadedUrl != null ? [uploadedUrl] : const [],
-            ),
-          ]
-        : <DiarySubEntry>[];
-
-    final title = result.title.trim().isNotEmpty
-        ? result.title.trim()
-        : context.l10n.checkInPoint;
-
-    final entry = TravelDiaryEntry(
-      id: 'checkin_${now.microsecondsSinceEpoch}',
-      date: result.entryDate ?? now,
-      title: title,
-      note: '',
-      province: result.province,
-      imageUrls: uploadedUrl != null ? [uploadedUrl] : const [],
-      latitude: result.selectedLocation?.latitude ?? pos.latitude,
-      longitude: result.selectedLocation?.longitude ?? pos.longitude,
-      source: 'gps',
-      subEntries: initialSub,
-    );
-
-    final ok = await _diary.upsert(entry);
-    if (!mounted) return;
-    if (ok) {
-      await _loadEntries();
-      setState(() => _selectedEntryId = entry.id);
-      _mapController.move(pos, _focusZoom);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.checkInSuccess)),
-        );
-      }
-    }
   }
 
   /// แตะการ์ด timeline → zoom แผนที่ไปที่ mark (ไม่เปิด diary)
@@ -262,8 +172,6 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
               children: [
                 _summaryCard(),
                 const SizedBox(height: 14),
-                _journeyRecordingCard(),
-                const SizedBox(height: 16),
                 _mapCard(),
                 const SizedBox(height: 20),
                 Row(
@@ -372,10 +280,7 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
 
   String _formatEntryDate(TravelDiaryEntry entry) {
     final locale = Localizations.localeOf(context).languageCode;
-    final datePart = DateFormat(
-      'd MMM yyyy',
-      locale,
-    ).format(entry.date);
+    final datePart = DateFormat('d MMM yyyy', locale).format(entry.date);
     final timePart = DateFormat('HH:mm', locale).format(entry.date);
     return '$datePart • $timePart';
   }
@@ -553,167 +458,6 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
     );
   }
 
-  Widget _journeyRecordingCard() {
-    final journey = TravelJourneyService.instance;
-    final isRecording = journey.isRecording;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isRecording ? const Color(0xfffff8e7) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isRecording ? _footprintGold : _footprintBorder,
-          width: isRecording ? 2.0 : 1.0,
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0a000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: isRecording
-                      ? const Color(0xffffe7a0)
-                      : const Color(0xfff0f0f0),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  isRecording ? Icons.directions_walk : Icons.route_outlined,
-                  color: isRecording ? const Color(0xffa67400) : Colors.black54,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          isRecording
-                              ? context.l10n.recordingJourneyActive
-                              : context.l10n.recordJourney,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        if (isRecording) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: Colors.redAccent,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      isRecording
-                          ? '${context.l10n.timeElapsed}: ${journey.formattedDuration}  •  ${context.l10n.distanceWalked}: ${journey.formattedDistance}'
-                          : context.l10n.autoDiarySubtitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.black54,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              if (!isRecording) ...[
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: () => journey.startRecording(),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: _footprintGold,
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    icon: const Icon(Icons.play_arrow, size: 20),
-                    label: Text(
-                      context.l10n.startRecordingJourney,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ),
-                if (journey.trailPoints.isNotEmpty) ...[
-                  const SizedBox(width: 8),
-                  IconButton(
-                    tooltip: 'ล้างร่องรอย',
-                    onPressed: () => journey.clearTrail(),
-                    icon: const Icon(Icons.delete_outline, color: Colors.black45),
-                  ),
-                ],
-              ] else ...[
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: _checkInCurrentLocation,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: _footprintGold,
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    icon: const Icon(Icons.add_location_alt, size: 18),
-                    label: Text(
-                      context.l10n.checkInHere,
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => journey.stopRecording(),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red[700],
-                      side: BorderSide(color: Colors.red[300]!),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    icon: const Icon(Icons.stop, size: 18),
-                    label: Text(
-                      context.l10n.stopRecordingJourney,
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _summaryCard() => Container(
     padding: const EdgeInsets.all(18),
     decoration: BoxDecoration(
@@ -818,8 +562,6 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
 
   Widget _mapCard() {
     final locatedEntries = _locatedEntries;
-    final journey = TravelJourneyService.instance;
-    final currentPos = LocationService.instance.currentPosition;
 
     return Container(
       key: _mapKey,
@@ -835,10 +577,8 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter: currentPos != null && journey.isRecording
-                  ? currentPos
-                  : _mapCenter(locatedEntries),
-              initialZoom: locatedEntries.isEmpty && currentPos == null
+              initialCenter: _mapCenter(locatedEntries),
+              initialZoom: locatedEntries.isEmpty
                   ? _emptyMapZoom
                   : _defaultMapZoom,
               onTap: (_, __) {
@@ -852,23 +592,16 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
                 urlTemplate: AppConfig.mapTileUrl,
                 userAgentPackageName: 'com.example.myapp',
               ),
-              if (journey.trailPoints.length >= 2 || locatedEntries.length >= 2)
+              if (locatedEntries.length >= 2)
                 PolylineLayer(
                   polylines: [
-                    if (locatedEntries.length >= 2)
-                      Polyline(
-                        points: locatedEntries.reversed
-                            .map((e) => LatLng(e.latitude!, e.longitude!))
-                            .toList(),
-                        color: const Color(0xfff4b400).withValues(alpha: 0.45),
-                        strokeWidth: 3.0,
-                      ),
-                    if (journey.trailPoints.length >= 2)
-                      Polyline(
-                        points: journey.trailPoints,
-                        color: const Color(0xffe65100),
-                        strokeWidth: 5.0,
-                      ),
+                    Polyline(
+                      points: locatedEntries.reversed
+                          .map((e) => LatLng(e.latitude!, e.longitude!))
+                          .toList(),
+                      color: const Color(0xfff4b400).withValues(alpha: 0.45),
+                      strokeWidth: 3.0,
+                    ),
                   ],
                 ),
               if (locatedEntries.isNotEmpty)
@@ -879,32 +612,9 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
                 MarkerLayer(
                   markers: locatedEntries.map(_footprintMarker).toList(),
                 ),
-              if (currentPos != null && journey.isRecording)
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: currentPos,
-                      width: 24,
-                      height: 24,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xffe65100),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2.5),
-                          boxShadow: const [
-                            BoxShadow(color: Colors.black26, blurRadius: 4),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
             ],
           ),
-          if (locatedEntries.isEmpty &&
-              !journey.isRecording &&
-              journey.trailPoints.isEmpty)
-            _mapEmptyOverlay(),
+          if (locatedEntries.isEmpty) _mapEmptyOverlay(),
         ],
       ),
     );

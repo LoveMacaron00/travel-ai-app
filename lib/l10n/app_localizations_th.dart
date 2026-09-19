@@ -1161,9 +1161,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get noCheckIns => 'ยังไม่มีจุด Check-in';
 
   @override
-  String get createCurrentCheckIn => 'เช็คอินตำแหน่งปัจจุบัน';
-
-  @override
   String diaryPhotos(int count) {
     return 'รูปภาพ $count รูป';
   }

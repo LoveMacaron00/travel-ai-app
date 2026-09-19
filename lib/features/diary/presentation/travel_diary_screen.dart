@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/features/diary/domain/travel_diary_entry.dart';
 import 'package:myapp/core/di/app_services.dart';
 import 'package:myapp/features/media/data/image_upload.dart';
-import 'package:myapp/features/map/data/location_service.dart';
 import 'package:myapp/features/diary/data/travel_diary_service.dart';
 import 'package:myapp/features/diary/data/travel_journey_service.dart';
 import 'package:myapp/features/diary/presentation/travel_footprint_screen.dart';
@@ -40,7 +38,6 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
   late final TravelDiaryService _diary;
   List<TravelDiaryEntry> _entries = [];
   final Set<String> _expandedInsightIds = {};
-  final Set<String> _expandedImageSubEntryIds = {};
   bool _loading = true;
   // ปฏิทินกรองตามวัน — null = แสดงทั้งหมด
   DateTime? _selectedCalendarDay;
@@ -118,15 +115,11 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
   /// เพิ่มบันทึกเองจากฟอร์ม — อัปโหลดรูปก่อน (ถ้ามี) แล้วจึงบันทึก entry
   /// รูปไม่สำเร็จก็ยังบันทึกข้อความได้ แค่ไม่มีรูปประกอบ
   /// [forDay] คือวันที่เลือกจากปฏิทิน — บันทึกจะลงวันนั้นแทนวันปัจจุบัน
-  Future<void> _addManualDiary({
-    DateTime? forDay,
-    LatLng? initialLocation,
-  }) async {
+  Future<void> _addManualDiary({DateTime? forDay}) async {
     final result = await showDiaryManualSheet(
       context: context,
       isEdit: false,
       initialDate: forDay,
-      initialLocation: initialLocation,
     );
     if (!mounted) return;
     if (result == null) return;
@@ -198,23 +191,6 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     }
   }
 
-  /// ผู้ใช้สร้าง Check-in จากตำแหน่งปัจจุบันเอง ไม่มีการสร้างอัตโนมัติ.
-  Future<void> _createCheckInAtCurrentLocation() async {
-    var position = LocationService.instance.currentPosition;
-    position ??= await LocationService.instance.refresh();
-    if (!mounted) return;
-    if (position == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.l10n.gpsUnavailable)));
-      return;
-    }
-    await _addManualDiary(
-      forDay: _selectedCalendarDay,
-      initialLocation: position,
-    );
-  }
-
   Future<void> _selectCheckInForDiary() async {
     final checkIns = _entries.where((entry) => entry.hasLocation).toList()
       ..sort((a, b) => b.date.compareTo(a.date));
@@ -282,20 +258,6 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
                     },
                   ),
                 ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.pop(sheetContext);
-                  _createCheckInAtCurrentLocation();
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xff8a6300),
-                  side: const BorderSide(color: _diaryGold),
-                  minimumSize: const Size.fromHeight(48),
-                ),
-                icon: const Icon(Icons.add_location_alt_outlined),
-                label: Text(context.l10n.createCurrentCheckIn),
-              ),
             ],
           ),
         ),
@@ -316,9 +278,6 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       initialProvince: entry.province,
       initialNote: entry.note,
       initialImageUrls: entry.imageUrls,
-      initialLocation: entry.hasLocation
-          ? LatLng(entry.latitude!, entry.longitude!)
-          : null,
       isEdit: true,
     );
     if (!mounted) return;
@@ -378,8 +337,8 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       province: result.province,
       insight: entry.insight,
       imageUrls: finalImageUrls,
-      latitude: result.selectedLocation?.latitude,
-      longitude: result.selectedLocation?.longitude,
+      latitude: entry.latitude,
+      longitude: entry.longitude,
       destinationId: entry.destinationId,
       source: entry.source,
     );
@@ -1117,116 +1076,157 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     ],
   );
 
-  Widget _subEntryWidget(TravelDiaryEntry entry, DiarySubEntry sub) => Padding(
-    padding: EdgeInsets.zero,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.access_time, size: 13, color: Colors.black45),
-            const SizedBox(width: 5),
-            Text(
-              _formatTime(sub.time),
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black54,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const Spacer(),
-            SizedBox(
-              width: 28,
-              height: 22,
-              child: PopupMenuButton<String>(
-                padding: EdgeInsets.zero,
-                icon: const Icon(
-                  Icons.more_horiz,
-                  size: 16,
-                  color: Colors.black45,
+  Widget _subEntryWidget(
+    TravelDiaryEntry entry,
+    DiarySubEntry sub, {
+    bool includeInsight = false,
+  }) {
+    final expandedIds = _expandedInsightIds;
+    final toggleId = entry.id;
+    final isExpanded = expandedIds.contains(toggleId);
+
+    return Padding(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.access_time, size: 13, color: Colors.black45),
+              const SizedBox(width: 5),
+              Text(
+                _formatTime(sub.time),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.black54,
+                  fontWeight: FontWeight.w600,
                 ),
-                onSelected: (val) {
-                  if (val == 'edit') _editDiarySubEntry(entry, sub);
-                  if (val == 'delete') _deleteDiarySubEntry(entry, sub);
-                },
-                itemBuilder: (_) => [
-                  PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.edit_outlined, size: 16),
-                        const SizedBox(width: 8),
-                        Text(context.l10n.editDiaryEntry),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Text(
-                      context.l10n.deleteDiaryEntry,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ),
-                ],
               ),
-            ),
-          ],
-        ),
-        if (sub.imageUrls.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          InkWell(
-            onTap: () => setState(() {
-              if (!_expandedImageSubEntryIds.add(sub.id)) {
-                _expandedImageSubEntryIds.remove(sub.id);
-              }
-            }),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: _diaryPaleGold.withValues(alpha: 0.45),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xffffd96b)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.photo_outlined, color: _diaryGold),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      context.l10n.diaryPhotos(sub.imageUrls.length),
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+              const Spacer(),
+              SizedBox(
+                width: 28,
+                height: 22,
+                child: PopupMenuButton<String>(
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(
+                    Icons.more_horiz,
+                    size: 16,
+                    color: Colors.black45,
+                  ),
+                  onSelected: (val) {
+                    if (val == 'edit') _editDiarySubEntry(entry, sub);
+                    if (val == 'delete') _deleteDiarySubEntry(entry, sub);
+                  },
+                  itemBuilder: (_) => [
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.edit_outlined, size: 16),
+                          const SizedBox(width: 8),
+                          Text(context.l10n.editDiaryEntry),
+                        ],
+                      ),
                     ),
-                  ),
-                  Icon(
-                    _expandedImageSubEntryIds.contains(sub.id)
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    color: const Color(0xff8a6300),
-                  ),
-                ],
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Text(
+                        context.l10n.deleteDiaryEntry,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
-          if (_expandedImageSubEntryIds.contains(sub.id)) ...[
+          if (!includeInsight && sub.imageUrls.isNotEmpty) ...[
             const SizedBox(height: 8),
             _imagesWidget(sub.imageUrls),
           ],
-        ],
-        if (sub.note.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text(
-            sub.note,
-            style: const TextStyle(
-              fontSize: 14,
-              height: 1.42,
-              color: Colors.black87,
+          if (includeInsight &&
+              (sub.imageUrls.isNotEmpty || entry.insight.isNotEmpty)) ...[
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: () => setState(() {
+                if (!expandedIds.add(toggleId)) {
+                  expandedIds.remove(toggleId);
+                }
+              }),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: _diaryPaleGold.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xffffd96b)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      sub.imageUrls.isNotEmpty
+                          ? Icons.photo_outlined
+                          : Icons.auto_awesome,
+                      color: _diaryGold,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        sub.imageUrls.isNotEmpty
+                            ? context.l10n.diaryPhotos(sub.imageUrls.length)
+                            : context.l10n.culturalInsight,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    Icon(
+                      isExpanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      color: const Color(0xff8a6300),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
+            if (isExpanded) ...[
+              if (sub.imageUrls.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                _imagesWidget(sub.imageUrls),
+              ],
+              if (includeInsight && entry.insight.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _diaryPaleGold,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    entry.insight,
+                    style: const TextStyle(fontSize: 12, height: 1.35),
+                  ),
+                ),
+              ],
+            ],
+          ],
+          if (sub.note.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              sub.note,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.42,
+                color: Colors.black87,
+              ),
+            ),
+          ],
         ],
-      ],
-    ),
-  );
+      ),
+    );
+  }
 
   Widget _entryCard(TravelDiaryEntry entry) {
     final isFocused =
@@ -1262,69 +1262,16 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
                 style: const TextStyle(fontSize: 13, color: Colors.black45),
               ),
             )
-          else
-            for (var i = 0; i < entry.subEntries.length; i++) ...[
-              if (i > 0) const SizedBox(height: 10),
+          else ...[
+            _subEntryWidget(
+              entry,
+              entry.subEntries.first,
+              includeInsight: entry.insight.isNotEmpty,
+            ),
+            for (var i = 1; i < entry.subEntries.length; i++) ...[
+              const SizedBox(height: 10),
               _subEntryWidget(entry, entry.subEntries[i]),
             ],
-          if (entry.insight.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            InkWell(
-              onTap: () => setState(() {
-                if (!_expandedInsightIds.add(entry.id)) {
-                  _expandedInsightIds.remove(entry.id);
-                }
-              }),
-              borderRadius: BorderRadius.circular(14),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 11,
-                ),
-                decoration: BoxDecoration(
-                  color: _diaryPaleGold,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xffffd96b)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.auto_awesome,
-                          color: _diaryGold,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            context.l10n.culturalInsight,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        Icon(
-                          _expandedInsightIds.contains(entry.id)
-                              ? Icons.keyboard_arrow_up
-                              : Icons.keyboard_arrow_down,
-                          color: const Color(0xff8a6300),
-                        ),
-                      ],
-                    ),
-                    if (_expandedInsightIds.contains(entry.id)) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        entry.insight,
-                        style: const TextStyle(fontSize: 12, height: 1.35),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
           ],
           const SizedBox(height: 10),
           OutlinedButton.icon(

@@ -467,7 +467,6 @@
   "selectCheckInForDiary": "เลือกจุด Check-in เพื่อเขียนไดอารี่",
   "selectExistingCheckIn": "เลือกจุด Check-in ที่เคยบันทึกไว้",
   "noCheckIns": "ยังไม่มีจุด Check-in",
-  "createCurrentCheckIn": "เช็คอินตำแหน่งปัจจุบัน",
   "diaryPhotos": "รูปภาพ {count} รูป",
   "@diaryPhotos": {
     "placeholders": {"count": {"type": "int"}}

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:myapp/l10n/l10n.dart';
-import 'package:myapp/features/map/presentation/map_picker_screen.dart';
 import 'package:myapp/core/widgets/media_image.dart';
 
 /// Result from diary manual sheet — unified for add/edit to remove duplication.
@@ -100,7 +99,8 @@ class _DiaryManualSheetContent extends StatefulWidget {
   final DateTime? initialDate;
 
   @override
-  State<_DiaryManualSheetContent> createState() => _DiaryManualSheetContentState();
+  State<_DiaryManualSheetContent> createState() =>
+      _DiaryManualSheetContentState();
 }
 
 class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
@@ -150,19 +150,6 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
     if (file != null) setState(() => _pickedImage = file);
   }
 
-  Future<void> _pickLocation() async {
-    // Use this State's context (stable, owns controllers) instead of an
-    // inner StatefulBuilder context. Pushing from StatefulBuilder's
-    // innerContext was causing framework.dart:6171 _dependents.isEmpty
-    // because inherited dependencies (l10n, MediaQuery) were still tracked.
-    final result = await Navigator.push<LatLng>(
-      context,
-      MaterialPageRoute(builder: (_) => MapPickerScreen(initialLocation: _selectedLocation)),
-    );
-    if (!mounted) return;
-    if (result != null) setState(() => _selectedLocation = result);
-  }
-
   // ปฏิทินเลือกวันที่ของบันทึก — บล็อกวันอนาคต (บันทึกย้อนหลังได้อย่างเดียว)
   Future<void> _pickEntryDate() async {
     final now = DateTime.now();
@@ -186,7 +173,8 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
         style: const TextStyle(color: Colors.grey, fontSize: 14),
       );
     }
-    final year = picked.year +
+    final year =
+        picked.year +
         (Localizations.localeOf(context).languageCode == 'th' ? 543 : 0);
     return Text(
       '${context.l10n.diaryPickDate}: ${picked.day}/${picked.month}/$year',
@@ -196,48 +184,48 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
 
   @override
   Widget build(BuildContext context) {
-    final bool hasPreview = _pickedImage != null ||
+    final bool hasPreview =
+        _pickedImage != null ||
         (_existingImageUrls.isNotEmpty && !_removeExistingImage);
 
     Widget imageSourceCard({
       required IconData icon,
       required String label,
       required VoidCallback onTap,
-    }) =>
-        InkWell(
+    }) => InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F8FA),
           borderRadius: BorderRadius.circular(18),
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7F8FA),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFE1E4EA)),
+          border: Border.all(color: const Color(0xFFE1E4EA)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: const Color(0xFF202636), size: 27),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFF202636),
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-            child: Column(
-              children: [
-                Icon(icon, color: const Color(0xFF202636), size: 27),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Color(0xFF202636),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+          ],
+        ),
+      ),
+    );
 
     Widget imageFallback() => const ColoredBox(
-          color: Color(0xffeeeeee),
-          child: Center(
-            child: Icon(Icons.image_not_supported_outlined, color: Colors.black26),
-          ),
-        );
+      color: Color(0xffeeeeee),
+      child: Center(
+        child: Icon(Icons.image_not_supported_outlined, color: Colors.black26),
+      ),
+    );
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -252,7 +240,9 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              widget.isEdit ? context.l10n.editMemory : context.l10n.manualDiaryTitle,
+              widget.isEdit
+                  ? context.l10n.editMemory
+                  : context.l10n.manualDiaryTitle,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 18),
@@ -288,7 +278,9 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                               if (!snap.hasData) {
                                 return const SizedBox(
                                   height: 180,
-                                  child: Center(child: CircularProgressIndicator()),
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
                                 );
                               }
                               return Image.memory(
@@ -326,7 +318,11 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                           color: Colors.black54,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.close, color: Colors.white, size: 18),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 18,
+                        ),
                       ),
                     ),
                   ),
@@ -336,7 +332,10 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                     child: GestureDetector(
                       onTap: () => _pickImage(ImageSource.camera),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.black54,
                           borderRadius: BorderRadius.circular(20),
@@ -344,10 +343,19 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.camera_alt_outlined, color: Colors.white, size: 14),
+                            const Icon(
+                              Icons.camera_alt_outlined,
+                              color: Colors.white,
+                              size: 14,
+                            ),
                             const SizedBox(width: 4),
-                            Text(context.l10n.capturePhoto,
-                                style: const TextStyle(color: Colors.white, fontSize: 12)),
+                            Text(
+                              context.l10n.capturePhoto,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -359,7 +367,10 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                     child: GestureDetector(
                       onTap: () => _pickImage(ImageSource.gallery),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.black54,
                           borderRadius: BorderRadius.circular(20),
@@ -367,10 +378,19 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.photo_library_outlined, color: Colors.white, size: 14),
+                            const Icon(
+                              Icons.photo_library_outlined,
+                              color: Colors.white,
+                              size: 14,
+                            ),
                             const SizedBox(width: 4),
-                            Text(context.l10n.choosePhoto,
-                                style: const TextStyle(color: Colors.white, fontSize: 12)),
+                            Text(
+                              context.l10n.choosePhoto,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -387,7 +407,9 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                 labelText: context.l10n.placeName,
                 hintText: context.l10n.placeNameHint,
                 prefixIcon: const Icon(Icons.place_outlined),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
             const SizedBox(height: 14),
@@ -398,7 +420,9 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                 labelText: context.l10n.provinceVisited,
                 hintText: context.l10n.provinceHint,
                 prefixIcon: const Icon(Icons.flag_outlined),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
             const SizedBox(height: 14),
@@ -408,7 +432,10 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                 onTap: _pickEntryDate,
                 borderRadius: BorderRadius.circular(14),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 18,
+                  ),
                   decoration: BoxDecoration(
                     border: Border.all(
                       color: _entryDate != null ? _sheetGold : Colors.grey,
@@ -419,8 +446,10 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_month_outlined,
-                          color: _entryDate != null ? _sheetGold : Colors.grey),
+                      Icon(
+                        Icons.calendar_month_outlined,
+                        color: _entryDate != null ? _sheetGold : Colors.grey,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(child: _entryDateLabel()),
                       if (_entryDate != null)
@@ -428,7 +457,11 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                           onTap: () => setState(() => _entryDate = null),
                           child: const Padding(
                             padding: EdgeInsets.only(left: 8),
-                            child: Icon(Icons.clear, size: 18, color: Colors.black45),
+                            child: Icon(
+                              Icons.clear,
+                              size: 18,
+                              color: Colors.black45,
+                            ),
                           ),
                         )
                       else
@@ -437,50 +470,6 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                   ),
                 ),
               ),
-            if (!widget.isEdit) const SizedBox(height: 14),
-            InkWell(
-              onTap: _pickLocation,
-              borderRadius: BorderRadius.circular(14),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: _selectedLocation != null ? _sheetGold : Colors.grey,
-                    width: _selectedLocation != null ? 2 : 1,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  color: _selectedLocation != null ? _sheetPaleGold : Colors.white,
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.map_outlined,
-                        color: _selectedLocation != null ? _sheetGold : Colors.grey),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _selectedLocation != null
-                            ? '${context.l10n.selectedLocation}: ${_selectedLocation!.latitude.toStringAsFixed(4)}, ${_selectedLocation!.longitude.toStringAsFixed(4)}'
-                            : context.l10n.selectLocationOnMap,
-                        style: TextStyle(
-                          color: _selectedLocation != null ? Colors.black87 : Colors.grey,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                    if (_selectedLocation != null)
-                      GestureDetector(
-                        onTap: () => setState(() => _selectedLocation = null),
-                        child: const Padding(
-                          padding: EdgeInsets.only(left: 8),
-                          child: Icon(Icons.clear, size: 18, color: Colors.black45),
-                        ),
-                      )
-                    else
-                      const Icon(Icons.chevron_right, color: Colors.grey),
-                  ],
-                ),
-              ),
-            ),
             const SizedBox(height: 14),
             TextField(
               controller: _noteCtrl,
@@ -494,7 +483,9 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                   padding: EdgeInsets.only(bottom: 48),
                   child: Icon(Icons.edit_outlined),
                 ),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
             const SizedBox(height: 22),
@@ -516,7 +507,9 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                 backgroundColor: _sheetGold,
                 foregroundColor: Colors.black,
                 minimumSize: const Size.fromHeight(50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
               icon: const Icon(Icons.save_outlined),
               label: Text(context.l10n.saveMemory),

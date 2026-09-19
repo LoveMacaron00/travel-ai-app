@@ -1175,9 +1175,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noCheckIns => 'No saved check-ins yet';
 
   @override
-  String get createCurrentCheckIn => 'Check in at current location';
-
-  @override
   String diaryPhotos(int count) {
     return '$count photos';
   }

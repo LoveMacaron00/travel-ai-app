@@ -467,7 +467,6 @@
   "selectCheckInForDiary": "Choose a check-in to write a diary",
   "selectExistingCheckIn": "Choose a saved check-in",
   "noCheckIns": "No saved check-ins yet",
-  "createCurrentCheckIn": "Check in at current location",
   "diaryPhotos": "{count} photos",
   "@diaryPhotos": {
     "placeholders": {"count": {"type": "int"}}
