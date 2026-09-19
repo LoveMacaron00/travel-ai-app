@@ -1158,4 +1158,82 @@ class AppLocalizationsEn extends AppLocalizations {
   String navigationLocked(String date) {
     return 'Navigation unlocks on $date';
   }
+
+  @override
+  String get gpsCheckIn => 'GPS Check-in';
+
+  @override
+  String get startDiaryWithCheckIn => 'Check in to start a diary';
+
+  @override
+  String get selectCheckInForDiary => 'Choose a check-in to write a diary';
+
+  @override
+  String get selectExistingCheckIn => 'Choose a saved check-in';
+
+  @override
+  String get noCheckIns => 'No saved check-ins yet';
+
+  @override
+  String get createCurrentCheckIn => 'Check in at current location';
+
+  @override
+  String diaryPhotos(int count) {
+    return '$count photos';
+  }
+
+  @override
+  String get checkInHere => 'Check in here';
+
+  @override
+  String get checkInPoint => 'Check-in Point';
+
+  @override
+  String get addDiaryEntry => 'Add diary to this check-in';
+
+  @override
+  String get editDiaryEntry => 'Edit diary';
+
+  @override
+  String get deleteDiaryEntry => 'Delete this diary';
+
+  @override
+  String get deleteDiaryEntryConfirmation =>
+      'Are you sure you want to delete this diary entry?';
+
+  @override
+  String get writeDiaryForCheckIn => 'Write diary for this check-in';
+
+  @override
+  String get recordJourney => 'Record Journey';
+
+  @override
+  String get startRecordingJourney => 'Start Recording Journey';
+
+  @override
+  String get stopRecordingJourney => 'End Journey';
+
+  @override
+  String get recordingJourneyActive => 'Recording journey in progress';
+
+  @override
+  String get walkingTrail => 'Walking Trail';
+
+  @override
+  String get goToDiary => 'Go to Diary';
+
+  @override
+  String get goToFootprint => 'Travel Footprint';
+
+  @override
+  String get checkInName => 'Check-in Name';
+
+  @override
+  String get checkInSuccess => 'Check-in successful';
+
+  @override
+  String get distanceWalked => 'Distance';
+
+  @override
+  String get timeElapsed => 'Time';
 }

@@ -1144,4 +1144,82 @@ class AppLocalizationsTh extends AppLocalizations {
   String navigationLocked(String date) {
     return 'นำทางได้เมื่อถึงวันที่ $date';
   }
+
+  @override
+  String get gpsCheckIn => 'เช็คอินจุดนี้ (GPS)';
+
+  @override
+  String get startDiaryWithCheckIn => 'เช็คอินเพื่อเริ่มเขียนไดอารี่';
+
+  @override
+  String get selectCheckInForDiary => 'เลือกจุด Check-in เพื่อเขียนไดอารี่';
+
+  @override
+  String get selectExistingCheckIn => 'เลือกจุด Check-in ที่เคยบันทึกไว้';
+
+  @override
+  String get noCheckIns => 'ยังไม่มีจุด Check-in';
+
+  @override
+  String get createCurrentCheckIn => 'เช็คอินตำแหน่งปัจจุบัน';
+
+  @override
+  String diaryPhotos(int count) {
+    return 'รูปภาพ $count รูป';
+  }
+
+  @override
+  String get checkInHere => 'เช็คอินที่นี่';
+
+  @override
+  String get checkInPoint => 'จุดเช็คอิน';
+
+  @override
+  String get addDiaryEntry => 'เพิ่มไดอารี่ในจุดนี้';
+
+  @override
+  String get editDiaryEntry => 'แก้ไขไดอารี่';
+
+  @override
+  String get deleteDiaryEntry => 'ลบไดอารี่นี้';
+
+  @override
+  String get deleteDiaryEntryConfirmation =>
+      'คุณแน่ใจหรือไม่ว่าต้องการลบไดอารี่รายการนี้?';
+
+  @override
+  String get writeDiaryForCheckIn => 'เขียนไดอารี่สำหรับจุดนี้';
+
+  @override
+  String get recordJourney => 'บันทึกการเดินทาง';
+
+  @override
+  String get startRecordingJourney => 'เริ่มบันทึกการเดินทาง';
+
+  @override
+  String get stopRecordingJourney => 'สิ้นสุดการเดินทาง';
+
+  @override
+  String get recordingJourneyActive => 'กำลังบันทึกการเดินทาง';
+
+  @override
+  String get walkingTrail => 'ร่องรอยการเดิน';
+
+  @override
+  String get goToDiary => 'ไปหน้าไดอารี่';
+
+  @override
+  String get goToFootprint => 'ร่องรอยการเดินทาง';
+
+  @override
+  String get checkInName => 'ชื่อจุดเช็คอิน';
+
+  @override
+  String get checkInSuccess => 'เช็คอินสำเร็จแล้ว';
+
+  @override
+  String get distanceWalked => 'ระยะทาง';
+
+  @override
+  String get timeElapsed => 'เวลา';
 }

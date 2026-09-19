@@ -461,5 +461,33 @@
   "navigationLocked": "นำทางได้เมื่อถึงวันที่ {date}",
   "@navigationLocked": {
     "placeholders": {"date": {"type": "String"}}
-  }
+  },
+  "gpsCheckIn": "เช็คอินจุดนี้ (GPS)",
+  "startDiaryWithCheckIn": "เช็คอินเพื่อเริ่มเขียนไดอารี่",
+  "selectCheckInForDiary": "เลือกจุด Check-in เพื่อเขียนไดอารี่",
+  "selectExistingCheckIn": "เลือกจุด Check-in ที่เคยบันทึกไว้",
+  "noCheckIns": "ยังไม่มีจุด Check-in",
+  "createCurrentCheckIn": "เช็คอินตำแหน่งปัจจุบัน",
+  "diaryPhotos": "รูปภาพ {count} รูป",
+  "@diaryPhotos": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "checkInHere": "เช็คอินที่นี่",
+  "checkInPoint": "จุดเช็คอิน",
+  "addDiaryEntry": "เพิ่มไดอารี่ในจุดนี้",
+  "editDiaryEntry": "แก้ไขไดอารี่",
+  "deleteDiaryEntry": "ลบไดอารี่นี้",
+  "deleteDiaryEntryConfirmation": "คุณแน่ใจหรือไม่ว่าต้องการลบไดอารี่รายการนี้?",
+  "writeDiaryForCheckIn": "เขียนไดอารี่สำหรับจุดนี้",
+  "recordJourney": "บันทึกการเดินทาง",
+  "startRecordingJourney": "เริ่มบันทึกการเดินทาง",
+  "stopRecordingJourney": "สิ้นสุดการเดินทาง",
+  "recordingJourneyActive": "กำลังบันทึกการเดินทาง",
+  "walkingTrail": "ร่องรอยการเดิน",
+  "goToDiary": "ไปหน้าไดอารี่",
+  "goToFootprint": "ร่องรอยการเดินทาง",
+  "checkInName": "ชื่อจุดเช็คอิน",
+  "checkInSuccess": "เช็คอินสำเร็จแล้ว",
+  "distanceWalked": "ระยะทาง",
+  "timeElapsed": "เวลา"
 }

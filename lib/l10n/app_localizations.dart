@@ -2209,6 +2209,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Navigation unlocks on {date}'**
   String navigationLocked(String date);
+
+  /// No description provided for @gpsCheckIn.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS Check-in'**
+  String get gpsCheckIn;
+
+  /// No description provided for @startDiaryWithCheckIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in to start a diary'**
+  String get startDiaryWithCheckIn;
+
+  /// No description provided for @selectCheckInForDiary.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a check-in to write a diary'**
+  String get selectCheckInForDiary;
+
+  /// No description provided for @selectExistingCheckIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a saved check-in'**
+  String get selectExistingCheckIn;
+
+  /// No description provided for @noCheckIns.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved check-ins yet'**
+  String get noCheckIns;
+
+  /// No description provided for @createCurrentCheckIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in at current location'**
+  String get createCurrentCheckIn;
+
+  /// No description provided for @diaryPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} photos'**
+  String diaryPhotos(int count);
+
+  /// No description provided for @checkInHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in here'**
+  String get checkInHere;
+
+  /// No description provided for @checkInPoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in Point'**
+  String get checkInPoint;
+
+  /// No description provided for @addDiaryEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Add diary to this check-in'**
+  String get addDiaryEntry;
+
+  /// No description provided for @editDiaryEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit diary'**
+  String get editDiaryEntry;
+
+  /// No description provided for @deleteDiaryEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this diary'**
+  String get deleteDiaryEntry;
+
+  /// No description provided for @deleteDiaryEntryConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this diary entry?'**
+  String get deleteDiaryEntryConfirmation;
+
+  /// No description provided for @writeDiaryForCheckIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Write diary for this check-in'**
+  String get writeDiaryForCheckIn;
+
+  /// No description provided for @recordJourney.
+  ///
+  /// In en, this message translates to:
+  /// **'Record Journey'**
+  String get recordJourney;
+
+  /// No description provided for @startRecordingJourney.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Recording Journey'**
+  String get startRecordingJourney;
+
+  /// No description provided for @stopRecordingJourney.
+  ///
+  /// In en, this message translates to:
+  /// **'End Journey'**
+  String get stopRecordingJourney;
+
+  /// No description provided for @recordingJourneyActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording journey in progress'**
+  String get recordingJourneyActive;
+
+  /// No description provided for @walkingTrail.
+  ///
+  /// In en, this message translates to:
+  /// **'Walking Trail'**
+  String get walkingTrail;
+
+  /// No description provided for @goToDiary.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Diary'**
+  String get goToDiary;
+
+  /// No description provided for @goToFootprint.
+  ///
+  /// In en, this message translates to:
+  /// **'Travel Footprint'**
+  String get goToFootprint;
+
+  /// No description provided for @checkInName.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in Name'**
+  String get checkInName;
+
+  /// No description provided for @checkInSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in successful'**
+  String get checkInSuccess;
+
+  /// No description provided for @distanceWalked.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get distanceWalked;
+
+  /// No description provided for @timeElapsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get timeElapsed;
 }
 
 class _AppLocalizationsDelegate

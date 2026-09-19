@@ -346,6 +346,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         body: _showingDiary
             ? TravelDiaryScreen(
                 onBack: () => setState(() => _showingDiary = false),
+                onOpenFootprint: _showFootprint,
               )
             : _showingFeedback
             ? FeedbackHistoryScreen(

@@ -1,18 +1,17 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/features/diary/domain/travel_diary_entry.dart';
-import 'package:myapp/features/chat/presentation/chatbot_screen.dart';
 import 'package:myapp/core/di/app_services.dart';
 import 'package:myapp/features/media/data/image_upload.dart';
 import 'package:myapp/features/map/data/location_service.dart';
-import 'package:myapp/features/diary/data/travel_diary_automation_service.dart';
 import 'package:myapp/features/diary/data/travel_diary_service.dart';
+import 'package:myapp/features/diary/data/travel_journey_service.dart';
+import 'package:myapp/features/diary/presentation/travel_footprint_screen.dart';
 import 'package:myapp/features/diary/widgets/diary_calendar_card.dart';
 import 'package:myapp/features/diary/widgets/diary_manual_sheet.dart';
+import 'package:myapp/features/diary/widgets/diary_sub_entry_sheet.dart';
 import 'package:myapp/core/widgets/media_image.dart';
 
 const _diaryGold = Color(0xfff4b400);
@@ -20,12 +19,18 @@ const _diaryPaleGold = Color(0xffffefbd);
 const _diaryBorder = Color(0xffe6e6e6);
 
 /// หน้า Smart Travel Diary — สมุดบันทึกการเดินทางแบบ timeline แบ่งตามวัน
-/// บันทึกเข้ามาได้ 3 ช่องทาง: GPS อัตโนมัติ (TravelDiaryAutomationService),
-/// กล้อง AI สแกน (ผ่าน ChatbotScreen) และผู้ใช้พิมพ์เอง
+/// ผู้ใช้บันทึกไดอารี่ด้วยการ Check-in หรือเขียนเองได้
 class TravelDiaryScreen extends StatefulWidget {
-  const TravelDiaryScreen({super.key, this.onBack});
+  const TravelDiaryScreen({
+    super.key,
+    this.onBack,
+    this.onOpenFootprint,
+    this.focusEntryId,
+  });
 
   final VoidCallback? onBack;
+  final VoidCallback? onOpenFootprint;
+  final String? focusEntryId;
 
   @override
   State<TravelDiaryScreen> createState() => _TravelDiaryScreenState();
@@ -33,11 +38,9 @@ class TravelDiaryScreen extends StatefulWidget {
 
 class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
   late final TravelDiaryService _diary;
-  // debounce บันทึกโน้ตราย entry — พิมพ์ต่อเนื่องจะ reset timer กันยิง API ทุก keystroke
-  final Map<String, Timer> _noteSaveTimers = {};
-  // debounce reload รายการ เมื่อ GPS เปลี่ยน (อาจมี entry ใหม่จากระบบ auto โผล่มา)
-  Timer? _locationReloadTimer;
   List<TravelDiaryEntry> _entries = [];
+  final Set<String> _expandedInsightIds = {};
+  final Set<String> _expandedImageSubEntryIds = {};
   bool _loading = true;
   // ปฏิทินกรองตามวัน — null = แสดงทั้งหมด
   DateTime? _selectedCalendarDay;
@@ -47,35 +50,18 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
   void initState() {
     super.initState();
     _diary = AppServices.diary;
-    LocationService.instance.addListener(_onLocationChanged);
-    _initializeDiary();
+    TravelJourneyService.instance.addListener(_onJourneyUpdated);
+    _loadEntries();
   }
 
-  /// เปิด automation บันทึก GPS อัตโนมัติ (ถ้าผู้ใช้ไม่ได้ปิดสวิตช์ไว้)
-  /// ก่อนโหลดรายการทั้งหมดจาก server มาแสดง
-  Future<void> _initializeDiary() async {
-    if (await TravelDiaryAutomationService.isEnabled()) {
-      await AppServices.diaryAutomation.start();
-    }
-    await _loadEntries();
+  void _onJourneyUpdated() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    LocationService.instance.removeListener(_onLocationChanged);
-    _locationReloadTimer?.cancel();
-    for (final timer in _noteSaveTimers.values) {
-      timer.cancel();
-    }
+    TravelJourneyService.instance.removeListener(_onJourneyUpdated);
     super.dispose();
-  }
-
-  void _onLocationChanged() {
-    // GPS เด้งบ่อย รอให้ตำแหน่งนิ่ง 1.2 วินาทีแล้วค่อยโหลดใหม่ครั้งเดียว
-    _locationReloadTimer?.cancel();
-    _locationReloadTimer = Timer(const Duration(milliseconds: 1200), () {
-      if (mounted) unawaited(_loadEntries());
-    });
   }
 
   Future<void> _loadEntries() async {
@@ -97,31 +83,6 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
           )) {
         _selectedCalendarDay = null;
       }
-    });
-  }
-
-  /// เปิดกล้อง AI สแกนสถานที่ — ฝั่ง ChatbotScreen จะเรียก recordAiCapture()
-  /// บันทึก entry เอง พอกลับมาหน้านี้จึงต้อง reload รายการ
-  Future<void> _openAiCamera() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const ChatbotScreen(openScannerOnStart: true),
-      ),
-    );
-    await _loadEntries();
-  }
-
-  /// autosave โน้ตแบบ debounce — หยุดพิมพ์ 650ms แล้วค่อย upsert กลับ server
-  /// timer เก่าถูก cancel ทุกครั้งที่พิมพ์ต่อ จึงบันทึกรอบสุดท้ายรอบเดียว
-  void _scheduleNoteSave(TravelDiaryEntry entry, String note) {
-    _noteSaveTimers[entry.id]?.cancel();
-    _noteSaveTimers[entry.id] = Timer(const Duration(milliseconds: 650), () {
-      final index = _entries.indexWhere((item) => item.id == entry.id);
-      if (index < 0) return;
-      final updated = _entries[index].copyWith(note: note.trim());
-      _entries[index] = updated;
-      unawaited(_diary.upsert(updated));
     });
   }
 
@@ -157,15 +118,24 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
   /// เพิ่มบันทึกเองจากฟอร์ม — อัปโหลดรูปก่อน (ถ้ามี) แล้วจึงบันทึก entry
   /// รูปไม่สำเร็จก็ยังบันทึกข้อความได้ แค่ไม่มีรูปประกอบ
   /// [forDay] คือวันที่เลือกจากปฏิทิน — บันทึกจะลงวันนั้นแทนวันปัจจุบัน
-  Future<void> _addManualDiary({DateTime? forDay}) async {
+  Future<void> _addManualDiary({
+    DateTime? forDay,
+    LatLng? initialLocation,
+  }) async {
     final result = await showDiaryManualSheet(
       context: context,
       isEdit: false,
       initialDate: forDay,
+      initialLocation: initialLocation,
     );
     if (!mounted) return;
     if (result == null) return;
-    if (result.title.isEmpty && result.province.isEmpty && result.note.isEmpty && result.pickedImage == null) return;
+    if (result.title.isEmpty &&
+        result.province.isEmpty &&
+        result.note.isEmpty &&
+        result.pickedImage == null) {
+      return;
+    }
 
     String? uploadedUrl;
     if (result.pickedImage != null) {
@@ -199,7 +169,6 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
             now.minute,
           )
         : now;
-    final position = LocationService.instance.currentPosition;
     final entry = TravelDiaryEntry(
       id: 'manual_${now.microsecondsSinceEpoch}',
       date: entryDate,
@@ -207,8 +176,8 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       note: result.note,
       province: result.province,
       imageUrls: uploadedUrl != null ? [uploadedUrl] : const [],
-      latitude: result.selectedLocation?.latitude ?? position?.latitude,
-      longitude: result.selectedLocation?.longitude ?? position?.longitude,
+      latitude: result.selectedLocation?.latitude,
+      longitude: result.selectedLocation?.longitude,
       source: 'manual',
     );
     final ok = await _diary.upsert(entry);
@@ -222,10 +191,118 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       await _loadEntries();
       if (mounted) {
         final l10n = context.l10n;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.memorySaved)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.memorySaved)));
       }
+    }
+  }
+
+  /// ผู้ใช้สร้าง Check-in จากตำแหน่งปัจจุบันเอง ไม่มีการสร้างอัตโนมัติ.
+  Future<void> _createCheckInAtCurrentLocation() async {
+    var position = LocationService.instance.currentPosition;
+    position ??= await LocationService.instance.refresh();
+    if (!mounted) return;
+    if (position == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.gpsUnavailable)));
+      return;
+    }
+    await _addManualDiary(
+      forDay: _selectedCalendarDay,
+      initialLocation: position,
+    );
+  }
+
+  Future<void> _selectCheckInForDiary() async {
+    final checkIns = _entries.where((entry) => entry.hasLocation).toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+
+    final selected = await showModalBottomSheet<TravelDiaryEntry>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                context.l10n.selectExistingCheckIn,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (checkIns.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    context.l10n.noCheckIns,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.black54),
+                  ),
+                )
+              else
+                SizedBox(
+                  height: 320,
+                  child: ListView.separated(
+                    itemCount: checkIns.length,
+                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    itemBuilder: (_, index) {
+                      final entry = checkIns[index];
+                      final title = entry.title.isNotEmpty
+                          ? entry.title
+                          : entry.province.isNotEmpty
+                          ? entry.province
+                          : context.l10n.locationDetails;
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const CircleAvatar(
+                          backgroundColor: _diaryPaleGold,
+                          child: Icon(Icons.location_on, color: _diaryGold),
+                        ),
+                        title: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        subtitle: Text(_formatDate(entry.date)),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.pop(sheetContext, entry),
+                      );
+                    },
+                  ),
+                ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  _createCheckInAtCurrentLocation();
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xff8a6300),
+                  side: const BorderSide(color: _diaryGold),
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                icon: const Icon(Icons.add_location_alt_outlined),
+                label: Text(context.l10n.createCurrentCheckIn),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (selected != null && mounted) {
+      await _addDiaryToEntry(selected);
     }
   }
 
@@ -239,7 +316,9 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       initialProvince: entry.province,
       initialNote: entry.note,
       initialImageUrls: entry.imageUrls,
-      initialLocation: entry.hasLocation ? LatLng(entry.latitude!, entry.longitude!) : null,
+      initialLocation: entry.hasLocation
+          ? LatLng(entry.latitude!, entry.longitude!)
+          : null,
       isEdit: true,
     );
     if (!mounted) return;
@@ -266,21 +345,26 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       if (uploadedUrl != null) {
         finalImageUrls = [uploadedUrl];
       } else {
-        if (!result.removeExistingImage && result.existingImageUrls.isNotEmpty) {
+        if (!result.removeExistingImage &&
+            result.existingImageUrls.isNotEmpty) {
           finalImageUrls = result.existingImageUrls;
         }
         if (mounted) {
           final l10n = context.l10n;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.uploadFailed)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.uploadFailed)));
         }
       }
-    } else if (!result.removeExistingImage && result.existingImageUrls.isNotEmpty) {
+    } else if (!result.removeExistingImage &&
+        result.existingImageUrls.isNotEmpty) {
       finalImageUrls = result.existingImageUrls;
     }
 
-    if (result.title.isEmpty && result.province.isEmpty && result.note.isEmpty && finalImageUrls.isEmpty) {
+    if (result.title.isEmpty &&
+        result.province.isEmpty &&
+        result.note.isEmpty &&
+        finalImageUrls.isEmpty) {
       return;
     }
 
@@ -306,11 +390,166 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       await _loadEntries();
       if (mounted) {
         final l10n = context.l10n;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.memorySaved)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.memorySaved)));
       }
     }
+  }
+
+  Future<void> _addDiaryToEntry(TravelDiaryEntry entry) async {
+    final result = await showDiarySubEntrySheet(
+      context: context,
+      checkInTitle: entry.title.isNotEmpty ? entry.title : entry.province,
+    );
+    if (result == null || !mounted) return;
+
+    final List<String> uploadedUrls = [];
+    if (result.pickedImages.isNotEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${context.l10n.memorySaved}...'),
+            duration: const Duration(seconds: 10),
+          ),
+        );
+      }
+      for (final img in result.pickedImages) {
+        final bytes = await img.readAsBytes();
+        final url = await _diary.uploadImage(
+          ImageUpload(bytes: bytes, filename: img.name),
+        );
+        if (url != null) uploadedUrls.add(url);
+      }
+      if (mounted) ScaffoldMessenger.of(context).clearSnackBars();
+    }
+    if (!mounted) return;
+
+    final now = DateTime.now();
+    final newSub = DiarySubEntry(
+      id: 'sub_${now.microsecondsSinceEpoch}',
+      time: now,
+      note: result.note,
+      imageUrls: uploadedUrls,
+    );
+
+    final updated = entry.addSubEntry(newSub);
+    final ok = await _diary.upsert(updated);
+    if (!mounted) return;
+    if (ok) {
+      await _loadEntries();
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.memorySaved)));
+      }
+    }
+  }
+
+  Future<void> _editDiarySubEntry(
+    TravelDiaryEntry entry,
+    DiarySubEntry sub,
+  ) async {
+    final result = await showDiarySubEntrySheet(
+      context: context,
+      initialNote: sub.note,
+      initialImageUrls: sub.imageUrls,
+      isEdit: true,
+      checkInTitle: entry.title.isNotEmpty ? entry.title : entry.province,
+    );
+    if (result == null || !mounted) return;
+
+    final List<String> finalImages = List.from(result.keptExistingImages);
+    if (result.pickedImages.isNotEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${context.l10n.memorySaved}...'),
+            duration: const Duration(seconds: 10),
+          ),
+        );
+      }
+      for (final img in result.pickedImages) {
+        final bytes = await img.readAsBytes();
+        final url = await _diary.uploadImage(
+          ImageUpload(bytes: bytes, filename: img.name),
+        );
+        if (url != null) finalImages.add(url);
+      }
+      if (mounted) ScaffoldMessenger.of(context).clearSnackBars();
+    }
+    if (!mounted) return;
+
+    final updatedSub = sub.copyWith(note: result.note, imageUrls: finalImages);
+
+    final updated = entry.updateSubEntry(updatedSub);
+    final ok = await _diary.upsert(updated);
+    if (!mounted) return;
+    if (ok) {
+      await _loadEntries();
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.memorySaved)));
+      }
+    }
+  }
+
+  Future<void> _deleteDiarySubEntry(
+    TravelDiaryEntry entry,
+    DiarySubEntry sub,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.l10n.deleteDiaryEntry),
+        content: Text(context.l10n.deleteDiaryEntryConfirmation),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(context.l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(
+              context.l10n.deleteDiaryEntry,
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final updated = entry.removeSubEntry(sub.id);
+    final ok = await _diary.upsert(updated);
+    if (!mounted) return;
+    if (ok) {
+      await _loadEntries();
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.deleteMemory)));
+      }
+    }
+  }
+
+  void _openFootprint() {
+    if (widget.onOpenFootprint != null) {
+      widget.onOpenFootprint!.call();
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TravelFootprintScreen(
+          onBack: () => Navigator.pop(context),
+          onOpenDiary: () => Navigator.pop(context),
+        ),
+      ),
+    ).then((_) {
+      if (mounted) _loadEntries();
+    });
   }
 
   /// จัดกลุ่ม entries ตามวันเพื่อวาด timeline
@@ -359,10 +598,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     Localizations.localeOf(context).languageCode,
   ).format(date);
 
-  String _formatTime(DateTime date) => DateFormat(
-    'h:mm a',
-    Localizations.localeOf(context).languageCode,
-  ).format(date);
+  String _formatTime(DateTime date) => DateFormat('HH:mm').format(date);
 
   String _formatDuration(int minutes) {
     if (minutes < 60) return context.l10n.diaryMinutes(minutes.clamp(1, 59));
@@ -394,14 +630,19 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       centerTitle: true,
       actions: [
         IconButton(
+          tooltip: context.l10n.selectCheckInForDiary,
+          onPressed: _selectCheckInForDiary,
+          icon: const Icon(Icons.add_location_alt_outlined, color: _diaryGold),
+        ),
+        IconButton(
+          tooltip: context.l10n.goToFootprint,
+          onPressed: _openFootprint,
+          icon: const Icon(Icons.map_outlined, color: _diaryGold),
+        ),
+        IconButton(
           tooltip: context.l10n.addManualDiary,
           onPressed: () => _addManualDiary(forDay: _selectedCalendarDay),
           icon: const Icon(Icons.add_circle_outline, color: _diaryGold),
-        ),
-        IconButton(
-          tooltip: context.l10n.openAiCamera,
-          onPressed: _openAiCamera,
-          icon: const Icon(Icons.photo_camera_outlined, color: _diaryGold),
         ),
       ],
     ),
@@ -416,10 +657,83 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
           ),
   );
 
+  Widget _journeyRecordingBanner() {
+    final journey = TravelJourneyService.instance;
+    if (!journey.isRecording) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 4, 14, 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xfffff7dc),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _diaryGold, width: 1.5),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1a000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: const BoxDecoration(
+              color: Colors.redAccent,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n.recordingJourneyActive,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${context.l10n.timeElapsed}: ${journey.formattedDuration} • ${context.l10n.distanceWalked}: ${journey.formattedDistance}',
+                  style: const TextStyle(fontSize: 11.5, color: Colors.black54),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: _openFootprint,
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xffa67400),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              visualDensity: VisualDensity.compact,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  context.l10n.walkingTrail,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
+                const Icon(Icons.chevron_right, size: 16),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// ชุดวันของปฏิทิน — วันที่เคยบันทึก + รูปแรกของวันนั้น (badge ใต้เลขวัน)
-  Set<DateTime> get _calendarDays => _entries
-      .map((e) => DateUtils.dateOnly(e.date))
-      .toSet();
+  Set<DateTime> get _calendarDays =>
+      _entries.map((e) => DateUtils.dateOnly(e.date)).toSet();
 
   Map<DateTime, String> get _calendarThumbs {
     final thumbs = <DateTime, String>{};
@@ -453,23 +767,22 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
         DateUtils.isSameDay(days.first.date, selectedDay);
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(0, 12, 14, 28),
-      itemCount:
-          1 + (showPreview ? 1 : 0) + (days.isEmpty ? 1 : days.length),
+      padding: const EdgeInsets.fromLTRB(0, 8, 14, 28),
+      itemCount: 2 + (showPreview ? 1 : 0) + (days.isEmpty ? 1 : days.length),
       itemBuilder: (_, index) {
-        if (index == 0) {
+        if (index == 0) return _journeyRecordingBanner();
+        if (index == 1) {
           return DiaryCalendarCard(
             focusedMonth: _calendarMonth,
             selectedDay: _selectedCalendarDay,
             daysWithEntries: _calendarDays,
             thumbnailByDay: _calendarThumbs,
-            onMonthChanged: (month) =>
-                setState(() => _calendarMonth = month),
+            onMonthChanged: (month) => setState(() => _calendarMonth = month),
             onDaySelected: _onCalendarDaySelected,
             onClearDay: () => setState(() => _selectedCalendarDay = null),
           );
         }
-        if (showPreview && index == 1) {
+        if (showPreview && index == 2) {
           return DiaryDayPreviewCard(
             date: days.first.date,
             place: days.first.place,
@@ -477,7 +790,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
           );
         }
         if (days.isEmpty) return _filteredEmptyState();
-        final day = days[showPreview ? index - 2 : index - 1];
+        final day = days[showPreview ? index - 3 : index - 2];
         return _daySection(day);
       },
     );
@@ -495,11 +808,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       ),
       child: Column(
         children: [
-          const Icon(
-            Icons.event_note_outlined,
-            color: _diaryGold,
-            size: 36,
-          ),
+          const Icon(Icons.event_note_outlined, color: _diaryGold, size: 36),
           const SizedBox(height: 10),
           Text(
             context.l10n.diaryNoEntriesOnDay,
@@ -507,8 +816,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
           ),
           const SizedBox(height: 12),
           FilledButton.icon(
-            onPressed: () =>
-                _addManualDiary(forDay: _selectedCalendarDay),
+            onPressed: () => _addManualDiary(forDay: _selectedCalendarDay),
             style: FilledButton.styleFrom(
               backgroundColor: _diaryGold,
               foregroundColor: Colors.black,
@@ -551,23 +859,23 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            context.l10n.diaryAutoDescription,
+            context.l10n.noDiaryEntriesDescription,
             textAlign: TextAlign.center,
             style: const TextStyle(color: Colors.black54, height: 1.45),
           ),
           const SizedBox(height: 22),
           FilledButton.icon(
-            onPressed: _openAiCamera,
+            onPressed: _selectCheckInForDiary,
             style: FilledButton.styleFrom(
               backgroundColor: _diaryGold,
               foregroundColor: Colors.black,
-              minimumSize: const Size(190, 48),
+              minimumSize: const Size(250, 48),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
-            icon: const Icon(Icons.photo_camera_outlined),
-            label: Text(context.l10n.openAiCamera),
+            icon: const Icon(Icons.add_location_alt_outlined),
+            label: Text(context.l10n.selectCheckInForDiary),
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
@@ -656,19 +964,15 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
         ),
       );
 
-  /// ไอคอน/สีของ node บน timeline ต่างกันตามแหล่งที่มาของ entry
-  /// ทอง = จับจาก GPS อัตโนมัติ, เทา = สแกนด้วยกล้อง AI, น้ำเงิน = พิมพ์เอง
+  /// ไอคอน/สีของ node บน timeline แยกตามการมีพิกัดหรือการเขียนเอง
   Widget _timelineNode(TravelDiaryEntry entry) {
     final IconData icon;
     final Color color;
     switch (entry.source) {
-      case 'aiCamera':
-        icon = Icons.photo_camera;
-        color = const Color(0xff9e9e9e);
       case 'manual':
         icon = Icons.edit_note;
         color = const Color(0xff6d9eeb);
-      default: // gps
+      default:
         icon = Icons.location_on;
         color = _diaryGold;
     }
@@ -691,23 +995,71 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              entry.title.isEmpty ? context.l10n.locationDetails : entry.title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            if (entry.durationMinutes > 0) ...[
-              const SizedBox(height: 3),
-              Row(
-                children: [
-                  const Icon(Icons.schedule, color: _diaryGold, size: 14),
-                  const SizedBox(width: 5),
-                  Text(
-                    _formatDuration(entry.durationMinutes),
-                    style: const TextStyle(color: _diaryGold, fontSize: 12),
+            Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    entry.title.isEmpty
+                        ? context.l10n.locationDetails
+                        : entry.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (entry.province.isNotEmpty) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _diaryPaleGold,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      entry.province,
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xff8a6300),
+                      ),
+                    ),
                   ),
                 ],
-              ),
-            ],
+              ],
+            ),
+            const SizedBox(height: 3),
+            Row(
+              children: [
+                if (entry.hasLocation) ...[
+                  const Icon(Icons.place, color: _diaryGold, size: 13),
+                  const SizedBox(width: 3),
+                  Text(
+                    context.l10n.locationDetails,
+                    style: const TextStyle(
+                      color: _diaryGold,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                if (entry.durationMinutes > 0) ...[
+                  const Icon(Icons.schedule, color: Colors.black45, size: 13),
+                  const SizedBox(width: 3),
+                  Text(
+                    _formatDuration(entry.durationMinutes),
+                    style: const TextStyle(
+                      color: Colors.black54,
+                      fontSize: 11.5,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ],
         ),
       ),
@@ -722,17 +1074,26 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       SizedBox(
         width: 32,
         height: 24,
-        // เมนูจัดการ entry — ให้แก้ไขเฉพาะที่ผู้ใช้พิมพ์เอง (manual)
-        // entry จาก AI/GPS ลบได้อย่างเดียว กัน user แก้ข้อมูลที่ระบบสร้างไว้
         child: PopupMenuButton<String>(
           padding: EdgeInsets.zero,
           icon: const Icon(Icons.more_vert, size: 18, color: Colors.black45),
           onSelected: (val) {
+            if (val == 'add') _addDiaryToEntry(entry);
             if (val == 'edit') _editManualDiary(entry);
             if (val == 'delete') _deleteEntry(entry);
           },
           itemBuilder: (_) => [
-            if (entry.source == 'manual')
+            PopupMenuItem(
+              value: 'add',
+              child: Row(
+                children: [
+                  const Icon(Icons.add_photo_alternate_outlined, size: 18),
+                  const SizedBox(width: 8),
+                  Text(context.l10n.addDiaryEntry),
+                ],
+              ),
+            ),
+            if (entry.source == 'manual' || entry.source == 'gps')
               PopupMenuItem(
                 value: 'edit',
                 child: Row(
@@ -756,81 +1117,253 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     ],
   );
 
-  Widget _entryCard(TravelDiaryEntry entry) => Container(
-    padding: const EdgeInsets.all(10),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(15),
-      border: Border.all(color: _diaryBorder),
-    ),
+  Widget _subEntryWidget(TravelDiaryEntry entry, DiarySubEntry sub) => Padding(
+    padding: EdgeInsets.zero,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (entry.imageUrls.isNotEmpty) ...[
-          _imageGallery(entry),
-          const SizedBox(height: 10),
-        ],
-        if (entry.insight.isNotEmpty) ...[
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-            decoration: BoxDecoration(
-              color: _diaryPaleGold,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xffffd96b)),
+        Row(
+          children: [
+            const Icon(Icons.access_time, size: 13, color: Colors.black45),
+            const SizedBox(width: 5),
+            Text(
+              _formatTime(sub.time),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.black54,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.auto_awesome, color: _diaryGold, size: 16),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    '${context.l10n.culturalInsight}: ${entry.insight}',
-                    style: const TextStyle(fontSize: 12, height: 1.35),
-                  ),
+            const Spacer(),
+            SizedBox(
+              width: 28,
+              height: 22,
+              child: PopupMenuButton<String>(
+                padding: EdgeInsets.zero,
+                icon: const Icon(
+                  Icons.more_horiz,
+                  size: 16,
+                  color: Colors.black45,
                 ),
-              ],
+                onSelected: (val) {
+                  if (val == 'edit') _editDiarySubEntry(entry, sub);
+                  if (val == 'delete') _deleteDiarySubEntry(entry, sub);
+                },
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.edit_outlined, size: 16),
+                        const SizedBox(width: 8),
+                        Text(context.l10n.editDiaryEntry),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Text(
+                      context.l10n.deleteDiaryEntry,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-        ],
-        TextFormField(
-          key: ValueKey('diary-note-${entry.id}'),
-          initialValue: entry.note,
-          minLines: 3,
-          maxLines: 5,
-          onChanged: (value) => _scheduleNoteSave(entry, value),
-          decoration: InputDecoration(
-            hintText: context.l10n.writeDiaryHint,
-            hintStyle: const TextStyle(color: Colors.black38, fontSize: 12),
-            prefixIcon: const Padding(
-              padding: EdgeInsets.only(bottom: 48),
-              child: Icon(Icons.edit_outlined, size: 17),
-            ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Colors.black45),
-            ),
-            contentPadding: const EdgeInsets.fromLTRB(12, 13, 12, 13),
-          ),
+          ],
         ),
+        if (sub.imageUrls.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () => setState(() {
+              if (!_expandedImageSubEntryIds.add(sub.id)) {
+                _expandedImageSubEntryIds.remove(sub.id);
+              }
+            }),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: _diaryPaleGold.withValues(alpha: 0.45),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xffffd96b)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.photo_outlined, color: _diaryGold),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      context.l10n.diaryPhotos(sub.imageUrls.length),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  Icon(
+                    _expandedImageSubEntryIds.contains(sub.id)
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: const Color(0xff8a6300),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_expandedImageSubEntryIds.contains(sub.id)) ...[
+            const SizedBox(height: 8),
+            _imagesWidget(sub.imageUrls),
+          ],
+        ],
+        if (sub.note.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            sub.note,
+            style: const TextStyle(
+              fontSize: 14,
+              height: 1.42,
+              color: Colors.black87,
+            ),
+          ),
+        ],
       ],
     ),
   );
 
-  /// แกลเลอรีรูปของ entry — 1 รูปโชว์เต็ม, หลายรูปโชว์ 2 รูปแรก
-  /// และทับรูปที่สองด้วยป้าย "+N" นับรูปที่เหลือ
-  Widget _imageGallery(TravelDiaryEntry entry) {
-    final images = entry.imageUrls;
+  Widget _entryCard(TravelDiaryEntry entry) {
+    final isFocused =
+        widget.focusEntryId != null && widget.focusEntryId == entry.id;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isFocused ? _diaryGold : _diaryBorder,
+          width: isFocused ? 2.0 : 1.0,
+        ),
+        boxShadow: [
+          if (isFocused)
+            BoxShadow(
+              color: _diaryGold.withValues(alpha: 0.22),
+              blurRadius: 10,
+              spreadRadius: 1,
+            ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (entry.subEntries.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'ยังไม่มีไดอารี่ในจุดเช็คอินนี้ แตะปุ่มด้านล่างเพื่อเขียนบันทึกหรือแนบรูปภาพ',
+                style: const TextStyle(fontSize: 13, color: Colors.black45),
+              ),
+            )
+          else
+            for (var i = 0; i < entry.subEntries.length; i++) ...[
+              if (i > 0) const SizedBox(height: 10),
+              _subEntryWidget(entry, entry.subEntries[i]),
+            ],
+          if (entry.insight.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: () => setState(() {
+                if (!_expandedInsightIds.add(entry.id)) {
+                  _expandedInsightIds.remove(entry.id);
+                }
+              }),
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 11,
+                ),
+                decoration: BoxDecoration(
+                  color: _diaryPaleGold,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xffffd96b)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.auto_awesome,
+                          color: _diaryGold,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            context.l10n.culturalInsight,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          _expandedInsightIds.contains(entry.id)
+                              ? Icons.keyboard_arrow_up
+                              : Icons.keyboard_arrow_down,
+                          color: const Color(0xff8a6300),
+                        ),
+                      ],
+                    ),
+                    if (_expandedInsightIds.contains(entry.id)) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        entry.insight,
+                        style: const TextStyle(fontSize: 12, height: 1.35),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: () => _addDiaryToEntry(entry),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xff8a6300),
+              side: const BorderSide(color: Color(0xffffe082)),
+              backgroundColor: const Color(0xfffffdf7),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 10),
+            ),
+            icon: const Icon(
+              Icons.add_photo_alternate_outlined,
+              size: 18,
+              color: _diaryGold,
+            ),
+            label: Text(
+              context.l10n.addDiaryEntry,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// แกลเลอรีรูป — 1 รูปโชว์เต็ม, หลายรูปโชว์ 2 รูปแรก
+  Widget _imagesWidget(List<String> images) {
+    if (images.isEmpty) return const SizedBox.shrink();
     if (images.length == 1) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(13),
-        child: SizedBox(height: 184, child: _image(images.first)),
+        child: SizedBox(height: 180, child: _image(images.first)),
       );
     }
     return SizedBox(
-      height: 174,
+      height: 160,
       child: Row(
         children: [
           for (var index = 0; index < images.take(2).length; index++) ...[
