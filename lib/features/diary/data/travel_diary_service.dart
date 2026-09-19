@@ -66,4 +66,28 @@ class TravelDiaryService {
         image: image,
         field: 'image',
       );
+
+  static List<Map<String, dynamic>>? _cachedProvinces;
+
+  // GET /api/mobile/provinces/all — 77 จังหวัดทั้งหมด (ไทย/อังกฤษ + ภูมิภาค)
+  // ใช้ใน dropdown ช่องจังหวัดของฟอร์ม diary (จำใน memory กันยิงซ้ำ)
+  // ใช้โดย: diary_manual_sheet.dart
+  Future<List<Map<String, dynamic>>> getProvinces({bool refresh = false}) async {
+    if (!refresh && _cachedProvinces != null) return _cachedProvinces!;
+    try {
+      final response = await _client.get('/mobile/provinces/all');
+      if (response.statusCode != 200) return _cachedProvinces ?? const [];
+      final payload = ApiClient.decodeMap(response.body);
+      final data = payload?['data'];
+      if (data is! List) return _cachedProvinces ?? const [];
+      _cachedProvinces = data
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+      return _cachedProvinces!;
+    } catch (_) {
+      // โหลดไม่ได้ใช้ช่องพิมพ์ฟรีเหมือนเดิม (ไม่ block ฟอร์ม)
+      return _cachedProvinces ?? const [];
+    }
+  }
 }

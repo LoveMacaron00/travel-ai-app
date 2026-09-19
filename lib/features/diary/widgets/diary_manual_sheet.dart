@@ -4,8 +4,54 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:myapp/l10n/l10n.dart';
+import 'package:myapp/core/di/app_services.dart';
 import 'package:myapp/features/map/presentation/map_picker_screen.dart';
 import 'package:myapp/core/widgets/media_image.dart';
+
+/// จังหวัดหนึ่งรายการจาก GET /mobile/provinces/all (77 จังหวัด ไทย/อังกฤษ)
+class _DiaryProvince {
+  const _DiaryProvince({
+    required this.code,
+    required this.value,
+    required this.label,
+    required this.nameTh,
+    required this.nameEn,
+  });
+
+  factory _DiaryProvince.fromJson(Map<String, dynamic> json) => _DiaryProvince(
+    code: '${json['code'] ?? ''}',
+    value: '${json['value'] ?? ''}',
+    label: '${json['label'] ?? json['value'] ?? ''}',
+    nameTh: '${json['nameTh'] ?? json['value'] ?? ''}',
+    nameEn: '${json['nameEn'] ?? ''}',
+  );
+
+  final String code;
+  final String value;
+  final String label;
+  final String nameTh;
+  final String nameEn;
+
+  /// เทียบชื่อที่เก็บไว้เดิม (ไทย/อังกฤษ/code) กับรายการนี้
+  bool matches(String text) {
+    final query = text.trim().toLowerCase();
+    if (query.isEmpty) return false;
+    return value.toLowerCase() == query ||
+        label.toLowerCase() == query ||
+        nameTh.toLowerCase() == query ||
+        nameEn.toLowerCase() == query ||
+        code.toLowerCase() == query;
+  }
+
+  bool contains(String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return true;
+    return label.toLowerCase().contains(q) ||
+        value.toLowerCase().contains(q) ||
+        nameTh.toLowerCase().contains(q) ||
+        nameEn.toLowerCase().contains(q);
+  }
+}
 
 /// Result from diary manual sheet — unified for add/edit to remove duplication.
 /// Previously `_addManualDiary` (129) and `_editManualDiary` (487) duplicated 250+ lines.
@@ -115,6 +161,10 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
   late List<String> _existingImageUrls;
   // วันที่ของบันทึก — กรอกใหม่ตั้งจากปฏิทินได้, แก้ไขคงวันเดิม (ไม่แก้)
   DateTime? _entryDate;
+  // รายการ 77 จังหวัดจาก server — โหลดไม่ได้ใช้ช่องพิมพ์ฟรีเหมือนเดิม
+  List<_DiaryProvince> _provinces = [];
+  _DiaryProvince? _selectedProvince;
+  bool _showProvinceSuggestions = false;
 
   @override
   void initState() {
@@ -127,6 +177,80 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
     _entryDate = widget.initialDate != null
         ? DateUtils.dateOnly(widget.initialDate!)
         : null;
+    _loadProvinces();
+  }
+
+  // โหลด 77 จังหวัดสำหรับ dropdown — พังเงียบใช้พิมพ์ฟรีแทน (ไม่ block ฟอร์ม)
+  Future<void> _loadProvinces() async {
+    final rows = await AppServices.diary.getProvinces();
+    if (!mounted) return;
+    final provinces = rows.map(_DiaryProvince.fromJson).toList();
+    setState(() {
+      _provinces = provinces;
+      // ค่าเดิมที่เคยบันทึกไว้ (ไทย/อังกฤษ) จับคู่กลับเป็นรายการให้เลย
+      // ตอนบันทึกจะได้ชื่อมาตรฐาน — ไม่เปลี่ยนข้อความที่โชว์ถ้าจับคู่ไม่เจอ
+      final initial = widget.initialProvince?.trim() ?? '';
+      if (initial.isNotEmpty) {
+        for (final province in provinces) {
+          if (province.matches(initial)) {
+            _selectedProvince = province;
+            break;
+          }
+        }
+      }
+    });
+  }
+
+  // ชื่อจังหวัดที่จะบันทึก — เลือกจาก dropdown ได้ name_th มาตรฐาน,
+  // พิมพ์เองใช้ข้อความเดิม (รองรับข้อมูลเก่า + ตอน server ยังไม่มีข้อมูล)
+  String get _provinceInput =>
+      _selectedProvince?.value ?? _provinceCtrl.text.trim();
+
+  // กล่องรายชื่อจังหวัดใต้ช่องกรอก — กรองตามข้อความ (ไทย/อังกฤษ) สูงสุด 8 แถว
+  // ตรงเป๊ะรายการเดียวซ่อนไปเลย (ถือว่าเลือกแล้ว)
+  Widget _provinceSuggestionsBox() {
+    if (_provinces.isEmpty) return const SizedBox.shrink();
+    final query = _provinceCtrl.text;
+    final suggestions = _provinces
+        .where((province) => province.contains(query))
+        .take(8)
+        .toList();
+    if (suggestions.isEmpty) return const SizedBox.shrink();
+    if (suggestions.length == 1 &&
+        suggestions.first.matches(query)) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      margin: const EdgeInsets.only(top: 6),
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFE1E4EA)),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      constraints: const BoxConstraints(maxHeight: 216),
+      child: ListView.builder(
+        padding: EdgeInsets.zero,
+        shrinkWrap: true,
+        itemCount: suggestions.length,
+        itemBuilder: (_, index) {
+          final province = suggestions[index];
+          final other = province.label == province.nameTh
+              ? province.nameEn
+              : province.nameTh;
+          return ListTile(
+            dense: true,
+            title: Text(province.label),
+            subtitle: other.isEmpty ? null : Text(other),
+            onTap: () {
+              setState(() {
+                _selectedProvince = province;
+                _provinceCtrl.text = province.label;
+                _showProvinceSuggestions = false;
+              });
+            },
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -425,6 +549,8 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
               ),
             ),
             const SizedBox(height: 14),
+            // จังหวัดที่ไป — พิมพ์ค้นจาก 77 จังหวัด (ไทย/อังกฤษ) แล้วแตะเลือก
+            // โหลดไม่ได้ใช้ช่องพิมพ์ฟรีเหมือนเดิม กัน block ฟอร์ม
             TextField(
               controller: _provinceCtrl,
               textCapitalization: TextCapitalization.sentences,
@@ -432,11 +558,38 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                 labelText: context.l10n.provinceVisited,
                 hintText: context.l10n.provinceHint,
                 prefixIcon: const Icon(Icons.flag_outlined),
+                suffixIcon: _provinces.isEmpty
+                    ? null
+                    : const Icon(Icons.arrow_drop_down),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
+              onTap: () {
+                if (_provinces.isNotEmpty &&
+                    !_showProvinceSuggestions) {
+                  setState(() => _showProvinceSuggestions = true);
+                }
+              },
+              onTapOutside: (_) {
+                if (_showProvinceSuggestions) {
+                  setState(() => _showProvinceSuggestions = false);
+                }
+              },
+              onChanged: (text) {
+                // พิมพ์เองจนไม่ตรงรายการที่เลือกไว้ → กลับเป็นข้อความอิสระ
+                // setState ทุกครั้งที่พิมพ์เพื่อให้รายชื่อกรองตามข้อความล่าสุด
+                final selected = _selectedProvince;
+                if (selected != null && !selected.matches(text)) {
+                  _selectedProvince = null;
+                }
+                if (_provinces.isNotEmpty) {
+                  setState(() => _showProvinceSuggestions = true);
+                }
+              },
             ),
+            if (_showProvinceSuggestions)
+              _provinceSuggestionsBox(),
             const SizedBox(height: 14),
             // วันที่ของบันทึก — กรอกใหม่เท่านั้นที่แก้ได้ ผ่านปฏิทิน (ย้อนหลังได้อย่างเดียว)
             if (!widget.isEdit)
@@ -564,7 +717,7 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
               onPressed: () {
                 final result = DiaryManualResult(
                   title: _titleCtrl.text.trim(),
-                  province: _provinceCtrl.text.trim(),
+                  province: _provinceInput,
                   note: _noteCtrl.text.trim(),
                   pickedImage: _pickedImage,
                   selectedLocation: _selectedLocation,
