@@ -595,7 +595,8 @@ extension _PlanMainView on _PlanScreenState {
                 ),
                 // จุด 3 + 5: คำเตือนจากระบบจัดตาราง (วันแน่น/ระยะไกล/ข้ามเกาะ)
                 // มาจาก plan_data.warnings ที่ server คำนวณ — แยกจาก disclaimer ถาวร
-                if (plan.warnings.isNotEmpty)
+                // ทริป local (จุดเริ่มอยู่จังหวัดเดียวกับปลายทาง) ไม่ต้องโชว์ "ข้อควรรู้ก่อนเดินทาง"
+                if (plan.warnings.isNotEmpty && !_isLocalTrip(plan))
                   SliverToBoxAdapter(child: _planWarningsBanner(plan)),
                 SliverToBoxAdapter(
                   child: Container(
