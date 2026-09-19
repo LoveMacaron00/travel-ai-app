@@ -1955,9 +1955,10 @@ class _PlanScreenState extends State<PlanScreen> {
     );
   }
 
-  // เติมจุดพัก/ปั๊มให้วันที่เพิ่งแก้โดยอัตโนมัติเมื่อมีขาขับยาว (mirror enrich ฝั่ง server)
-  // — เพิ่มสถานที่ไกล ๆ แล้วมีจุดพักไหม: มี ถ้าขา car/bus ≥2 ชม. (นาที = ระยะ × 2
-  // แบบเดียวกับที่โชว์) หรือวันขับรวม ≥150 กม. (ปั๊ม 1 จุด)
+  // เติมปั๊มน้ำมันให้วันที่เพิ่งแก้โดยอัตโนมัติเมื่อมีขาขับยาว (mirror enrich ฝั่ง server)
+  // เอาแค่ปั๊มน้ำมัน — เพิ่มสถานที่ไกล ๆ แล้วมีจุดพักไหม: มี ถ้าขา car/bus ≥2 ชม.
+  // (นาที = ระยะ × 2 แบบเดียวกับที่โชว์) หรือวันขับรวม ≥150 กม. (ปั๊ม 1 จุด)
+  // ไม่เจอปั๊มในรัศมีข้ามขานั้นไป ไม่เติมคาเฟ่/ร้านสะดวกซื้อแทน
   // รันหลัง _replaceSelectedDayStops ทุกครั้ง ถ้าไม่เข้าเกณฑ์จบเงียบ ๆ ไม่แตะ state
   Future<void> _enrichDayRestStops(int dayIndex) async {
     final plan = _plan;
@@ -2069,8 +2070,7 @@ class _PlanScreenState extends State<PlanScreen> {
         (longest.from.latitude + longest.to.latitude) / 2,
         (longest.from.longitude + longest.to.longitude) / 2,
       );
-      var poi = await pickPoi(mid, radius: 8000, types: 'fuel');
-      poi ??= await pickPoi(mid, radius: 5000, types: 'convenience');
+      final poi = await pickPoi(mid, radius: 8000, types: 'fuel');
       if (poi != null) {
         usedIds.add('${poi['id'] ?? ''}'.trim());
         insertions.add(
@@ -2080,7 +2080,8 @@ class _PlanScreenState extends State<PlanScreen> {
       }
     }
 
-    // 2) ขาขับยาว ≥2 ชม. เติมจุดพัก (ขาละ floor(นาที/120) สูงสุด 2 รวมไม่เกินโควต้า)
+    // 2) ขาขับยาว ≥2 ชม. เติมปั๊ม (ขาละ floor(นาที/120) สูงสุด 2 รวมไม่เกินโควต้า)
+    // เอาแค่ปั๊มน้ำมัน — ไม่เจอปั๊มข้ามขานี้ไป
     for (final leg in legs) {
       if (quota <= 0) break;
       final minutes = legMinutes(leg);
@@ -2095,7 +2096,7 @@ class _PlanScreenState extends State<PlanScreen> {
           leg.from.latitude + (leg.to.latitude - leg.from.latitude) * frac,
           leg.from.longitude + (leg.to.longitude - leg.from.longitude) * frac,
         );
-        final poi = await pickPoi(mid, radius: 5000);
+        final poi = await pickPoi(mid, radius: 5000, types: 'fuel');
         if (poi == null) continue;
         usedIds.add('${poi['id'] ?? ''}'.trim());
         insertions.add(
