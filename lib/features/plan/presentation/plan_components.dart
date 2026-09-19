@@ -270,6 +270,18 @@ extension _PlanComponents on _PlanScreenState {
     );
   }
 
+  // ไอคอน fallback รายโหมดให้ตรง [Image 1] หน้า plan option:
+  // รถยนต์/เดิน/บัส/รถไฟ/เรือ/เครื่องบิน — ใช้เมื่อ DB ไม่มี icon_url
+  IconData _transportFallbackIcon(String keyLower) => switch (keyLower) {
+    'car' => Icons.directions_car,
+    'walking' || 'walk' => Icons.directions_walk,
+    'bus' => Icons.directions_bus,
+    'train' => Icons.train,
+    'ferry' || 'boat' || 'ship' => Icons.directions_boat,
+    'flight' || 'plane' => Icons.flight,
+    _ => Icons.route,
+  };
+
   Widget _transportChips(Set<String> selected) {
     // Single source: DB ผ่าน _dynamicModes เท่านั้น (ไม่มี fallback hardcode)
     if (_loadingPlanOptions && _dynamicModes.isEmpty) {
@@ -297,7 +309,7 @@ extension _PlanComponents on _PlanScreenState {
       runSpacing: 8,
       children: items.map((item) {
         final keyLower = item.key.toLowerCase();
-        const fallbackIcon = Icons.route;
+        final fallbackIcon = _transportFallbackIcon(keyLower);
         final isSelected = selected.any((s) => s.toLowerCase() == keyLower);
         return FilterChip(
           avatar: _optionIcon(item.iconUrl, fallbackIcon),
@@ -795,6 +807,7 @@ extension _PlanComponents on _PlanScreenState {
       ],
     ),
   );
+
   String _date(DateTime d) => '${d.day}/${d.month}/${d.year}';
 
   // ป้ายวันที่ของหัวข้อแต่ละวัน — " · 12/9/2026" หรือ '' ถ้าไม่มีวันเริ่มทริป
