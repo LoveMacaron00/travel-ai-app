@@ -829,16 +829,30 @@ extension _PlanComponents on _PlanScreenState {
     (m) => ',',
   );
 
-  // ป้ายโซ่เวลาของจุดแวะ: "ถึง HH:MM · เที่ยว N นาที · ออก HH:MM"
-  // + ถ้ามีขาเข้า (segments) ต่อท้าย "· เดินทาง M นาที" ให้เห็นที่มาของเวลานั้น
+  // ป้ายโซ่เวลาของจุดแวะ:
+  // - ที่เที่ยว: "ถึง HH:MM · เที่ยว N นาที · ออก HH:MM" (+ "· เดินทาง M นาที" ขาเข้า)
+  // - จุดพักรายทาง (ปั๊ม/คาเฟ่/osm:/stopType rest): ใช้ "พัก" แทน "เที่ยว"
+  // - ที่พักค้างคืน (overnight): "ถึง HH:MM · เช็คอิน" เท่านั้น — ไม่มีเที่ยว/ออก/เดินทางต่อ
+  //   (ชิป segments ด้านล่างบอกเวลาเดินทางขาเข้าอยู่แล้ว ใส่ซ้ำท้ายป้ายจะอ่านเหมือนเดินทางต่อ)
   // จุดแรกของวันที่มีขาเข้า (departure→stop0): day start คือ DEPARTURE
   // จึงนำหน้าด้วย "ออก HH:MM · เดินทาง M นาที" (ออก = ถึง − เดินทาง)
   String _stopChainLabel(TravelStop stop, int selectedDayOrder) {
+    // ที่พักค้างคืนคือจุดจบของวัน — โชว์แค่เวลาเช็คอิน ไม่คำนวณเวลาออก/เดินทางต่อ
+    if (stop.isOvernight) {
+      return '${context.l10n.arriveLabel} ${stop.arrivalTime} · ${context.l10n.checkIn}';
+    }
+    final isRest = stop.isRestStop || stop.stopType.toLowerCase() == 'rest';
+    // "พัก" ยังไม่มี key ใน l10n — ใช้ตามภาษาแอปตรงนี้ก่อน (th: พัก / en: rest)
+    final visitWord = isRest
+        ? (Localizations.localeOf(context).languageCode == 'th'
+              ? 'พัก'
+              : 'rest')
+        : context.l10n.visitLabel;
     final arrive = stop.arrivalTime;
     final leave =
         _clockFromMinutes(_clockToMinutes(arrive) + stop.durationMinutes);
     final visit =
-        '${context.l10n.arriveLabel} $arrive · ${context.l10n.visitLabel} '
+        '${context.l10n.arriveLabel} $arrive · $visitWord '
         '${stop.durationMinutes} ${context.l10n.minutesShort} · '
         '${context.l10n.leaveLabel} $leave';
     if (stop.segments.isEmpty) return visit;
