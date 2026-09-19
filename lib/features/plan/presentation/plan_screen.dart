@@ -37,6 +37,21 @@ class _PlanRouteLeg {
   final List<LatLng> points;
 }
 
+/// ขาขับหนึ่งช่วงสำหรับหาจุดพัก (index = ตำแหน่งที่จะแทรกใน stops ของวันนั้น)
+class _EnrichLeg {
+  const _EnrichLeg({
+    required this.index,
+    required this.from,
+    required this.to,
+    required this.mode,
+  });
+
+  final int index;
+  final LatLng from;
+  final LatLng to;
+  final String mode;
+}
+
 /// สร้างและแสดงแผนเที่ยวจาก AI ก่อนส่งจุดแวะไปยังหน้าจอนำทาง
 class PlanScreen extends StatefulWidget {
   const PlanScreen({super.key, this.initialTripId, this.onBackFromSavedView});
@@ -1839,47 +1854,7 @@ class _PlanScreenState extends State<PlanScreen> {
 
     // ทริป local: ค่าน้ำมันรวมของวันที่แก้ไม่เกินวันละ 300 (เกินเกลี่ยแบบสัดส่วน)
     // ขาใหม่คิดเรทน้ำมันมาแล้วจาก _estimateTransportCost เหลือแค่ cap ยอดรวม
-    if (_isLocalTrip(updatedPlan)) {
-      final sel = selectedIndex;
-      final capped = _capDayFuelCosts(updatedPlan.days[sel].stops);
-      var diff = 0.0;
-      for (var i = 0; i < capped.length; i++) {
-        diff +=
-            capped[i].transportCost - updatedPlan.days[sel].stops[i].transportCost;
-      }
-      if (diff.abs() > 0.001) {
-        double nonNegative(double v) => v < 0 ? 0 : v;
-        final cappedBreakdown = Map<String, double>.from(
-          updatedPlan.budgetBreakdown,
-        );
-        cappedBreakdown['transport'] = nonNegative(
-          (cappedBreakdown['transport'] ?? 0) + diff,
-        );
-        updatedPlan = TravelPlan(
-          tripId: updatedPlan.tripId,
-          title: updatedPlan.title,
-          summary: updatedPlan.summary,
-          totalEstimatedCost: nonNegative(
-            updatedPlan.totalEstimatedCost + diff,
-          ),
-          budgetBreakdown: cappedBreakdown,
-          days: [
-            for (var index = 0; index < updatedPlan.days.length; index++)
-              TravelDay(
-                day: updatedPlan.days[index].day,
-                theme: updatedPlan.days[index].theme,
-                stops: index == sel
-                    ? capped
-                    : List<TravelStop>.from(updatedPlan.days[index].stops),
-              ),
-          ],
-          tips: updatedPlan.tips,
-          warnings: updatedPlan.warnings,
-          startDate: updatedPlan.startDate,
-          returnLeg: updatedPlan.returnLeg,
-        );
-      }
-    }
+    updatedPlan = _capLocalDayFuel(updatedPlan, selectedIndex);
 
     setState(() {
       _plan = updatedPlan;
@@ -1887,6 +1862,290 @@ class _PlanScreenState extends State<PlanScreen> {
     });
     unawaited(_savePlanChanges(updatedPlan));
     unawaited(_buildRoute(updatedPlan));
+    // เพิ่มสถานที่ไกล ๆ อาจต้องมีจุดพัก/ปั๊มเพิ่ม — ให้ระบบเติมให้เองถ้าขับยาว
+    unawaited(_enrichDayRestStops(selectedIndex));
+  }
+
+  // ทริป local: cap ค่าน้ำมันของวันให้รวมไม่เกิน 300 — คืนแผนใหมเฉพาะเมื่อยอดเปลี่ยน
+  TravelPlan _capLocalDayFuel(TravelPlan plan, int dayIndex) {
+    if (!_isLocalTrip(plan)) return plan;
+    if (dayIndex < 0 || dayIndex >= plan.days.length) return plan;
+    final capped = _capDayFuelCosts(plan.days[dayIndex].stops);
+    var diff = 0.0;
+    for (var i = 0; i < capped.length; i++) {
+      diff += capped[i].transportCost - plan.days[dayIndex].stops[i].transportCost;
+    }
+    if (diff.abs() <= 0.001) return plan;
+    double nonNegative(double v) => v < 0 ? 0 : v;
+    final cappedBreakdown = Map<String, double>.from(plan.budgetBreakdown);
+    cappedBreakdown['transport'] = nonNegative(
+      (cappedBreakdown['transport'] ?? 0) + diff,
+    );
+    return TravelPlan(
+      tripId: plan.tripId,
+      title: plan.title,
+      summary: plan.summary,
+      totalEstimatedCost: nonNegative(plan.totalEstimatedCost + diff),
+      budgetBreakdown: cappedBreakdown,
+      days: [
+        for (var index = 0; index < plan.days.length; index++)
+          TravelDay(
+            day: plan.days[index].day,
+            theme: plan.days[index].theme,
+            stops: index == dayIndex
+                ? capped
+                : List<TravelStop>.from(plan.days[index].stops),
+          ),
+      ],
+      tips: plan.tips,
+      warnings: plan.warnings,
+      startDate: plan.startDate,
+      returnLeg: plan.returnLeg,
+    );
+  }
+
+  // โควต้าจุดพัก/ปั๊มที่เติมให้เองตอนแก้แผน (mirror server MAX_REST_PER_DAY)
+  static const _maxAutoRestPerDay = 2;
+
+  // วันขับรถรวมตั้งแต่ 150 กม. เติมปั๊ม 1 จุด (mirror server LONG_DRIVE_FUEL_KM)
+  static const _longDriveFuelKm = 150.0;
+
+  // ค่าอาหารประมาณของจุดแวะตามประเภท (mirror server REST_FOOD_COST_BY_TYPE)
+  double _restFoodCost(String type) => switch (type.toLowerCase()) {
+    'cafe' => 120,
+    'restaurant' => 180,
+    'convenience' => 60,
+    'parking' => 20,
+    'toilets' => 10,
+    _ => 0,
+  };
+
+  // สร้าง TravelStop จุดแวะพักจาก POI ที่ GET /mobile/rest-stops คืนมา
+  // (โครงเดียวกับ buildRestStop ฝั่ง server — เวลา/ค่าเดินทางคำนวณใหม่ตอนแทรก)
+  TravelStop _restStopFromPoi(
+    Map<String, dynamic> poi,
+    String mode,
+    String attribution,
+  ) {
+    final type = '${poi['type'] ?? 'place'}'.toLowerCase();
+    final label = '${poi['typeLabel'] ?? 'จุดแวะพัก'}';
+    final brand = '${poi['brand'] ?? ''}'.trim();
+    final rawName = '${poi['name'] ?? ''}'.trim();
+    return TravelStop(
+      destinationId: '${poi['id'] ?? ''}',
+      place: rawName.isEmpty ? '$label (OSM)' : rawName,
+      province: '',
+      activity: 'แวะพัก$labelระหว่างทาง${brand.isEmpty ? '' : ' $brand'}'.trim(),
+      latitude: (poi['latitude'] as num?)?.toDouble() ?? 0,
+      longitude: (poi['longitude'] as num?)?.toDouble() ?? 0,
+      imageUrl: '',
+      arrivalTime: _clockOf(_startTime),
+      durationMinutes: 20,
+      entryCost: 0,
+      foodCost: _restFoodCost(type),
+      transportMode: mode,
+      transportCost: 0,
+      tip: attribution.isEmpty
+          ? 'จุดแวะพักระหว่างทาง ($label)'
+          : 'จุดแวะพักระหว่างทาง ($label) — ข้อมูล $attribution',
+      segments: const [],
+      isRestStop: true,
+      restType: type,
+      stopType: 'rest',
+    );
+  }
+
+  // เติมจุดพัก/ปั๊มให้วันที่เพิ่งแก้โดยอัตโนมัติเมื่อมีขาขับยาว (mirror enrich ฝั่ง server)
+  // — เพิ่มสถานที่ไกล ๆ แล้วมีจุดพักไหม: มี ถ้าขา car/bus ≥2 ชม. (นาที = ระยะ × 2
+  // แบบเดียวกับที่โชว์) หรือวันขับรวม ≥150 กม. (ปั๊ม 1 จุด)
+  // รันหลัง _replaceSelectedDayStops ทุกครั้ง ถ้าไม่เข้าเกณฑ์จบเงียบ ๆ ไม่แตะ state
+  Future<void> _enrichDayRestStops(int dayIndex) async {
+    final plan = _plan;
+    if (plan == null || plan.tripId <= 0) return;
+    if (dayIndex < 0 || dayIndex >= plan.days.length) return;
+    final day = plan.days[dayIndex];
+
+    // origin ของวัน (ขาแรก): วันที่ 1 = จุดเริ่มจริง, วันอื่น = จุดสุดท้ายวันก่อน
+    LatLng? origin;
+    if (day.day == 1) {
+      origin = _startPoint;
+    } else if (dayIndex > 0 && plan.days[dayIndex - 1].stops.isNotEmpty) {
+      final last = plan.days[dayIndex - 1].stops.last;
+      origin = LatLng(last.latitude, last.longitude);
+    }
+
+    bool eligibleMode(String mode) {
+      final lower = mode.toLowerCase();
+      return lower == 'car' || lower == 'bus';
+    }
+
+    // ขาในวันนี้รวมขาแรก — ข้ามขาที่ปลายเป็นจุดพักอยู่แล้ว
+    final legs = <_EnrichLeg>[];
+    final stops = day.stops;
+    if (origin != null && stops.isNotEmpty) {
+      final first = stops.first;
+      if (!first.isRestStop &&
+          !first.destinationId.startsWith('osm:') &&
+          eligibleMode(first.transportMode)) {
+        legs.add(
+          _EnrichLeg(
+            index: 0,
+            from: origin,
+            to: LatLng(first.latitude, first.longitude),
+            mode: first.transportMode,
+          ),
+        );
+      }
+    }
+    for (var i = 1; i < stops.length; i++) {
+      final curr = stops[i];
+      if (curr.isRestStop ||
+          curr.destinationId.startsWith('osm:') ||
+          !eligibleMode(curr.transportMode)) {
+        continue;
+      }
+      final prev = stops[i - 1];
+      legs.add(
+        _EnrichLeg(
+          index: i,
+          from: LatLng(prev.latitude, prev.longitude),
+          to: LatLng(curr.latitude, curr.longitude),
+          mode: curr.transportMode,
+        ),
+      );
+    }
+    if (legs.isEmpty) return;
+
+    double legKm(_EnrichLeg leg) =>
+        const Distance().as(LengthUnit.Kilometer, leg.from, leg.to);
+    // นาที files เดียวกับที่โชว์บนการ์ด (2 นาที/กม.)
+    int legMinutes(_EnrichLeg leg) => (legKm(leg) * 2).round();
+
+    final usedIds = <String>{
+      for (final s in stops)
+        if (s.destinationId.trim().isNotEmpty) s.destinationId.trim(),
+    };
+    var quota =
+        _maxAutoRestPerDay -
+        stops
+            .where((s) => s.isRestStop || s.destinationId.startsWith('osm:'))
+            .length;
+    String attribution = '';
+    // หา POI ใกล้จุดกลางขา — คืน null เมื่อไม่เจอ/ซ้ำ (ข้ามขานั้นไป)
+    Future<Map<String, dynamic>?> pickPoi(
+      LatLng mid, {
+      required int radius,
+      String? types,
+    }) async {
+      final res = await AppServices.trips.searchRestStops(
+        latitude: mid.latitude,
+        longitude: mid.longitude,
+        radius: radius,
+        types: types,
+        limit: 3,
+      );
+      if (res.attribution.isNotEmpty) attribution = res.attribution;
+      for (final poi in res.stops) {
+        final id = '${poi['id'] ?? ''}'.trim();
+        if (id.isEmpty || usedIds.contains(id)) continue;
+        return poi;
+      }
+      return null;
+    }
+
+    // งานแทรกเก็บ index ดิบ (ตำแหน่งใน stops เดิม) — เรียงแล้วบวก offset ตอน splice
+    final insertions = <({int index, TravelStop stop})>[];
+
+    // 1) วันขับรวมไกลเติมปั๊มก่อน 1 จุดกลางขาที่ยาวสุด (เหมือน server ให้ปั๊มมาก่อน)
+    final totalKm = legs.fold<double>(0, (sum, leg) => sum + legKm(leg));
+    final hasFuel = stops.any(
+      (s) =>
+          s.restType.toLowerCase() == 'fuel' ||
+          RegExp(r'ปั๊มน้ำมัน|เติมน้ำมัน').hasMatch('${s.place} ${s.activity}'),
+    );
+    if (!hasFuel && totalKm >= _longDriveFuelKm && quota > 0) {
+      final longest = legs.reduce((a, b) => legKm(b) > legKm(a) ? b : a);
+      final mid = LatLng(
+        (longest.from.latitude + longest.to.latitude) / 2,
+        (longest.from.longitude + longest.to.longitude) / 2,
+      );
+      var poi = await pickPoi(mid, radius: 8000, types: 'fuel');
+      poi ??= await pickPoi(mid, radius: 5000, types: 'convenience');
+      if (poi != null) {
+        usedIds.add('${poi['id'] ?? ''}'.trim());
+        insertions.add(
+          (index: longest.index, stop: _restStopFromPoi(poi, longest.mode, attribution)),
+        );
+        quota--;
+      }
+    }
+
+    // 2) ขาขับยาว ≥2 ชม. เติมจุดพัก (ขาละ floor(นาที/120) สูงสุด 2 รวมไม่เกินโควต้า)
+    for (final leg in legs) {
+      if (quota <= 0) break;
+      final minutes = legMinutes(leg);
+      if (minutes < 120) continue;
+      var needed = minutes ~/ 120;
+      if (needed > 2) needed = 2;
+      if (needed > quota) needed = quota;
+      for (var k = 1; k <= needed; k++) {
+        if (quota <= 0) break;
+        final frac = k / (needed + 1);
+        final mid = LatLng(
+          leg.from.latitude + (leg.to.latitude - leg.from.latitude) * frac,
+          leg.from.longitude + (leg.to.longitude - leg.from.longitude) * frac,
+        );
+        final poi = await pickPoi(mid, radius: 5000);
+        if (poi == null) continue;
+        usedIds.add('${poi['id'] ?? ''}'.trim());
+        insertions.add(
+          (index: leg.index, stop: _restStopFromPoi(poi, leg.mode, attribution)),
+        );
+        quota--;
+      }
+    }
+    if (insertions.isEmpty) return;
+
+    // มีการแก้ซ้อนระหว่างรอ network → ยกเลิกกันชน (ทุกการแก้สร้าง TravelPlan ใหม่เสมอ)
+    final current = _plan;
+    if (current == null || !identical(current, plan)) return;
+    if (dayIndex >= current.days.length) return;
+    final freshDay = current.days[dayIndex];
+    if (freshDay.stops.length != stops.length) return;
+
+    insertions.sort((a, b) => a.index.compareTo(b.index));
+    // index ดิบเรียงจากหน้าไปหลัง บวก offset งานแทรกก่อนหน้าไปด้วยทีละ 1
+    final newStops = List<TravelStop>.from(freshDay.stops);
+    var offset = 0;
+    for (final ins in insertions) {
+      newStops.insert(ins.index + offset, ins.stop);
+      offset++;
+    }
+    final recalculated = _rechainDay(
+      _recalculatedStopsPreservingCosts(
+        freshDay.stops,
+        newStops,
+        isFirstDay: freshDay.day == 1,
+      ),
+    );
+    final days = [
+      for (var index = 0; index < current.days.length; index++)
+        TravelDay(
+          day: current.days[index].day,
+          theme: current.days[index].theme,
+          stops: index == dayIndex
+              ? recalculated
+              : List<TravelStop>.from(current.days[index].stops),
+        ),
+    ];
+    var updated = _withDeltaBudget(current, days);
+    updated = _capLocalDayFuel(updated, dayIndex);
+    setState(() {
+      _plan = updated;
+      _route = [];
+    });
+    unawaited(_savePlanChanges(updated));
+    unawaited(_buildRoute(updated));
   }
 
   /// บันทึกการแก้ไขสถานที่ (ลบ/เพิ่ม/สลับลำดับ) กลับลง server
@@ -1895,8 +2154,7 @@ class _PlanScreenState extends State<PlanScreen> {
   /// จุด 6: server เดินโซ่เวลาใหม่แบบคงลำดับเดิม (chainAllDaysPreservingOrder)
   /// แล้วคืน warnings — ถ้าส่งเวลากลับมาจะ sync เข้า state ให้ตรงกันทันที
   /// ส่ง start_time เสริมด้วยเพื่อให้โซ่เวลาของวันเริ่มจากเวลาที่ผู้ใช้เลือกเหมือนตอนสร้าง
-  Future<void> _savePlanChanges(TravelPlan plan) async {
-    if (plan.tripId <= 0) return;
+  Future<void> _savePlanChanges(TravelPlan plan) async {    if (plan.tripId <= 0) return;
     final result = await AppServices.trips.updateTravelPlan(
       plan.tripId,
       {...plan.toJson(), 'start_time': _clockOf(_startTime)},
