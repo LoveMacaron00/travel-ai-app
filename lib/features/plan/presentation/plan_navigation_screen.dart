@@ -295,6 +295,29 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
   };
 
   Widget _buildDestinationMarker() {
+    // สี/ไอคอนตามประเภทจุดให้ตรงกับหน้าผลลัพธ์ — ปั๊ม/จุดพักไม่ควรโชว์เป็นหมุดสถานที่ท่องเที่ยว
+    // ทอง=ที่เที่ยว / ม่วง=ที่พักค้างคืน / ฟ้า=จุดพักรายทาง (รวมปั๊มน้ำมัน)
+    final stop = widget.destination;
+    final typeColor = stop.isOvernight
+        ? const Color(0xff7b2cbf)
+        : stop.isRestStop
+        ? const Color(0xff2d7dd2)
+        : const Color(0xffe9ad0c);
+    final icon = stop.isOvernight
+        ? Icons.hotel
+        : stop.isRestStop
+        ? _restStopIcon(stop.restType)
+        : Icons.attractions;
+    final labelBg = stop.isOvernight
+        ? const Color(0xfff1e8fb)
+        : stop.isRestStop
+        ? const Color(0xffe8f1fb)
+        : Colors.white;
+    final labelTextColor = stop.isOvernight
+        ? const Color(0xff5a1f8f)
+        : stop.isRestStop
+        ? const Color(0xff1f5f9f)
+        : Colors.black87;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -303,7 +326,7 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
-            border: Border.all(color: const Color(0xffe9ad0c), width: 3),
+            border: Border.all(color: typeColor, width: 3),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.2),
@@ -312,20 +335,16 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
               ),
             ],
           ),
-          child: const Icon(
-            Icons.attractions,
-            color: Color(0xffe9ad0c),
-            size: 24,
-          ),
+          child: Icon(icon, color: typeColor, size: 24),
         ),
         const SizedBox(height: 4),
         Container(
           constraints: const BoxConstraints(maxWidth: 126),
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: labelBg,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: const Color(0xffe9ad0c)),
+            border: Border.all(color: typeColor),
             boxShadow: const [
               BoxShadow(
                 color: Colors.black12,
@@ -339,14 +358,26 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: labelTextColor,
             ),
           ),
         ),
       ],
     );
   }
+
+  /// ไอคอนตามประเภทจุดแวะพัก OSM (ตรงกับหน้าแผน)
+  IconData _restStopIcon(String restType) => switch (restType.toLowerCase()) {
+    'fuel' => Icons.local_gas_station,
+    'cafe' => Icons.local_cafe,
+    'restaurant' => Icons.restaurant,
+    'hotel' => Icons.hotel,
+    'parking' => Icons.local_parking,
+    'toilets' => Icons.wc,
+    'rest_area' => Icons.landscape,
+    _ => Icons.store,
+  };
 }
