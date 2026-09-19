@@ -264,10 +264,9 @@ extension _PlanMainView on _PlanScreenState {
                     value: _autoDays,
                     onChanged: (on) =>
                         _updateState(() => _autoDays = on),
-                    activeTrackColor: _gold,
-                    activeThumbColor: _ink,
-                    inactiveThumbColor: Colors.white,
-                    inactiveTrackColor: const Color(0xffd8cdb8),
+                    // design เดียวกับสวิตช์หน้า profile (Auto Diary) —
+                    // ตั้งแค่สี thumb ตอน on ที่เหลือใช้ default ของ Material
+                    activeThumbColor: _gold,
                   ),
                 ],
               ),

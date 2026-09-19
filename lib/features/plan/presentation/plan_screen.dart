@@ -1907,8 +1907,15 @@ class _PlanScreenState extends State<PlanScreen> {
   // โควต้าจุดพัก/ปั๊มที่เติมให้เองตอนแก้แผน (mirror server MAX_REST_PER_DAY)
   static const _maxAutoRestPerDay = 2;
 
-  // วันขับรถรวมตั้งแต่ 150 กม. เติมปั๊ม 1 จุด (mirror server LONG_DRIVE_FUEL_KM)
+  // วันขับรถรวมตั้งแต่ 150 กม. เติมปั๊ม 1 จุดกลางขาที่ยาวสุดที่ยังไม่มีปั๊ม
+  // (mirror server LONG_DRIVE_FUEL_KM)
   static const _longDriveFuelKm = 150.0;
+
+  // วันนี้มีปั๊มน้ำมันแล้วหรือยัง (ปั๊ม OSM / AI / ที่เพิ่งแทรก) — เอาแค่ปั๊มวันละ 1 จุด
+  // (mirror server isFuelStopLike)
+  bool _isFuelStop(TravelStop s) =>
+      s.restType.toLowerCase() == 'fuel' ||
+      RegExp(r'ปั๊มน้ำมัน|เติมน้ำมัน').hasMatch('${s.place} ${s.activity}');
 
   // ค่าอาหารประมาณของจุดแวะตามประเภท (mirror server REST_FOOD_COST_BY_TYPE)
   double _restFoodCost(String type) => switch (type.toLowerCase()) {
@@ -1956,8 +1963,9 @@ class _PlanScreenState extends State<PlanScreen> {
   }
 
   // เติมปั๊มน้ำมันให้วันที่เพิ่งแก้โดยอัตโนมัติเมื่อมีขาขับยาว (mirror enrich ฝั่ง server)
-  // เอาแค่ปั๊มน้ำมัน — เพิ่มสถานที่ไกล ๆ แล้วมีจุดพักไหม: มี ถ้าขา car/bus ≥2 ชม.
-  // (นาที = ระยะ × 2 แบบเดียวกับที่โชว์) หรือวันขับรวม ≥150 กม. (ปั๊ม 1 จุด)
+  // เอาแค่ปั๊มน้ำมัน โควต้าตามขา — ขาไหนมีปั๊มอยู่หัว/ท้ายแล้วข้าม ไม่จำกัดครั้งรวม
+  // เพิ่มสถานที่ไกล ๆ แล้วมีจุดพักไหม: มี ถ้าขา car/bus ที่ยังไม่มีปั๊มยาว ≥2 ชม.
+  // (นาที = ระยะ × 2 แบบเดียวกับที่โชว์) หรือวันขับรวม ≥150 กม. (ปั๊มกลางขาที่ยาวสุดที่ยังไม่มีปั๊ม)
   // ไม่เจอปั๊มในรัศมีข้ามขานั้นไป ไม่เติมคาเฟ่/ร้านสะดวกซื้อแทน
   // รันหลัง _replaceSelectedDayStops ทุกครั้ง ถ้าไม่เข้าเกณฑ์จบเงียบ ๆ ไม่แตะ state
   Future<void> _enrichDayRestStops(int dayIndex) async {
@@ -1981,12 +1989,14 @@ class _PlanScreenState extends State<PlanScreen> {
     }
 
     // ขาในวันนี้รวมขาแรก — ข้ามขาที่ปลายเป็นจุดพักอยู่แล้ว
+    // และข้ามขาที่มีปั๊มอยู่หัว/ท้ายขาแล้ว (กันปั๊มซ้อนขาเดิม)
     final legs = <_EnrichLeg>[];
     final stops = day.stops;
     if (origin != null && stops.isNotEmpty) {
       final first = stops.first;
       if (!first.isRestStop &&
           !first.destinationId.startsWith('osm:') &&
+          !_isFuelStop(first) &&
           eligibleMode(first.transportMode)) {
         legs.add(
           _EnrichLeg(
@@ -2002,10 +2012,13 @@ class _PlanScreenState extends State<PlanScreen> {
       final curr = stops[i];
       if (curr.isRestStop ||
           curr.destinationId.startsWith('osm:') ||
-          !eligibleMode(curr.transportMode)) {
+          !eligibleMode(curr.transportMode) ||
+          _isFuelStop(curr)) {
         continue;
       }
       final prev = stops[i - 1];
+      // ขานี้มีปั๊มอยู่หัวขาแล้ว — ไม่เติมซ้ำ
+      if (_isFuelStop(prev)) continue;
       legs.add(
         _EnrichLeg(
           index: i,
@@ -2026,11 +2039,10 @@ class _PlanScreenState extends State<PlanScreen> {
       for (final s in stops)
         if (s.destinationId.trim().isNotEmpty) s.destinationId.trim(),
     };
-    var quota =
-        _maxAutoRestPerDay -
-        stops
-            .where((s) => s.isRestStop || s.destinationId.startsWith('osm:'))
-            .length;
+    // โควต้าต่อครั้งที่แก้ (ไม่หักของเดิม — เพิ่มที่ใหม่ไกลๆ ได้ปั๊มใหม่เรื่อยๆ
+    // ไม่จำกัดครั้งรวม กันปั๊มซ้อนด้วยการข้ามขาที่มีปั๊มแล้วข้างบน)
+    // (mirror server MAX_REST_PER_DAY)
+    var quota = _maxAutoRestPerDay;
     String attribution = '';
     // หา POI ใกล้จุดกลางขา — คืน null เมื่อไม่เจอ/ซ้ำ (ข้ามขานั้นไป)
     Future<Map<String, dynamic>?> pickPoi(
@@ -2057,14 +2069,10 @@ class _PlanScreenState extends State<PlanScreen> {
     // งานแทรกเก็บ index ดิบ (ตำแหน่งใน stops เดิม) — เรียงแล้วบวก offset ตอน splice
     final insertions = <({int index, TravelStop stop})>[];
 
-    // 1) วันขับรวมไกลเติมปั๊มก่อน 1 จุดกลางขาที่ยาวสุด (เหมือน server ให้ปั๊มมาก่อน)
+    // 1) วันขับรวมไกลเติมปั๊มก่อน 1 จุดกลางขาที่ยาวสุดที่ยังไม่มีปั๊ม
+    // (เหมือน server ให้ปั๊มมาก่อน)
     final totalKm = legs.fold<double>(0, (sum, leg) => sum + legKm(leg));
-    final hasFuel = stops.any(
-      (s) =>
-          s.restType.toLowerCase() == 'fuel' ||
-          RegExp(r'ปั๊มน้ำมัน|เติมน้ำมัน').hasMatch('${s.place} ${s.activity}'),
-    );
-    if (!hasFuel && totalKm >= _longDriveFuelKm && quota > 0) {
+    if (totalKm >= _longDriveFuelKm && quota > 0) {
       final longest = legs.reduce((a, b) => legKm(b) > legKm(a) ? b : a);
       final mid = LatLng(
         (longest.from.latitude + longest.to.latitude) / 2,
@@ -2080,8 +2088,8 @@ class _PlanScreenState extends State<PlanScreen> {
       }
     }
 
-    // 2) ขาขับยาว ≥2 ชม. เติมปั๊ม (ขาละ floor(นาที/120) สูงสุด 2 รวมไม่เกินโควต้า)
-    // เอาแค่ปั๊มน้ำมัน — ไม่เจอปั๊มข้ามขานี้ไป
+    // 2) ขาขับยาว ≥2 ชม. เติมปั๊ม (ขาละ floor(นาที/120) สูงสุด 2 รวมต่อครั้งไม่เกินโควต้า)
+    // ขาที่มีปั๊มแล้วถูกข้ามตั้งแต่ตอนสร้าง legs — ไม่เจอปั๊มข้ามขานี้ไป
     for (final leg in legs) {
       if (quota <= 0) break;
       final minutes = legMinutes(leg);
