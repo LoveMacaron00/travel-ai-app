@@ -991,10 +991,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noResults => 'No results found';
 
   @override
-  String get savedPlans => 'Saved plans';
+  String get savedPlans => 'Saved trips';
 
   @override
-  String get noSavedPlans => 'No saved plans yet';
+  String get noSavedPlans => 'No saved trips yet';
 
   @override
   String planDaysCount(int count) {

@@ -589,14 +589,14 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       centerTitle: true,
       actions: [
         IconButton(
-          tooltip: context.l10n.selectCheckInForDiary,
-          onPressed: _selectCheckInForDiary,
-          icon: const Icon(Icons.add_location_alt_outlined, color: _diaryGold),
-        ),
-        IconButton(
           tooltip: context.l10n.goToFootprint,
           onPressed: _openFootprint,
           icon: const Icon(Icons.map_outlined, color: _diaryGold),
+        ),
+        IconButton(
+          tooltip: context.l10n.selectCheckInForDiary,
+          onPressed: _selectCheckInForDiary,
+          icon: const Icon(Icons.add_location_alt_outlined, color: _diaryGold),
         ),
         IconButton(
           tooltip: context.l10n.addManualDiary,

@@ -393,8 +393,8 @@
     "placeholders": {"count": {"type": "String"}}
   },
   "noResults": "No results found",
-  "savedPlans": "Saved plans",
-  "noSavedPlans": "No saved plans yet",
+  "savedPlans": "Saved trips",
+  "noSavedPlans": "No saved trips yet",
   "planDaysCount": "{count} days",
   "@planDaysCount": {
     "placeholders": {"count": {"type": "int"}}

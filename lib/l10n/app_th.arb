@@ -393,8 +393,8 @@
     "placeholders": {"count": {"type": "String"}}
   },
   "noResults": "ไม่พบผลลัพธ์",
-  "savedPlans": "แผนที่บันทึกไว้",
-  "noSavedPlans": "ยังไม่มีแผนที่บันทึกไว้",
+  "savedPlans": "ทริปที่บันทึกไว้",
+  "noSavedPlans": "ยังไม่มีทริปที่บันทึกไว้",
   "planDaysCount": "{count} วัน",
   "@planDaysCount": {
     "placeholders": {"count": {"type": "int"}}

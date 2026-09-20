@@ -1907,13 +1907,13 @@ abstract class AppLocalizations {
   /// No description provided for @savedPlans.
   ///
   /// In en, this message translates to:
-  /// **'Saved plans'**
+  /// **'Saved trips'**
   String get savedPlans;
 
   /// No description provided for @noSavedPlans.
   ///
   /// In en, this message translates to:
-  /// **'No saved plans yet'**
+  /// **'No saved trips yet'**
   String get noSavedPlans;
 
   /// No description provided for @planDaysCount.

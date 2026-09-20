@@ -978,10 +978,10 @@ class AppLocalizationsTh extends AppLocalizations {
   String get noResults => 'ไม่พบผลลัพธ์';
 
   @override
-  String get savedPlans => 'แผนที่บันทึกไว้';
+  String get savedPlans => 'ทริปที่บันทึกไว้';
 
   @override
-  String get noSavedPlans => 'ยังไม่มีแผนที่บันทึกไว้';
+  String get noSavedPlans => 'ยังไม่มีทริปที่บันทึกไว้';
 
   @override
   String planDaysCount(int count) {
