@@ -33,6 +33,10 @@ class TravelStop {
   final String openingTime;
   final String closingTime;
 
+  /// ขารถเช่า (บินไปต่างจังหวัดแล้วไม่มีรถส่วนตัว) — คิดเรทเช่า ~10 บาท/กม. ไม่ใช่น้ำมันรถตัวเอง
+  /// server ปักธงผ่าน markRentalCarLegs (ขารถหลังขาบินขาแรก) PUT กลับคงค่าผ่าน toJson
+  final bool rentalCar;
+
   const TravelStop({
     required this.destinationId,
     required this.place,
@@ -54,6 +58,7 @@ class TravelStop {
     this.stopType = '',
     this.openingTime = '',
     this.closingTime = '',
+    this.rentalCar = false,
   });
 
   factory TravelStop.fromJson(Map<String, dynamic> j) => TravelStop(
@@ -81,6 +86,7 @@ class TravelStop {
     stopType: '${j['stopType'] ?? ''}',
     openingTime: '${j['openingTime'] ?? j['opening_time'] ?? ''}',
     closingTime: '${j['closingTime'] ?? j['closing_time'] ?? ''}',
+    rentalCar: j['rentalCar'] == true,
   );
 
   Map<String, dynamic> toJson() => {
@@ -104,6 +110,7 @@ class TravelStop {
     if (stopType.isNotEmpty) 'stopType': stopType,
     if (openingTime.isNotEmpty) 'openingTime': openingTime,
     if (closingTime.isNotEmpty) 'closingTime': closingTime,
+    if (rentalCar) 'rentalCar': true,
   };
 
   TravelStop copyWith({
@@ -127,6 +134,7 @@ class TravelStop {
     String? stopType,
     String? openingTime,
     String? closingTime,
+    bool? rentalCar,
   }) => TravelStop(
     destinationId: destinationId ?? this.destinationId,
     place: place ?? this.place,
@@ -148,6 +156,7 @@ class TravelStop {
     stopType: stopType ?? this.stopType,
     openingTime: openingTime ?? this.openingTime,
     closingTime: closingTime ?? this.closingTime,
+    rentalCar: rentalCar ?? this.rentalCar,
   );
 }
 

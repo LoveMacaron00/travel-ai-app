@@ -686,7 +686,15 @@ class _PlanScreenState extends State<PlanScreen> {
     for (final place in _mustVisit) {
       if (_planContainsPlace(days, place)) continue;
       final day = _targetDayForMustVisit(days);
-      day.stops.add(_mustVisitStop(place, day.stops));
+      var added = _mustVisitStop(place, day.stops);
+      // วันที่บินไปแล้วใช้รถเช่า — จุดที่เติมเองก็เช่นกัน (PUT จะได้คิดเรทเช่า)
+      if (day.stops.any(
+        (s) =>
+            s.transportMode.toLowerCase() == 'flight' || s.rentalCar,
+      )) {
+        added = added.copyWith(rentalCar: true);
+      }
+      day.stops.add(added);
     }
 
     return TravelPlan(
@@ -980,11 +988,13 @@ class _PlanScreenState extends State<PlanScreen> {
 
   // เกลี่ยค่าน้ำมันรถของวันให้รวมไม่เกินวันละ 300 บาทแบบสัดส่วน
   // คืน list ชุดใหม่ (เวลา/นาทีเดินทางคงเดิม เปลี่ยนแค่ราคาขา car)
+  // ขารถเช่าข้าม — ไม่ใช่ค่าน้ำมัน ไม่เข้าเพดานนี้
   List<TravelStop> _capDayFuelCosts(List<TravelStop> stops) {
     final carIdx = <int>[];
     var sum = 0.0;
     for (var i = 0; i < stops.length; i++) {
-      if (stops[i].transportMode.toLowerCase() == 'car') {
+      if (stops[i].transportMode.toLowerCase() == 'car' &&
+          !stops[i].rentalCar) {
         carIdx.add(i);
         sum += stops[i].transportCost;
       }
@@ -1047,6 +1057,8 @@ class _PlanScreenState extends State<PlanScreen> {
       for (var i = 0; i < stops.length; i++) {
         final stop = stops[i];
         if (stop.transportMode.toLowerCase() != 'car') continue;
+        // ขารถเช่า (บินไปต่างจังหวัด) คงเรทเช่าไว้ — ห้ามเขียนทับเป็นค่าน้ำมัน
+        if (stop.rentalCar) continue;
         final LatLng? from = i == 0
             ? prev
             : LatLng(stops[i - 1].latitude, stops[i - 1].longitude);
@@ -1155,11 +1167,26 @@ class _PlanScreenState extends State<PlanScreen> {
 
   // ประมาณค่าเดินทางตามระยะทาง × อัตราต่อกม. ของแต่ละพาหนะ (รถอื่นขั้นต่ำ 50฿)
   // flight = ค่าตั๋วโดยประมาณ ฐาน 800 + 4 บาท/กม. ขั้นต่ำ 1000 (mirror estimateFlightCostKm ฝั่ง server)
-  double _estimateTransportCost(LatLng from, LatLng to, String mode) {
+  // car + rentalCar = รถเช่าที่ต่างจังหวัด (บินไปแล้วไม่มีรถส่วนตัว) ~10 บาท/กม. ขั้นต่ำ 50 (mirror estimateRentalCostKm)
+  static const _rentalRatePerKm = 10.0;
+  static const _rentalMinCost = 50.0;
+
+  double _estimateTransportCost(
+    LatLng from,
+    LatLng to,
+    String mode, {
+    bool rentalCar = false,
+  }) {
     final lower = mode.toLowerCase();
     if (lower == 'walking') return 0;
     final km = const Distance().as(LengthUnit.Kilometer, from, to);
-    if (lower == 'car') return (km * _localFuelRatePerKm).roundToDouble();
+    if (lower == 'car') {
+      if (rentalCar) {
+        final rental = (km * _rentalRatePerKm).roundToDouble();
+        return rental < _rentalMinCost ? _rentalMinCost : rental;
+      }
+      return (km * _localFuelRatePerKm).roundToDouble();
+    }
     if (lower == 'flight') {
       final fare = (800 + km * 4).roundToDouble();
       return fare < 1000 ? 1000 : fare;
@@ -1195,7 +1222,12 @@ class _PlanScreenState extends State<PlanScreen> {
     final to = LatLng(stop.latitude, stop.longitude);
     final km = const Distance().as(LengthUnit.Kilometer, start, to);
     final minutes = (km * 2).round().clamp(5, 720);
-    final cost = _estimateTransportCost(start, to, stop.transportMode);
+    final cost = _estimateTransportCost(
+      start,
+      to,
+      stop.transportMode,
+      rentalCar: stop.rentalCar,
+    );
     return stop.copyWith(
       transportCost: cost,
       segments: [
@@ -1267,10 +1299,16 @@ class _PlanScreenState extends State<PlanScreen> {
         continue;
       }
       // ขาใหม่ (จุดก่อนหน้าเปลี่ยน) → ประมาณเฉพาะขานี้ขาเดียว
+      // (ขารถเช่าส่ง flag ไปด้วย — กันคิดเป็นน้ำมันรถตัวเอง)
       final prev = updated[i - 1];
       final from = LatLng(prev.latitude, prev.longitude);
       final to = LatLng(stop.latitude, stop.longitude);
-      final estimated = _estimateTransportCost(from, to, stop.transportMode);
+      final estimated = _estimateTransportCost(
+        from,
+        to,
+        stop.transportMode,
+        rentalCar: stop.rentalCar,
+      );
       final segment = TravelSegment(
         mode: stop.transportMode,
         from: prev.place,
@@ -1763,28 +1801,39 @@ class _PlanScreenState extends State<PlanScreen> {
     if (isAppendOne) {
       final prev = oldStops.isNotEmpty ? oldStops.last : null;
       final rawNew = stops.last;
+      // เพิ่มต่อท้ายจุดรถเช่า/สนามบินขาเข้า → จุดใหม่ก็ใช้รถเช่า (บินมาแล้วไม่มีรถตัวเอง)
+      final newWithFlag =
+          prev != null &&
+              (prev.rentalCar || prev.transportMode.toLowerCase() == 'flight')
+          ? rawNew.copyWith(rentalCar: true)
+          : rawNew;
       double estimated = 0;
       List<TravelSegment> newSegments = const [];
       if (prev != null) {
         final from = LatLng(prev.latitude, prev.longitude);
-        final to = LatLng(rawNew.latitude, rawNew.longitude);
-        estimated = _estimateTransportCost(from, to, rawNew.transportMode);
+        final to = LatLng(newWithFlag.latitude, newWithFlag.longitude);
+        estimated = _estimateTransportCost(
+          from,
+          to,
+          newWithFlag.transportMode,
+          rentalCar: newWithFlag.rentalCar,
+        );
         newSegments = [
           TravelSegment(
-            mode: rawNew.transportMode,
+            mode: newWithFlag.transportMode,
             from: prev.place,
-            to: rawNew.place,
-            estimatedMinutes: rawNew.segments.isNotEmpty
-                ? rawNew.segments.first.estimatedMinutes
+            to: newWithFlag.place,
+            estimatedMinutes: newWithFlag.segments.isNotEmpty
+                ? newWithFlag.segments.first.estimatedMinutes
                 : (const Distance().as(LengthUnit.Kilometer, from, to) * 2)
                       .round(),
             estimatedCost: estimated,
           ),
         ];
       }
-      var newStop = rawNew.copyWith(
+      var newStop = newWithFlag.copyWith(
         transportCost: estimated,
-        segments: newSegments.isEmpty ? rawNew.segments : newSegments,
+        segments: newSegments.isEmpty ? newWithFlag.segments : newSegments,
       );
       // แปะเป็นที่แรกของวันแรกโดยตรง (วันว่าง) — ขาเข้าว่างให้เติมขา
       // departure→stop0 จากจุดเริ่มต้นจริงเหมือนกติกาวันแรกข้ออื่น
