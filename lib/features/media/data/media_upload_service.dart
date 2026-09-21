@@ -38,23 +38,4 @@ class MediaUploadService {
     }
   }
 
-  /// Upload and return full JSON map (for auth profile which needs user object).
-  /// Keeps `AuthService.uploadProfileImage` success envelope.
-  Future<Map<String, dynamic>?> uploadWithJson({
-    required String endpoint,
-    required ImageUpload image,
-    String field = 'image',
-    Map<String, String>? fields,
-  }) async {
-    try {
-      final request = http.MultipartRequest('POST', _client.uri(endpoint))
-        ..files.add(image.asMultipartFile(field));
-      if (fields != null) request.fields.addAll(fields);
-      final streamed = await _client.send(request);
-      final response = await http.Response.fromStream(streamed);
-      return ApiClient.decodeMap(response.body);
-    } catch (_) {
-      return null;
-    }
-  }
 }

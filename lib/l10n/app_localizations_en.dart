@@ -1202,15 +1202,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get writeDiaryForCheckIn => 'Write diary for this check-in';
 
   @override
-  String get recordJourney => 'Record Journey';
-
-  @override
-  String get startRecordingJourney => 'Start Recording Journey';
-
-  @override
-  String get stopRecordingJourney => 'End Journey';
-
-  @override
   String get recordingJourneyActive => 'Recording journey in progress';
 
   @override

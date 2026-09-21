@@ -3,24 +3,6 @@ enum ScanMode { place, sign, food }
 
 extension ScanModeDetails on ScanMode {
   String get apiValue => name;
-
-  String get title => switch (this) {
-    ScanMode.place => 'Explore a place',
-    ScanMode.sign => 'Translate a sign',
-    ScanMode.food => 'Discover Thai food',
-  };
-
-  String get description => switch (this) {
-    ScanMode.place => 'History, culture, and visitor etiquette',
-    ScanMode.sign => 'Read Thai text and translate it to English',
-    ScanMode.food => 'Identify a dish and learn its cultural story',
-  };
-
-  String get userCaption => switch (this) {
-    ScanMode.place => 'Explore this place',
-    ScanMode.sign => 'Translate this Thai sign',
-    ScanMode.food => 'Tell me about this Thai dish',
-  };
 }
 
 class ScanSection {

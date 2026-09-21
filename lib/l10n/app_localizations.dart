@@ -2288,24 +2288,6 @@ abstract class AppLocalizations {
   /// **'Write diary for this check-in'**
   String get writeDiaryForCheckIn;
 
-  /// No description provided for @recordJourney.
-  ///
-  /// In en, this message translates to:
-  /// **'Record Journey'**
-  String get recordJourney;
-
-  /// No description provided for @startRecordingJourney.
-  ///
-  /// In en, this message translates to:
-  /// **'Start Recording Journey'**
-  String get startRecordingJourney;
-
-  /// No description provided for @stopRecordingJourney.
-  ///
-  /// In en, this message translates to:
-  /// **'End Journey'**
-  String get stopRecordingJourney;
-
   /// No description provided for @recordingJourneyActive.
   ///
   /// In en, this message translates to:

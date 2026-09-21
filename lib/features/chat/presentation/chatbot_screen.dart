@@ -33,6 +33,12 @@ String _scanModeCaption(BuildContext context, ScanMode mode) => switch (mode) {
   ScanMode.food => context.l10n.scanFoodCaption,
 };
 
+IconData _scanModeIcon(ScanMode mode) => switch (mode) {
+  ScanMode.place => Icons.account_balance_outlined,
+  ScanMode.sign => Icons.translate_rounded,
+  ScanMode.food => Icons.restaurant_outlined,
+};
+
 class ChatMessage {
   final int? id;
   final int? replyToMessageId;

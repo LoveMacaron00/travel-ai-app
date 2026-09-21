@@ -26,7 +26,6 @@ class TravelJourneyService extends ChangeNotifier {
   Timer? _timer;
 
   bool get isRecording => _isRecording;
-  DateTime? get startTime => _startTime;
   List<LatLng> get trailPoints => List.unmodifiable(_trailPoints);
   double get totalDistanceMeters => _totalDistanceMeters;
 
@@ -100,21 +99,6 @@ class TravelJourneyService extends ChangeNotifier {
     } catch (_) {}
   }
 
-  Future<void> startRecording() async {
-    if (_isRecording) return;
-    _isRecording = true;
-    _startTime = DateTime.now();
-
-    final current = LocationService.instance.currentPosition;
-    if (current != null) {
-      _trailPoints.add(current);
-    }
-
-    _startListening();
-    await _saveToPrefs();
-    notifyListeners();
-  }
-
   void _startListening() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -153,27 +137,6 @@ class TravelJourneyService extends ChangeNotifier {
       notifyListeners();
       _saveToPrefs();
     }
-  }
-
-  Future<void> stopRecording() async {
-    if (!_isRecording) return;
-    _isRecording = false;
-    _timer?.cancel();
-    _timer = null;
-    LocationService.instance.removeListener(_onLocationChanged);
-    await _saveToPrefs();
-    notifyListeners();
-  }
-
-  Future<void> clearTrail() async {
-    _trailPoints.clear();
-    _totalDistanceMeters = 0.0;
-    _startTime = null;
-    if (_isRecording) {
-      _startTime = DateTime.now();
-    }
-    await _saveToPrefs();
-    notifyListeners();
   }
 
   @override

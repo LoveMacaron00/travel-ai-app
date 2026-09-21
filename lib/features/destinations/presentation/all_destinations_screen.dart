@@ -3,6 +3,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/features/destinations/presentation/destination_detail_screen.dart';
 import 'package:myapp/core/di/app_services.dart';
+import 'package:myapp/core/utils/destination_display.dart';
 import 'package:myapp/core/utils/place_category.dart';
 import 'package:myapp/core/widgets/place_category_chips.dart';
 import 'package:myapp/features/map/data/location_service.dart';
@@ -75,23 +76,6 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
     LocationService.instance.removeListener(_onLocationChanged);
     _searchController.dispose();
     super.dispose();
-  }
-
-  double _distanceKm(Map<String, dynamic> dest) {
-    final origin = _position;
-    if (origin == null) return double.infinity;
-    final lat = double.tryParse('${dest['latitude']}');
-    final lng = double.tryParse('${dest['longitude']}');
-    if (lat == null || lng == null) return double.infinity;
-    return const Distance().as(LengthUnit.Kilometer, origin, LatLng(lat, lng));
-  }
-
-  String? _distanceLabel(Map<String, dynamic> dest) {
-    if (_position == null) return null;
-    final km = _distanceKm(dest);
-    if (km == double.infinity) return null;
-    if (km < 1) return '${(km * 1000).round()} m';
-    return '${km.toStringAsFixed(1)} km';
   }
 
   @override
@@ -176,7 +160,12 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
                         .where(_matchesCategory)
                         .where(_matchesSearch)
                         .toList()
-                      ..sort((a, b) => _distanceKm(a).compareTo(_distanceKm(b)));
+                      ..sort(
+                        (a, b) => distanceKmToPlace(
+                          _position,
+                          a,
+                        ).compareTo(distanceKmToPlace(_position, b)),
+                      );
                 if (matches.isEmpty) {
                   return _message(
                     icon: Icons.search_off_rounded,
@@ -295,7 +284,10 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
                       bottom: 0,
                       child: Builder(
                         builder: (_) {
-                          final distance = _distanceLabel(destination);
+                          final distance = distanceLabelToPlace(
+                            _position,
+                            destination,
+                          );
                           if (distance == null) return const SizedBox.shrink();
                           return Container(
                             padding: const EdgeInsets.symmetric(

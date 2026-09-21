@@ -896,9 +896,9 @@ extension _PlanMainView on _PlanScreenState {
                       .map(
                         (leg) => Polyline(
                           points: leg.points,
-                          color: _routeColor(leg.mode),
+                          color: routeLineColor(leg.mode),
                           strokeWidth: 5,
-                          pattern: _usesRoadRoute(leg.mode)
+                          pattern: usesRoadRoute(leg.mode)
                               ? const StrokePattern.solid()
                               : StrokePattern.dashed(segments: const [12, 8]),
                         ),
@@ -1023,7 +1023,7 @@ extension _PlanMainView on _PlanScreenState {
                                 stop.isOvernight
                                     ? Icons.hotel
                                     : stop.isRestStop
-                                    ? _restStopIcon(stop.restType)
+                                    ? restStopIcon(stop.restType)
                                     : Icons.attractions,
                                 size: 16,
                               ),
@@ -1072,7 +1072,7 @@ extension _PlanMainView on _PlanScreenState {
                                   stop.isOvernight
                                       ? Icons.hotel
                                       : stop.isRestStop
-                                      ? _restStopIcon(stop.restType)
+                                      ? restStopIcon(stop.restType)
                                       : Icons.landscape,
                                   color: stop.isOvernight
                                       ? const Color(0xff7b2cbf)
@@ -1202,7 +1202,7 @@ extension _PlanMainView on _PlanScreenState {
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: _routeColor(
+                                  color: routeLineColor(
                                     segment.mode,
                                   ).withValues(alpha: .14),
                                   borderRadius: BorderRadius.circular(10),
@@ -1211,7 +1211,7 @@ extension _PlanMainView on _PlanScreenState {
                                   '${_modeLabel(segment.mode)} · ${segment.estimatedMinutes} ${context.l10n.minutesShort} · ฿${_money(segment.estimatedCost)}',
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: _routeLabelColor(segment.mode),
+                                    color: routeLabelColor(segment.mode),
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),

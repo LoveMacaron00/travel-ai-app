@@ -4,12 +4,6 @@ part of 'chatbot_screen.dart';
 class _ScanModeSheet extends StatelessWidget {
   const _ScanModeSheet();
 
-  IconData _icon(ScanMode mode) => switch (mode) {
-    ScanMode.place => Icons.account_balance_outlined,
-    ScanMode.sign => Icons.translate_rounded,
-    ScanMode.food => Icons.restaurant_outlined,
-  };
-
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -65,7 +59,7 @@ class _ScanModeSheet extends StatelessWidget {
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
-                          _icon(mode),
+                          _scanModeIcon(mode),
                           color: _ChatbotScreenState.brandGold,
                           size: 22,
                         ),

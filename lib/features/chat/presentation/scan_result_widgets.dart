@@ -6,12 +6,6 @@ class ScanResultView extends StatelessWidget {
 
   const ScanResultView({super.key, required this.result});
 
-  IconData get _icon => switch (result.mode) {
-    ScanMode.place => Icons.account_balance_outlined,
-    ScanMode.sign => Icons.translate_rounded,
-    ScanMode.food => Icons.restaurant_outlined,
-  };
-
   @override
   Widget build(BuildContext context) {
     final confidence = (result.confidence * 100).round().clamp(0, 100);
@@ -31,7 +25,7 @@ class ScanResultView extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  _icon,
+                  _scanModeIcon(result.mode),
                   size: 19,
                   color: _ChatbotScreenState.brandGold,
                 ),

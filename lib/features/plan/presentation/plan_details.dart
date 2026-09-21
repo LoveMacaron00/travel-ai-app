@@ -485,7 +485,7 @@ extension _PlanDetailsView on _PlanScreenState {
                 ),
               ],
             ),
-            child: Icon(_restStopIcon(stop.restType), color: Colors.white, size: 18),
+            child: Icon(restStopIcon(stop.restType), color: Colors.white, size: 18),
           ),
           const SizedBox(height: 4),
           Container(
@@ -575,15 +575,4 @@ extension _PlanDetailsView on _PlanScreenState {
     );
   }
 
-  /// ไอคอนหมุดตามประเภทจุดแวะพัก OSM
-  IconData _restStopIcon(String restType) => switch (restType.toLowerCase()) {
-    'fuel' => Icons.local_gas_station,
-    'cafe' => Icons.local_cafe,
-    'restaurant' => Icons.restaurant,
-    'hotel' => Icons.hotel,
-    'parking' => Icons.local_parking,
-    'toilets' => Icons.wc,
-    'rest_area' => Icons.landscape,
-    _ => Icons.store,
-  };
 }

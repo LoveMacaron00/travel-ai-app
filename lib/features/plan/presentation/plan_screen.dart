@@ -19,6 +19,8 @@ import 'package:myapp/features/plan/widgets/province_selector.dart';
 import 'package:myapp/features/map/presentation/map_picker_screen.dart';
 import 'package:myapp/core/utils/place_category.dart';
 import 'package:myapp/core/widgets/place_category_chips.dart';
+import 'package:myapp/core/widgets/rest_stop_icon.dart';
+import 'package:myapp/core/widgets/route_style.dart';
 
 part 'plan_view.dart';
 part 'plan_details.dart';
@@ -701,16 +703,21 @@ class _PlanScreenState extends State<PlanScreen> {
     );
   }
 
-  // เช็คว่าแผนมีสถานที่นี้อยู่แล้วไหม — เทียบทั้ง id และชื่อ (กัน AI เขียนชื่อเพี้ยน)
-  bool _planContainsPlace(List<TravelDay> days, PlaceMarker place) {
+  // เทียบสถานที่กับ stops — ทั้ง id และชื่อ (กัน AI เขียนชื่อเพี้ยน)
+  // (รวม logic ซ้ำใน _planContainsPlace กับ _isDuplicateInSelectedDay)
+  bool _stopsContainPlace(Iterable<TravelStop> stops, PlaceMarker place) {
     final id = place.id.trim();
     final title = _placeKey(place.title);
-    for (final stop in days.expand((day) => day.stops)) {
+    for (final stop in stops) {
       if (id.isNotEmpty && stop.destinationId.trim() == id) return true;
       if (title.isNotEmpty && _placeKey(stop.place) == title) return true;
     }
     return false;
   }
+
+  // เช็คว่าแผนมีสถานที่นี้อยู่แล้วไหม — เทียบทั้ง id และชื่อ (กัน AI เขียนชื่อเพี้ยน)
+  bool _planContainsPlace(List<TravelDay> days, PlaceMarker place) =>
+      _stopsContainPlace(days.expand((day) => day.stops), place);
 
   // วันที่ควรแทรก must-visit — เลือกวันที่มีจุดแวะน้อยที่สุด (ถ้าไม่มีวันเลยสร้างวันใหม่)
   TravelDay _targetDayForMustVisit(List<TravelDay> days) {
@@ -1147,16 +1154,20 @@ class _PlanScreenState extends State<PlanScreen> {
   static const _localFuelCapPerDay = 300.0;
 
   // ประมาณค่าเดินทางตามระยะทาง × อัตราต่อกม. ของแต่ละพาหนะ (รถอื่นขั้นต่ำ 50฿)
+  // flight = ค่าตั๋วโดยประมาณ ฐาน 800 + 4 บาท/กม. ขั้นต่ำ 1000 (mirror estimateFlightCostKm ฝั่ง server)
   double _estimateTransportCost(LatLng from, LatLng to, String mode) {
     final lower = mode.toLowerCase();
     if (lower == 'walking') return 0;
     final km = const Distance().as(LengthUnit.Kilometer, from, to);
     if (lower == 'car') return (km * _localFuelRatePerKm).roundToDouble();
+    if (lower == 'flight') {
+      final fare = (800 + km * 4).roundToDouble();
+      return fare < 1000 ? 1000 : fare;
+    }
     final rate = switch (lower) {
       'bus' => 7.0,
       'train' => 12.0,
       'ferry' => 25.0,
-      'flight' => 35.0,
       _ => 15.0,
     };
     if (km < 0.5) return 50;
@@ -1709,13 +1720,7 @@ class _PlanScreenState extends State<PlanScreen> {
     if (plan == null) return false;
     final day = _selectedDayFor(plan);
     if (day == null) return false;
-    final id = place.id.trim();
-    final title = _placeKey(place.title);
-    for (final stop in day.stops) {
-      if (id.isNotEmpty && stop.destinationId.trim() == id) return true;
-      if (title.isNotEmpty && _placeKey(stop.place) == title) return true;
-    }
-    return false;
+    return _stopsContainPlace(day.stops, place);
   }
 
   // เพิ่มสถานที่เข้าวันที่เลือกหลังสร้างแผนแล้ว — คืน true ถ้าเพิ่มสำเร็จ,

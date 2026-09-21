@@ -1188,15 +1188,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get writeDiaryForCheckIn => 'เขียนไดอารี่สำหรับจุดนี้';
 
   @override
-  String get recordJourney => 'บันทึกการเดินทาง';
-
-  @override
-  String get startRecordingJourney => 'เริ่มบันทึกการเดินทาง';
-
-  @override
-  String get stopRecordingJourney => 'สิ้นสุดการเดินทาง';
-
-  @override
   String get recordingJourneyActive => 'กำลังบันทึกการเดินทาง';
 
   @override

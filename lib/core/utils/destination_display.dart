@@ -1,3 +1,4 @@
+import 'package:latlong2/latlong.dart';
 import 'package:myapp/core/di/app_services.dart';
 
 /// รวมกติกาแปลงข้อมูลสถานที่จาก API ให้พร้อมแสดงผลใน UI
@@ -183,4 +184,23 @@ Map<dynamic, dynamic>? resolveAdmissionFee(Map<String, dynamic> detail) {
     return information['fee'] as Map;
   }
   return raw['fee'] is Map ? raw['fee'] as Map : null;
+}
+
+/// ระยะทาง กม. จาก origin ถึงสถานที่ (map API) — รวม `_distanceKm`
+/// ที่เคยนิยามซ้ำกันใน home กับ all_destinations
+double distanceKmToPlace(LatLng? origin, Map<String, dynamic> dest) {
+  if (origin == null) return double.infinity;
+  final lat = double.tryParse('${dest['latitude']}');
+  final lng = double.tryParse('${dest['longitude']}');
+  if (lat == null || lng == null) return double.infinity;
+  return const Distance().as(LengthUnit.Kilometer, origin, LatLng(lat, lng));
+}
+
+/// ป้ายระยะทาง ("850 m" / "12.3 km") — null เมื่อไม่มีพิกัด
+String? distanceLabelToPlace(LatLng? origin, Map<String, dynamic> dest) {
+  if (origin == null) return null;
+  final km = distanceKmToPlace(origin, dest);
+  if (km == double.infinity) return null;
+  if (km < 1) return '${(km * 1000).round()} m';
+  return '${km.toStringAsFixed(1)} km';
 }

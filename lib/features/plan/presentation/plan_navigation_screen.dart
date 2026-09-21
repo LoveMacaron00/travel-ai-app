@@ -7,6 +7,8 @@ import 'package:myapp/core/config/app_config.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/features/plan/domain/travel_plan.dart';
 import 'package:myapp/core/di/app_services.dart';
+import 'package:myapp/core/widgets/rest_stop_icon.dart';
+import 'package:myapp/core/widgets/route_style.dart';
 
 class PlanNavigationScreen extends StatefulWidget {
   final TravelStop destination;
@@ -83,8 +85,8 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
     _map.move(next, 16);
     if (refreshRoute || _route.isEmpty) {
       final mode = widget.destination.transportMode.toLowerCase();
-      final usesRoadRoute = const {'car', 'walking', 'bus'}.contains(mode);
-      final raw = usesRoadRoute
+      final roadRoute = usesRoadRoute(mode);
+      final raw = roadRoute
           ? await AppServices.trips.getRoadRoute(
               fromLat: p.latitude,
               fromLng: p.longitude,
@@ -105,7 +107,7 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
                 ]
               : raw.map((e) => LatLng(e[0], e[1])).toList(),
         );
-        if (!usesRoadRoute) {
+        if (!roadRoute) {
           _map.fitCamera(
             CameraFit.bounds(
               bounds: LatLngBounds.fromPoints(_route),
@@ -152,8 +154,11 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
                     Polyline(
                       points: _route,
                       strokeWidth: 6,
-                      color: _routeColor(widget.destination.transportMode),
-                      pattern: _usesRoadRoute(widget.destination.transportMode)
+                      color: routeLineColor(
+                        widget.destination.transportMode,
+                        fallback: const Color(0xffe8ad10),
+                      ),
+                      pattern: usesRoadRoute(widget.destination.transportMode)
                           ? const StrokePattern.solid()
                           : StrokePattern.dashed(segments: const [12, 8]),
                     ),
@@ -282,18 +287,6 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
     child: IconButton(onPressed: onTap, icon: Icon(icon)),
   );
 
-  bool _usesRoadRoute(String mode) =>
-      const {'car', 'walking', 'bus'}.contains(mode.toLowerCase());
-
-  Color _routeColor(String mode) => switch (mode.toLowerCase()) {
-    'walking' => const Color(0xff6d7278),
-    'bus' => const Color(0xff2d7dd2),
-    'train' => const Color(0xff7b2cbf),
-    'ferry' => const Color(0xff0096c7),
-    'flight' => const Color(0xffe76f51),
-    _ => const Color(0xffe8ad10),
-  };
-
   Widget _buildDestinationMarker() {
     // สี/ไอคอนตามประเภทจุดให้ตรงกับหน้าผลลัพธ์ — ปั๊ม/จุดพักไม่ควรโชว์เป็นหมุดสถานที่ท่องเที่ยว
     // ทอง=ที่เที่ยว / ม่วง=ที่พักค้างคืน / ฟ้า=จุดพักรายทาง (รวมปั๊มน้ำมัน)
@@ -306,7 +299,7 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
     final icon = stop.isOvernight
         ? Icons.hotel
         : stop.isRestStop
-        ? _restStopIcon(stop.restType)
+        ? restStopIcon(stop.restType)
         : Icons.attractions;
     final labelBg = stop.isOvernight
         ? const Color(0xfff1e8fb)
@@ -369,15 +362,4 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
     );
   }
 
-  /// ไอคอนตามประเภทจุดแวะพัก OSM (ตรงกับหน้าแผน)
-  IconData _restStopIcon(String restType) => switch (restType.toLowerCase()) {
-    'fuel' => Icons.local_gas_station,
-    'cafe' => Icons.local_cafe,
-    'restaurant' => Icons.restaurant,
-    'hotel' => Icons.hotel,
-    'parking' => Icons.local_parking,
-    'toilets' => Icons.wc,
-    'rest_area' => Icons.landscape,
-    _ => Icons.store,
-  };
 }

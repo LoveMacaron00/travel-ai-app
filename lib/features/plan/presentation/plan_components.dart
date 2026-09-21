@@ -855,8 +855,14 @@ extension _PlanComponents on _PlanScreenState {
       return '${context.l10n.arriveLabel} ${stop.arrivalTime} · ${context.l10n.checkIn}';
     }
     final isRest = stop.isRestStop || stop.stopType.toLowerCase() == 'rest';
-    // "พัก" ยังไม่มี key ใน l10n — ใช้ตามภาษาแอปตรงนี้ก่อน (th: พัก / en: rest)
-    final visitWord = isRest
+    // สนามบิน (transfer) ใช้คำว่า "เปลี่ยนเครื่อง" แทน "พัก" — ยังไม่มี key ใน l10n
+    // ใช้ตามภาษาแอปตรงนี้ก่อนเหมือน "พัก"/"rest" (th: เปลี่ยนเครื่อง / en: transfer)
+    final isAirport = stop.restType.toLowerCase() == 'airport';
+    final visitWord = isAirport
+        ? (Localizations.localeOf(context).languageCode == 'th'
+              ? 'เปลี่ยนเครื่อง'
+              : 'transfer')
+        : isRest
         ? (Localizations.localeOf(context).languageCode == 'th'
               ? 'พัก'
               : 'rest')
@@ -1063,27 +1069,6 @@ extension _PlanComponents on _PlanScreenState {
       _ => _title(value),
     };
   }
-
-  bool _usesRoadRoute(String mode) =>
-      const {'car', 'walking', 'bus'}.contains(mode.toLowerCase());
-
-  Color _routeColor(String mode) => switch (mode.toLowerCase()) {
-    'walking' => const Color(0xff6d7278),
-    'bus' => const Color(0xff2d7dd2),
-    'train' => const Color(0xff7b2cbf),
-    'ferry' => const Color(0xff0096c7),
-    'flight' => const Color(0xffe76f51),
-    _ => _gold,
-  };
-
-  Color _routeLabelColor(String mode) => switch (mode.toLowerCase()) {
-    'walking' => const Color(0xff4f5459),
-    'bus' => const Color(0xff1f5f9f),
-    'train' => const Color(0xff61208f),
-    'ferry' => const Color(0xff00779e),
-    'flight' => const Color(0xffb84d36),
-    _ => const Color(0xff7a5800),
-  };
 
   String _title(String value) => switch (value.toLowerCase()) {
     'food' => context.l10n.food,
