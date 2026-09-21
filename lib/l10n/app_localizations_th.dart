@@ -1219,4 +1219,13 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get timeElapsed => 'เวลา';
+
+  @override
+  String get lateNightTag => 'เที่ยวดึก';
+
+  @override
+  String get moveToDaytimeHint => 'ควรย้ายไปกลางวัน';
+
+  @override
+  String get maybeClosedTag => 'อาจปิดแล้ว';
 }

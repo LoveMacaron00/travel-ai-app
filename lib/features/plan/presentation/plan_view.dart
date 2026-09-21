@@ -1148,11 +1148,19 @@ extension _PlanMainView on _PlanScreenState {
                             // number เริ่มที่ 1 — จุดแรกของวันไม่มีขาเข้าจึงไม่แสดงเวลาเดินทาง
                             Text(
                               _stopChainLabel(stop, number),
-                              style: const TextStyle(
-                                color: Colors.black45,
+                              style: TextStyle(
+                                // เที่ยวดึกขึ้นแดงทันที — เห็นชัดแบบในภาพ (23:09 / 00:45)
+                                color: _isLateNightVisit(stop)
+                                    ? const Color(0xffb84d36)
+                                    : Colors.black45,
                                 fontSize: 12,
+                                fontWeight: _isLateNightVisit(stop)
+                                    ? FontWeight.w700
+                                    : FontWeight.normal,
                               ),
                             ),
+                            // ป้ายเที่ยวดึก / อาจปิดแล้ว / เวลาเปิด-ปิด (จาก DB ผ่าน server)
+                            ..._timeWarningChips(stop),
                             const SizedBox(height: 5),
                             Text(
                               stop.activity,

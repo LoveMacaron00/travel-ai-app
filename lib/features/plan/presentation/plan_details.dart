@@ -126,8 +126,16 @@ extension _PlanDetailsView on _PlanScreenState {
                   // โซ่เวลาเดียวกับการ์ด: ถึง → เที่ยว → ออก (+ เวลาเดินทางขาเข้า)
                   Text(
                     _stopChainLabel(stop, number),
-                    style: const TextStyle(color: Colors.black54),
+                    style: TextStyle(
+                      color: _isLateNightVisit(stop)
+                          ? const Color(0xffb84d36)
+                          : Colors.black54,
+                      fontWeight: _isLateNightVisit(stop)
+                          ? FontWeight.w700
+                          : FontWeight.normal,
+                    ),
                   ),
+                  ..._timeWarningChips(stop),
                   const SizedBox(height: 12),
                   Text(
                     stop.activity,

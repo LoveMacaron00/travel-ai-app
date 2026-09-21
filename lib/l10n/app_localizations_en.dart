@@ -1233,4 +1233,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get timeElapsed => 'Time';
+
+  @override
+  String get lateNightTag => 'Late night';
+
+  @override
+  String get moveToDaytimeHint => 'Move to daytime';
+
+  @override
+  String get maybeClosedTag => 'May be closed';
 }

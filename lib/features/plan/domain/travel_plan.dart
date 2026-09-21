@@ -27,6 +27,12 @@ class TravelStop {
   /// ที่พักค้างคืนท้ายวัน — แยกสี/ไอคอนจากจุดพักรายทาง
   bool get isOvernight => stopType == 'overnight';
 
+  /// เวลาเปิด-ปิดจาก DB ("08:00"/"18:00") — '' คือไม่ระบุ
+  /// server เติมให้ตอน normalize (ดู planPlaceNormalizer) เพื่อให้ UI โชว์ + ตรวจนอกเวลาเปิดได้
+  /// PUT กลับ server คงค่าผ่าน toJson (server ใช้ตรวจซ้ำตอน chainAllDaysPreservingOrder)
+  final String openingTime;
+  final String closingTime;
+
   const TravelStop({
     required this.destinationId,
     required this.place,
@@ -46,6 +52,8 @@ class TravelStop {
     this.isRestStop = false,
     this.restType = '',
     this.stopType = '',
+    this.openingTime = '',
+    this.closingTime = '',
   });
 
   factory TravelStop.fromJson(Map<String, dynamic> j) => TravelStop(
@@ -71,6 +79,8 @@ class TravelStop {
         j['isRestStop'] == true || '${j['destinationId'] ?? ''}'.startsWith('osm:'),
     restType: '${j['restType'] ?? ''}',
     stopType: '${j['stopType'] ?? ''}',
+    openingTime: '${j['openingTime'] ?? j['opening_time'] ?? ''}',
+    closingTime: '${j['closingTime'] ?? j['closing_time'] ?? ''}',
   );
 
   Map<String, dynamic> toJson() => {
@@ -92,6 +102,8 @@ class TravelStop {
     if (isRestStop) 'isRestStop': true,
     if (restType.isNotEmpty) 'restType': restType,
     if (stopType.isNotEmpty) 'stopType': stopType,
+    if (openingTime.isNotEmpty) 'openingTime': openingTime,
+    if (closingTime.isNotEmpty) 'closingTime': closingTime,
   };
 
   TravelStop copyWith({
@@ -113,6 +125,8 @@ class TravelStop {
     bool? isRestStop,
     String? restType,
     String? stopType,
+    String? openingTime,
+    String? closingTime,
   }) => TravelStop(
     destinationId: destinationId ?? this.destinationId,
     place: place ?? this.place,
@@ -132,6 +146,8 @@ class TravelStop {
     isRestStop: isRestStop ?? this.isRestStop,
     restType: restType ?? this.restType,
     stopType: stopType ?? this.stopType,
+    openingTime: openingTime ?? this.openingTime,
+    closingTime: closingTime ?? this.closingTime,
   );
 }
 

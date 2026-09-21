@@ -488,5 +488,8 @@
   "checkInName": "ชื่อจุดเช็คอิน",
   "checkInSuccess": "เช็คอินสำเร็จแล้ว",
   "distanceWalked": "ระยะทาง",
-  "timeElapsed": "เวลา"
+  "timeElapsed": "เวลา",
+  "lateNightTag": "เที่ยวดึก",
+  "moveToDaytimeHint": "ควรย้ายไปกลางวัน",
+  "maybeClosedTag": "อาจปิดแล้ว"
 }

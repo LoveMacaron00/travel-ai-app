@@ -488,5 +488,8 @@
   "checkInName": "Check-in Name",
   "checkInSuccess": "Check-in successful",
   "distanceWalked": "Distance",
-  "timeElapsed": "Time"
+  "timeElapsed": "Time",
+  "lateNightTag": "Late night",
+  "moveToDaytimeHint": "Move to daytime",
+  "maybeClosedTag": "May be closed"
 }

@@ -2353,6 +2353,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Time'**
   String get timeElapsed;
+
+  /// No description provided for @lateNightTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Late night'**
+  String get lateNightTag;
+
+  /// No description provided for @moveToDaytimeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to daytime'**
+  String get moveToDaytimeHint;
+
+  /// No description provided for @maybeClosedTag.
+  ///
+  /// In en, this message translates to:
+  /// **'May be closed'**
+  String get maybeClosedTag;
 }
 
 class _AppLocalizationsDelegate

@@ -878,6 +878,175 @@ extension _PlanComponents on _PlanScreenState {
     }
     return '$visit · ${context.l10n.travelLabel} $leg ${context.l10n.minutesShort}';
   }
+
+  // --- เวลาเปิด-ปิด + กันเที่ยวดึก (mirror ฝั่ง server planScheduler) ---
+  // ที่เที่ยวต้องถึงก่อน 21:00 / ออกไม่เกิน 22:00 — ที่พัก overnight / จุดพัก rest ยกเว้น
+  bool _isLateNightVisit(TravelStop stop) {
+    if (stop.isOvernight || stop.isRestStop) return false;
+    if (stop.destinationId.startsWith('osm:')) return false;
+    final arrival = _strictClockToMinutes(stop.arrivalTime);
+    if (arrival == null) return false;
+    final departure = arrival + stop.durationMinutes;
+    final arrivalClock = arrival % 1440;
+    final departureClock = departure % 1440;
+    if (arrivalClock >= 21 * 60) return true;
+    if (arrivalClock < 5 * 60) return true;
+    if (departureClock > 22 * 60 && departureClock < 12 * 60) return true;
+    return false;
+  }
+
+  // "HH:MM" แบบเข้ม — แปลงไม่ได้คืน null (ไม่ fallback เป็น startTime กันเตือนมั่ว)
+  int? _strictClockToMinutes(String clock) {
+    final parts = clock.split(':');
+    if (parts.length < 2) return null;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1].substring(0, 2));
+    if (hour == null || minute == null) return null;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+    return hour * 60 + minute;
+  }
+
+  // "08:00"/"9:00 PM"/"08.00" → นาที — "00:00" ถือว่าไม่ระบุ (DB ใช้เป็น unknown)
+  int? _flexibleTimeToMinutes(String value) {
+    final text = value.trim();
+    if (text.isEmpty || text == '00:00' || text == '00:00:00') return null;
+    final ampm = RegExp(r'([AP])\.?\s*M\.?', caseSensitive: false).firstMatch(text);
+    final match = RegExp(r'(\d{1,2})\s*[:.]\s*(\d{2})').firstMatch(text);
+    if (match == null) return null;
+    var hour = int.tryParse(match.group(1) ?? '');
+    final minute = int.tryParse(match.group(2) ?? '');
+    if (hour == null || minute == null || minute > 59) return null;
+    if (ampm != null) {
+      final isPm = ampm.group(1)!.toUpperCase() == 'P';
+      if (hour < 1 || hour > 12) return null;
+      if (isPm && hour != 12) hour += 12;
+      if (!isPm && hour == 12) hour = 0;
+    } else if (hour > 23) {
+      return null;
+    }
+    if (hour == 0 && minute == 0) return null;
+    return hour * 60 + minute;
+  }
+
+  // ป้าย "08:00–18:00" หรือ '' ถ้าไม่รู้เวลาเปิด
+  String _openingRangeLabel(TravelStop stop) {
+    final open = _flexibleTimeToMinutes(stop.openingTime);
+    final close = _flexibleTimeToMinutes(stop.closingTime);
+    if (open == null || close == null) return '';
+    String fmt(int m) =>
+        '${(m ~/ 60).toString().padLeft(2, '0')}:${(m % 60).toString().padLeft(2, '0')}';
+    return '${fmt(open)}–${fmt(close)}';
+  }
+
+  // ถึง/ออกอยู่นอกเวลาเปิด-ปิดไหม — ไม่รู้เวลาเปิดถือว่าผ่าน, overnight/rest ข้าม
+  bool _isOutsideOpeningHours(TravelStop stop) {
+    if (stop.isOvernight || stop.isRestStop) return false;
+    if (stop.destinationId.startsWith('osm:')) return false;
+    final open = _flexibleTimeToMinutes(stop.openingTime);
+    final close = _flexibleTimeToMinutes(stop.closingTime);
+    if (open == null || close == null) return false;
+    final arrival = _strictClockToMinutes(stop.arrivalTime);
+    if (arrival == null) return false;
+    final departure = arrival + stop.durationMinutes;
+    if (close == open) return false;
+    bool inOpen(int t) => close < open ? (t >= open || t < close) : (t >= open && t < close);
+    final arrivalClock = arrival % 1440;
+    final departureClock = departure % 1440;
+    if (!inOpen(arrivalClock)) return true;
+    if (close < open) {
+      return !(inOpen(departureClock) || departureClock <= close + 15);
+    }
+    return departureClock > close + 15;
+  }
+
+  // ชิปเตือนใต้โซ่เวลา: เที่ยวดึก (แดง) / อาจปิดแล้ว+เวลาเปิด (ส้ม) / เวลาเปิดเฉย ๆ (เทา)
+  // คืน [] ถ้าไม่มีอะไรต้องเตือน — ใช้ทั้งการ์ด (_stopTile) และ bottom sheet
+  List<Widget> _timeWarningChips(TravelStop stop) {
+    final chips = <Widget>[];
+    if (_isLateNightVisit(stop)) {
+      chips.add(
+        Container(
+          margin: const EdgeInsets.only(top: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xfffde2e2),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xffe76f51)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.bedtime_outlined, size: 13, color: Color(0xffb84d36)),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  '${context.l10n.lateNightTag} · ${context.l10n.arriveLabel} ${stop.arrivalTime} — ${context.l10n.moveToDaytimeHint}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xffb84d36),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      return chips;
+    }
+    final range = _openingRangeLabel(stop);
+    if (range.isNotEmpty) {
+      if (_isOutsideOpeningHours(stop)) {
+        chips.add(
+          Container(
+            margin: const EdgeInsets.only(top: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xfffdeeda),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xfff0b429)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.schedule_outlined, size: 13, color: Color(0xff9a5b00)),
+                const SizedBox(width: 5),
+                Flexible(
+                  child: Text(
+                    '${context.l10n.maybeClosedTag} (${context.l10n.openingHours} $range)',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xff9a5b00),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        chips.add(
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.access_time, size: 12, color: Colors.black38),
+                const SizedBox(width: 4),
+                Text(
+                  '${context.l10n.openingHours} $range',
+                  style: const TextStyle(fontSize: 11, color: Colors.black45),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    }
+    return chips;
+  }
+
   String _modeLabel(String value) {
     // ใช้ label จาก DB ก่อน (รองรับ mode ใหม่ที่ admin เพิ่ม) แล้วค่อย fallback เป็น l10n
     final keyLower = value.toLowerCase();
