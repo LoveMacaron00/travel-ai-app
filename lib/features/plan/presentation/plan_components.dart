@@ -1053,9 +1053,12 @@ extension _PlanComponents on _PlanScreenState {
     return chips;
   }
 
-  String _modeLabel(String value) {
-    // ใช้ label จาก DB ก่อน (รองรับ mode ใหม่ที่ admin เพิ่ม) แล้วค่อย fallback เป็น l10n
+  // rentalCar = ขารถเช่าหลังบิน (ธงจาก server) — โชว์ป้าย "รถเช่า" แทน "รถยนต์"
+  // เช็กก่อน label DB เพราะ DB ไม่มีโหมดรถเช่า (เป็นความหมายเพิ่มฝั่ง client)
+  String _modeLabel(String value, {bool rentalCar = false}) {
     final keyLower = value.toLowerCase();
+    if (rentalCar && keyLower == 'car') return context.l10n.transportRentalCar;
+    // ใช้ label จาก DB ก่อน (รองรับ mode ใหม่ที่ admin เพิ่ม) แล้วค่อย fallback เป็น l10n
     for (final item in _dynamicModes) {
       if (item.key.toLowerCase() == keyLower) return item.label;
     }

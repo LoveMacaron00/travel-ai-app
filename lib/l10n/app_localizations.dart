@@ -1742,6 +1742,12 @@ abstract class AppLocalizations {
   /// **'Car'**
   String get transportCar;
 
+  /// No description provided for @transportRentalCar.
+  ///
+  /// In en, this message translates to:
+  /// **'Rental car'**
+  String get transportRentalCar;
+
   /// No description provided for @transportWalking.
   ///
   /// In en, this message translates to:

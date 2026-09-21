@@ -261,7 +261,7 @@ extension _PlanDetailsView on _PlanScreenState {
                           child: Icon(Icons.route),
                         ),
                         title: Text(
-                          '${_modeLabel(segment.mode)} · ${segment.estimatedMinutes} ${context.l10n.minutesShort}',
+                          '${_modeLabel(segment.mode, rentalCar: stop.rentalCar)} · ${segment.estimatedMinutes} ${context.l10n.minutesShort}',
                         ),
                         subtitle: Text(
                           [

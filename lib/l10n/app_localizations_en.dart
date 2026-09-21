@@ -905,6 +905,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get transportCar => 'Car';
 
   @override
+  String get transportRentalCar => 'Rental car';
+
+  @override
   String get transportWalking => 'Walking';
 
   @override

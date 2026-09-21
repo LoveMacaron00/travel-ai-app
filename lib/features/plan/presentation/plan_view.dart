@@ -1208,7 +1208,7 @@ extension _PlanMainView on _PlanScreenState {
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
-                                  '${_modeLabel(segment.mode)} · ${segment.estimatedMinutes} ${context.l10n.minutesShort} · ฿${_money(segment.estimatedCost)}',
+                                  '${_modeLabel(segment.mode, rentalCar: stop.rentalCar)} · ${segment.estimatedMinutes} ${context.l10n.minutesShort} · ฿${_money(segment.estimatedCost)}',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: routeLabelColor(segment.mode),

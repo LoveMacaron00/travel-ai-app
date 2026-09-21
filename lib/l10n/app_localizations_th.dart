@@ -892,6 +892,9 @@ class AppLocalizationsTh extends AppLocalizations {
   String get transportCar => 'รถยนต์';
 
   @override
+  String get transportRentalCar => 'รถเช่า';
+
+  @override
   String get transportWalking => 'เดิน';
 
   @override
