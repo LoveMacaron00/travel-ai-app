@@ -938,6 +938,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get transport => 'Transport';
 
   @override
+  String get activities => 'Activities';
+
+  @override
+  String get accommodation => 'Accommodation';
+
+  @override
+  String get returnTripTitle => 'Return trip';
+
+  @override
+  String get kmShort => 'km';
+
+  @override
+  String returnVia(String route) {
+    return 'via $route';
+  }
+
+  @override
   String get stopTotal => 'Stop total';
 
   @override

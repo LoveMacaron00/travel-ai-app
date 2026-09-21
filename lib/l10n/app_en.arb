@@ -371,6 +371,14 @@
   "admissionDetailsTat": "Admission details from TAT",
   "food": "Food",
   "transport": "Transport",
+  "activities": "Activities",
+  "accommodation": "Accommodation",
+  "returnTripTitle": "Return trip",
+  "kmShort": "km",
+  "returnVia": "via {route}",
+  "@returnVia": {
+    "placeholders": {"route": {"type": "String"}}
+  },
   "stopTotal": "Stop total",
   "journeyDetails": "Journey details",
   "navigateToPlace": "Navigate to this place",

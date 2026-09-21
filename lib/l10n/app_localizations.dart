@@ -1808,6 +1808,36 @@ abstract class AppLocalizations {
   /// **'Transport'**
   String get transport;
 
+  /// No description provided for @activities.
+  ///
+  /// In en, this message translates to:
+  /// **'Activities'**
+  String get activities;
+
+  /// No description provided for @accommodation.
+  ///
+  /// In en, this message translates to:
+  /// **'Accommodation'**
+  String get accommodation;
+
+  /// No description provided for @returnTripTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Return trip'**
+  String get returnTripTitle;
+
+  /// No description provided for @kmShort.
+  ///
+  /// In en, this message translates to:
+  /// **'km'**
+  String get kmShort;
+
+  /// No description provided for @returnVia.
+  ///
+  /// In en, this message translates to:
+  /// **'via {route}'**
+  String returnVia(String route);
+
   /// No description provided for @stopTotal.
   ///
   /// In en, this message translates to:

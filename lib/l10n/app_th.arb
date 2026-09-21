@@ -371,6 +371,14 @@
   "admissionDetailsTat": "รายละเอียดค่าเข้าชมจาก TAT",
   "food": "อาหาร",
   "transport": "การเดินทาง",
+  "activities": "กิจกรรม",
+  "accommodation": "ที่พัก",
+  "returnTripTitle": "เดินทางกลับ",
+  "kmShort": "กม.",
+  "returnVia": "ผ่าน {route}",
+  "@returnVia": {
+    "placeholders": {"route": {"type": "String"}}
+  },
   "stopTotal": "รวมจุดนี้",
   "journeyDetails": "รายละเอียดการเดินทาง",
   "navigateToPlace": "นำทางไปสถานที่นี้",

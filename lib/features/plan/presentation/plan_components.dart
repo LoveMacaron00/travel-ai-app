@@ -52,8 +52,6 @@ extension _PlanComponents on _PlanScreenState {
             ),
           ),
         ),
-        // ขากลับวันสุดท้าย (ถ้า server คำนวณมา): จากสถานที่ปลายทางกลับจุดเริ่มต้น
-        if (plan.returnLeg != null) _returnLegLine(plan.returnLeg!),
         const SizedBox(height: 10),
         Text(
           context.l10n.estimateDisclaimer,
@@ -63,21 +61,79 @@ extension _PlanComponents on _PlanScreenState {
     ),
   );
 
-  // บรรทัดเดียวสั้น ๆ ใต้ยอดรวม: ขากลับจากปลายทางสู่จุดเริ่มต้น
-  // ตัวเลขตรงจาก planData.returnLeg ฝั่ง server (กม./นาที/บาท) ไม่คำนวณซ้ำ
-  Widget _returnLegLine(TravelReturnLeg leg) => Padding(
-    padding: const EdgeInsets.only(top: 6),
+  // การ์ดขากลับใบเต็มต่อจากการ์ดค่าใช้จ่าย: จากสถานที่ปลายทางกลับจุดเริ่มต้น
+  // ตัวเลขตรงจาก planData.returnLeg ฝั่ง server (โหมด/กม./นาที/บาท) ไม่คำนวณซ้ำ
+  // ขากลับเครื่องบินมีบรรทัด via ("DMK → HKT") เพิ่ม
+  Widget _returnLegCard(TravelReturnLeg leg) => Container(
+    margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: _gold, width: 1.5),
+    ),
     child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.keyboard_return, size: 15, color: Colors.black45),
-        const SizedBox(width: 6),
+        const CircleAvatar(
+          radius: 15,
+          backgroundColor: _gold,
+          foregroundColor: _ink,
+          child: Icon(Icons.keyboard_return, size: 16),
+        ),
+        const SizedBox(width: 12),
         Expanded(
-          child: Text(
-            'กลับ ${leg.from} → ${leg.to} · '
-            '${leg.distanceKm.toStringAsFixed(1)} กม. · '
-            '${leg.estimatedMinutes} ${context.l10n.minutesShort} · '
-            '฿${_money(leg.estimatedCost)}',
-            style: const TextStyle(color: Colors.black54, fontSize: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      context.l10n.returnTripTitle,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '฿${_money(leg.estimatedCost)}',
+                    style: const TextStyle(
+                      color: _gold,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${leg.from} → ${leg.to}',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${_modeLabel(leg.mode)} · '
+                '${leg.distanceKm.toStringAsFixed(1)} ${context.l10n.kmShort} · '
+                '${leg.estimatedMinutes} ${context.l10n.minutesShort}',
+                style: const TextStyle(color: Colors.black45, fontSize: 12),
+              ),
+              if (leg.via.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    context.l10n.returnVia(leg.via),
+                    style: const TextStyle(
+                      color: Colors.black38,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ],
@@ -414,6 +470,7 @@ extension _PlanComponents on _PlanScreenState {
   }
 
   void _showPlacePicker() {
+    // ทริปล่วงหน้าเพิ่มสถานที่ได้ตามปกติ — มีแค่ระบบนำทางที่ล็อกจนถึงวันเดินทาง
     if (_mustVisit.length >= _PlanScreenState._maxMustVisitPlaces) {
       _showPlanSnack(context.l10n.mustVisitLimitReached);
       return;
@@ -1077,6 +1134,8 @@ extension _PlanComponents on _PlanScreenState {
     'food' => context.l10n.food,
     'transport' => context.l10n.transport,
     'admission' => context.l10n.admission,
+    'activities' => context.l10n.activities,
+    'accommodation' || 'hotel' => context.l10n.accommodation,
     _ =>
       value
           .split(RegExp(r'[_ ]'))

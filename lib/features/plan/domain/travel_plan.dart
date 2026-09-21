@@ -225,6 +225,10 @@ class TravelReturnLeg {
   final double estimatedCost;
   final String mode;
 
+  /// เส้นทางบินขากลับ ("DMK → HKT") — '' คือขากลับภาคพื้น
+  /// server เติมให้เฉพาะขากลับเครื่องบิน (computeReturnLeg)
+  final String via;
+
   const TravelReturnLeg({
     required this.from,
     required this.to,
@@ -232,6 +236,7 @@ class TravelReturnLeg {
     required this.estimatedMinutes,
     required this.estimatedCost,
     required this.mode,
+    this.via = '',
   });
 
   factory TravelReturnLeg.fromJson(Map<String, dynamic> j) => TravelReturnLeg(
@@ -243,6 +248,7 @@ class TravelReturnLeg {
     ).round(),
     estimatedCost: _number(j['estimatedCost'] ?? j['estimated_cost']),
     mode: '${j['mode'] ?? 'car'}',
+    via: '${j['via'] ?? ''}',
   );
 
   Map<String, dynamic> toJson() => {
@@ -252,6 +258,7 @@ class TravelReturnLeg {
     'estimatedMinutes': estimatedMinutes,
     'estimatedCost': estimatedCost,
     'mode': mode,
+    if (via.isNotEmpty) 'via': via,
   };
 }
 

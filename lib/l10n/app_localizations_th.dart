@@ -925,6 +925,23 @@ class AppLocalizationsTh extends AppLocalizations {
   String get transport => 'การเดินทาง';
 
   @override
+  String get activities => 'กิจกรรม';
+
+  @override
+  String get accommodation => 'ที่พัก';
+
+  @override
+  String get returnTripTitle => 'เดินทางกลับ';
+
+  @override
+  String get kmShort => 'กม.';
+
+  @override
+  String returnVia(String route) {
+    return 'ผ่าน $route';
+  }
+
+  @override
   String get stopTotal => 'รวมจุดนี้';
 
   @override

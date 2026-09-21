@@ -717,6 +717,13 @@ extension _PlanMainView on _PlanScreenState {
                     ),
                   ),
                 ],
+                // การ์ดขากลับใบเต็ม (ถ้า server คำนวณมา) — ไว้เหนือการ์ดยอดรวม
+                // โชว์เฉพาะตอนดูวันสุดท้ายของทริป (ขากลับออกจากจุดสุดท้ายของวันนั้น)
+                if (plan.returnLeg != null &&
+                    selectedDay != null &&
+                    plan.days.isNotEmpty &&
+                    selectedDay.day == plan.days.last.day)
+                  SliverToBoxAdapter(child: _returnLegCard(plan.returnLeg!)),
                 SliverToBoxAdapter(child: _costSummary(plan)),
                 SliverToBoxAdapter(
                   child: Padding(

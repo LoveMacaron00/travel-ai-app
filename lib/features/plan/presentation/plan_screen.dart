@@ -93,7 +93,7 @@ class _PlanScreenState extends State<PlanScreen> {
   final _planMapKey = GlobalKey();
   final _planNameController = TextEditingController();
   DateTimeRange? _dates;
-  double _budget = 30000;
+  double _budget = 60000;
   int _days = 3;
   // จุด 2: เวลาเริ่มเดินทาง + โหมดให้ AI ประเมินจำนวนวัน
   // _startTime เริ่ม 09:00 ตรงกับ DEFAULT_DAY_START_MINUTES ฝั่ง server
@@ -1120,6 +1120,7 @@ class _PlanScreenState extends State<PlanScreen> {
           estimatedMinutes: returnLeg.estimatedMinutes,
           estimatedCost: fuel,
           mode: returnLeg.mode,
+          via: returnLeg.via,
         );
         changed = true;
       }
@@ -2217,15 +2218,25 @@ class _PlanScreenState extends State<PlanScreen> {
   /// จุด 6: server เดินโซ่เวลาใหม่แบบคงลำดับเดิม (chainAllDaysPreservingOrder)
   /// แล้วคืน warnings — ถ้าส่งเวลากลับมาจะ sync เข้า state ให้ตรงกันทันที
   /// ส่ง start_time เสริมด้วยเพื่อให้โซ่เวลาของวันเริ่มจากเวลาที่ผู้ใช้เลือกเหมือนตอนสร้าง
-  Future<void> _savePlanChanges(TravelPlan plan) async {    if (plan.tripId <= 0) return;
+  Future<void> _savePlanChanges(TravelPlan plan) async {
+    if (plan.tripId <= 0) return;
+    // ส่งพิกัดจุดเริ่มไปด้วย — server เก็บไว้ (ถ้ายังไม่มี) แล้วคำนวณขากลับให้
+    final start = _startPoint;
     final result = await AppServices.trips.updateTravelPlan(
       plan.tripId,
-      {...plan.toJson(), 'start_time': _clockOf(_startTime)},
+      {
+        ...plan.toJson(),
+        'start_time': _clockOf(_startTime),
+        if (start != null) 'start_latitude': start.latitude,
+        if (start != null) 'start_longitude': start.longitude,
+      },
     );
     if (!mounted) return;
     if (result['success'] == true) {
       final warnings =
           ((result['warnings'] as List?) ?? const []).map((e) => '$e').toList();
+      // PUT คำนวณขากลับ + ยอดรวมใหม่ฝั่ง server — อัปเดตเข้าหน้าจอทันทีโดยไม่ต้องโหลดใหม่
+      _applyReturnLegFromResponse(result);
       // ทริป local ไม่ต้องมี "ข้อควรรู้ก่อนเดินทาง" — ทิ้ง warnings ที่ server ส่งกลับมา
       if (_plan != null && _isLocalTrip(_plan!)) {
         if ((_plan?.warnings ?? const []).isNotEmpty) {
@@ -2247,6 +2258,32 @@ class _PlanScreenState extends State<PlanScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('${result['message'] ?? 'บันทึกแผนไม่สำเร็จ'}')),
     );
+  }
+
+  // PUT คำนวณขากลับ + ยอดรวมใหม่ฝั่ง server — อัปเดตเข้าหน้าจอทันทีโดยไม่ต้องโหลดใหม่
+  // (response ไม่มี/เก่า = ข้าม ไม่แตะ state เดิม)
+  void _applyReturnLegFromResponse(Map<String, dynamic> result) {
+    final plan = _plan;
+    if (plan == null) return;
+    final leg = result['returnLeg'];
+    if (leg is! Map) return;
+    Map<String, double>? breakdown;
+    final rawBreakdown = result['budgetBreakdown'];
+    if (rawBreakdown is Map) {
+      breakdown = {
+        for (final e in rawBreakdown.entries)
+          '${e.key}': (double.tryParse('${e.value}') ?? 0).toDouble(),
+      };
+    }
+    setState(() {
+      _plan = plan.copyWith(
+        returnLeg: TravelReturnLeg.fromJson(Map<String, dynamic>.from(leg)),
+        totalEstimatedCost:
+            double.tryParse('${result['totalEstimatedCost']}') ??
+            plan.totalEstimatedCost,
+        budgetBreakdown: breakdown ?? plan.budgetBreakdown,
+      );
+    });
   }
 
   // เทียบ list คำเตือนแบบไม่สนลำดับ — กัน SnackBar เด้งซ้ำทั้งที่ warnings เท่าเดิม
