@@ -93,13 +93,21 @@ class ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  /// เรียกจาก MainNavigationScreen เมื่อกลับจาก AccountSettings overlay เพื่อรีเฟรชข้อมูล
+  /// รีเฟรชข้อมูลทั้งหน้า (โปรไฟล์ + แผนที่บันทึก + สวิตช์ไดอารี่)
+  /// เรียกจาก MainNavigationScreen เมื่อกลับมา tab โปรไฟล์ / กลับจาก AccountSettings /
+  /// สร้างแผนสำเร็จ — หน้าโปรไฟล์อยู่ใน IndexedStack (initState รันครั้งเดียว) ลิสต์แผนเลยต้องรีเอง
+  Future<void> _refreshAll() async {
+    _loadUserData();
+    final enabled = await TravelDiaryAutomationService.isEnabled();
+    if (!mounted) return;
+    setState(() => _autoDiaryEnabled = enabled);
+    await _loadSavedPlans();
+  }
+
+  /// เรียกจาก MainNavigationScreen เพื่อรีเฟรชข้อมูลโดยไม่ต้องรอ pull-to-refresh
   void refreshProfile() {
-    if (mounted) {
-      setState(() => _loadUserData());
-    } else {
-      _loadUserData();
-    }
+    if (!mounted) return;
+    _refreshAll();
   }
 
   Future<void> _updateProfile({List<String>? interests}) async {
@@ -536,8 +544,11 @@ class ProfileScreenState extends State<ProfileScreen> {
             ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+      body: RefreshIndicator(
+        onRefresh: _refreshAll,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -879,6 +890,7 @@ class ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 24),
           ],
+        ),
         ),
       ),
     );

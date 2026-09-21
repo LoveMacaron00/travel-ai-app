@@ -51,8 +51,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     });
   }
 
+  // tripId ล่าสุดที่รีเฟรชโปรไฟล์ให้แล้ว — กันโหลดซ้ำจาก status เดิม
+  int? _lastProfileTripId;
+
   void _onTripStatusChanged() {
     if (mounted) setState(() {});
+    // สร้างแผนสำเร็จขณะมีหน้าโปรไฟล์อยู่ → รีเฟรชลิสต์แผนให้เอง (ยังไม่เคยเปิดโปรไฟล์เลยก็ข้าม initState จะโหลดใหม่ให้)
+    final status = AppServices.tripGenerationStatus;
+    if (status.isSuccess &&
+        status.tripId != null &&
+        status.tripId != _lastProfileTripId &&
+        _screens[3] != null) {
+      _lastProfileTripId = status.tripId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _profileScreenKey.currentState?.refreshProfile();
+      });
+    }
   }
 
   @override
@@ -115,6 +129,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   void _selectTab(int index) {
+    // กลับมา tab โปรไฟล์ให้รีเฟรชอัตโนมัติ — หน้าค้างใน IndexedStack (initState รันครั้งเดียว) ลิสต์แผนเลยเก่า
+    // (สร้างครั้งแรกข้ามไป initState โหลดให้อยู่แล้ว)
+    final refreshProfileOnReturn = index == 3 && _screens[3] != null;
     setState(() {
       _showingDiary = false;
       _showingFeedback = false;
@@ -123,6 +140,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _screens[index] ??= _createScreen(index);
       _selectedIndex = index;
     });
+    if (refreshProfileOnReturn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _profileScreenKey.currentState?.refreshProfile();
+      });
+    }
   }
 
   void _showDiary() {
