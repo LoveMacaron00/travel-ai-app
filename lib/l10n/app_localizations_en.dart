@@ -190,7 +190,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Add a photo and note from your trip. Your GPS location will be captured automatically.';
 
   @override
-  String get memoryNote => 'Today\'s story';
+  String get memoryNote => 'Record your story';
 
   @override
   String get memoryNoteHint =>
@@ -1039,7 +1039,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Are you sure you want to delete this plan?';
 
   @override
-  String get planNameLabel => 'Plan name';
+  String get planNameLabel => 'Trip name';
 
   @override
   String get planNameHint => 'e.g. Weekend in Chiang Mai';
@@ -1070,7 +1070,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addManualDiary => 'Add Memory';
 
   @override
-  String get manualDiaryTitle => 'New Memory';
+  String get manualDiaryTitle => 'Check-in Memory';
 
   @override
   String get placeName => 'Place name';

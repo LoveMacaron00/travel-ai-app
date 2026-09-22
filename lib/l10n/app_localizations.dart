@@ -437,7 +437,7 @@ abstract class AppLocalizations {
   /// No description provided for @memoryNote.
   ///
   /// In en, this message translates to:
-  /// **'Today\'s story'**
+  /// **'Record your story'**
   String get memoryNote;
 
   /// No description provided for @memoryNoteHint.
@@ -1985,7 +1985,7 @@ abstract class AppLocalizations {
   /// No description provided for @planNameLabel.
   ///
   /// In en, this message translates to:
-  /// **'Plan name'**
+  /// **'Trip name'**
   String get planNameLabel;
 
   /// No description provided for @planNameHint.
@@ -2045,7 +2045,7 @@ abstract class AppLocalizations {
   /// No description provided for @manualDiaryTitle.
   ///
   /// In en, this message translates to:
-  /// **'New Memory'**
+  /// **'Check-in Memory'**
   String get manualDiaryTitle;
 
   /// No description provided for @placeName.

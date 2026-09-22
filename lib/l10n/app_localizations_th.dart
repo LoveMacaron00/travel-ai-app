@@ -188,7 +188,7 @@ class AppLocalizationsTh extends AppLocalizations {
       'เพิ่มรูปและข้อความจากทริปของคุณ พิกัด GPS จะถูกบันทึกให้อัตโนมัติ';
 
   @override
-  String get memoryNote => 'เรื่องราวของวันนี้';
+  String get memoryNote => 'บันทึกเรื่องราว';
 
   @override
   String get memoryNoteHint => 'เขียนความประทับใจหรือสิ่งที่อยากจดจำ';
@@ -1026,7 +1026,7 @@ class AppLocalizationsTh extends AppLocalizations {
       'คุณแน่ใจหรือไม่ว่าต้องการลบแผนที่บันทึกไว้นี้?';
 
   @override
-  String get planNameLabel => 'ชื่อแผน';
+  String get planNameLabel => 'ชื่อทริป';
 
   @override
   String get planNameHint => 'เช่น เที่ยวเชียงใหม่สุดสัปดาห์';
@@ -1057,7 +1057,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get addManualDiary => 'เพิ่มความทรงจำ';
 
   @override
-  String get manualDiaryTitle => 'ความทรงจำใหม่';
+  String get manualDiaryTitle => 'เช็คอินความทรงจำ';
 
   @override
   String get placeName => 'ชื่อสถานที่';

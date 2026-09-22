@@ -540,7 +540,7 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
               controller: _titleCtrl,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
-                labelText: context.l10n.placeName,
+                labelText: context.l10n.checkInName,
                 hintText: context.l10n.placeNameHint,
                 prefixIcon: const Icon(Icons.place_outlined),
                 border: OutlineInputBorder(
