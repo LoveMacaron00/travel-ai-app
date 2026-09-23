@@ -297,7 +297,8 @@ class _PlanScreenState extends State<PlanScreen> {
 
       // เปิดแผนเก่า: เก็บ snapshot ตอนเปิดไว้ — reset จะย้อนการแก้ของ session นี้
       // (trip เก่าไม่มี snapshot แผนแรกใน memory/server แล้วเพราะทุกการแก้ save ทับ)
-      // ตัดที่พัก/จุดแวะพักที่ server แถมมาออก + คิดรถเป็นน้ำมันก่อนโชว์
+      // ตัดที่พัก/จุดแวะพักที่ server แถมมาออก + เหมาน้ำมันรายวันก่อนโชว์
+      // (ยอดยึดตาม server ไม่คำนวณใหม่ — เปิดดูกี่ครั้งก็เท่าเดิม)
       plan = _sanitizePlan(plan);
       _storeOriginalPlan(plan.toJson());
       setState(() {
@@ -549,7 +550,7 @@ class _PlanScreenState extends State<PlanScreen> {
         );
       }).toList(),
     );
-    // _places เพิ่งมา — รัน sanitize ซ้ำเผื่อค่าน้ำมันเปลี่ยน (ไม่มีอะไรเปลี่ยนไม่แตะ state)
+    // _places เพิ่งมา — รัน sanitize ซ้ำ (strip/zero/lump อย่างเดียว ยอดไม่ขยับถ้าเท่าเดิม)
     final current = _plan;
     if (current != null) {
       final fixed = _sanitizePlan(current);
@@ -732,7 +733,7 @@ class _PlanScreenState extends State<PlanScreen> {
           warnings: {...next.warnings, ...streamed}.toList(),
         );
       }
-      // ตัดที่พัก/จุดแวะพักที่ server แถมมาออก + คิดรถเป็นน้ำมัน
+      // ตัดที่พัก/จุดแวะพักที่ server แถมมาออก + เหมาน้ำมันรายวัน
       // เก็บ snapshot หลังปรับ reset จะได้ไม่เพี้ยน
       next = _sanitizePlan(next);
       _storeOriginalPlan(next.toJson());
@@ -959,88 +960,40 @@ class _PlanScreenState extends State<PlanScreen> {
     );
   }
 
-  // รถยนต์ทุกคันคือรถส่วนตัว: คำนวณขารถยนต์ใหม่จากระยะจริงด้วยเรทน้ำมัน
-  // (แผนเก่า/AI ใช้เรทแท็กซี่ 20 บาท/กม. รวมทุกขาแล้วยอดพุ่งเกินจริง)
-  // คำนวณ deterministic จากพิกัดจึงรันซ้ำได้ — ไม่มีอะไรเปลี่ยนคืน plan เดิม
-  TravelPlan _applyCarFuelModel(TravelPlan plan) {
-    final home = _calcOrigin;
-    var saved = 0.0;
+  // sanitize ครบชุดทุกทริป: ตัดที่พัก/จุดแวะพัก ล้างค่าเดิน-ปั่นฟรี แล้วเหมาน้ำมันรายวัน
+  // ยอดเงินทุกอย่างยึดตาม server (ไม่คำนวณใหม่จาก GPS สด) — เปิดดูเมื่อไรก็เท่าเดิม
+  // มีแค่การจัดโชว์ (เหมาวัน) ไม่แตะยอดรวม
+  TravelPlan _sanitizePlan(TravelPlan plan) =>
+      _lumpDayFuelCostOnPlan(_zeroFreeModeCosts(_stripLodgingAndRestStops(plan)));
+
+  // เหมาค่าน้ำมันทั้งวันไว้ที่ขารถขาแรกของทุกวัน ขารถขาอื่นเป็น 0
+  // ยอดรวมเท่าเดิมแค่ย้ายที่โชว์ — รันซ้ำได้ ไม่มีอะไรเปลี่ยนคืน plan เดิม
+  TravelPlan _lumpDayFuelCostOnPlan(TravelPlan plan) {
     var changed = false;
-    LatLng? prev = home;
     final days = <TravelDay>[];
     for (final day in plan.days) {
-      final stops = List<TravelStop>.from(day.stops);
-      for (var i = 0; i < stops.length; i++) {
-        final stop = stops[i];
-        if (stop.transportMode.toLowerCase() != 'car') continue;
-        final LatLng? from = i == 0
-            ? prev
-            : LatLng(stops[i - 1].latitude, stops[i - 1].longitude);
-        if (from == null) continue;
-        final km = const Distance().as(
-          LengthUnit.Kilometer,
-          from,
-          LatLng(stop.latitude, stop.longitude),
-        );
-        final fuel = (km * _localFuelRatePerKm).roundToDouble();
-        if ((fuel - stop.transportCost).abs() > 0.001) {
-          saved += stop.transportCost - fuel;
-          var segments = stop.segments;
-          if (segments.isNotEmpty &&
-              segments.first.mode.toLowerCase() == 'car') {
-            final first = segments.first;
-            segments = [
-              TravelSegment(
-                mode: first.mode,
-                from: first.from,
-                to: first.to,
-                estimatedMinutes: first.estimatedMinutes,
-                estimatedCost: fuel,
-              ),
-              ...segments.sublist(1),
-            ];
-          }
-          stops[i] = stop.copyWith(
-            transportCost: fuel,
-            segments: segments,
-          );
-          changed = true;
-        }
-      }
-      days.add(TravelDay(day: day.day, theme: day.theme, stops: stops));
-      if (day.stops.isNotEmpty) {
-        final last = day.stops.last;
-        prev = LatLng(last.latitude, last.longitude);
-      }
+      // _lumpDayFuelCost ไม่ mutate list เดิม — คืน object เดิมถ้าเหมาอยู่แล้ว
+      final lumped = _lumpDayFuelCost(day.stops);
+      if (!identical(lumped, day.stops)) changed = true;
+      days.add(
+        identical(lumped, day.stops)
+            ? day
+            : TravelDay(day: day.day, theme: day.theme, stops: lumped),
+      );
     }
     if (!changed) return plan;
-    double nonNegative(double v) => v < 0 ? 0 : v;
-    var transportSum = 0.0;
-    for (final d in plan.days) {
-      for (final s in d.stops) {
-        transportSum += s.transportCost;
-      }
-    }
-    final breakdown = Map<String, double>.from(plan.budgetBreakdown);
-    breakdown['transport'] = nonNegative(
-      (breakdown['transport'] ?? transportSum) - saved,
-    );
     return TravelPlan(
       tripId: plan.tripId,
       title: plan.title,
       summary: plan.summary,
-      totalEstimatedCost: nonNegative(plan.totalEstimatedCost - saved),
-      budgetBreakdown: breakdown,
+      totalEstimatedCost: plan.totalEstimatedCost,
+      budgetBreakdown: plan.budgetBreakdown,
       days: days,
       tips: plan.tips,
       warnings: plan.warnings,
       startDate: plan.startDate,
     );
   }
-
-  // sanitize ครบชุดทุกทริป: ตัดที่พัก/จุดแวะพัก ล้างค่าเดิน-ปั่นฟรี แล้วปรับขารถเป็นค่าน้ำมัน
-  TravelPlan _sanitizePlan(TravelPlan plan) =>
-      _applyCarFuelModel(_zeroFreeModeCosts(_stripLodgingAndRestStops(plan)));
 
   static bool _isFreeMode(String mode) {
     final lower = mode.toLowerCase();
@@ -1711,6 +1664,51 @@ class _PlanScreenState extends State<PlanScreen> {
     return true;
   }
 
+  // เหมาค่าน้ำมันทั้งวันไว้ที่ขารถขาแรกของวัน ขารถขาอื่นเป็น 0
+  // ยอดรวมเท่าเดิมแค่ย้ายที่โชว์ — กันเศษ 3/6/12 บาทค้างตามขา
+  // คืน list เดิมถ้าเหมาอยู่แล้ว (กัน setState/PUT ฟรี)
+  List<TravelStop> _lumpDayFuelCost(List<TravelStop> stops) {
+    final carIdx = <int>[];
+    var sum = 0.0;
+    for (var i = 0; i < stops.length; i++) {
+      if (stops[i].transportMode.toLowerCase() == 'car') {
+        carIdx.add(i);
+        sum += stops[i].transportCost;
+      }
+    }
+    if (carIdx.length < 2) return stops;
+    if (stops[carIdx.first].transportCost == sum &&
+        carIdx.skip(1).every((i) => stops[i].transportCost == 0)) {
+      return stops;
+    }
+    TravelStop withLegCost(TravelStop stop, double cost) {
+      var segments = stop.segments;
+      if (segments.isNotEmpty &&
+          segments.first.mode.toLowerCase() == 'car') {
+        final first = segments.first;
+        segments = [
+          TravelSegment(
+            mode: first.mode,
+            from: first.from,
+            to: first.to,
+            estimatedMinutes: first.estimatedMinutes,
+            estimatedCost: cost,
+          ),
+          ...segments.sublist(1),
+        ];
+      }
+      return stop.copyWith(transportCost: cost, segments: segments);
+    }
+
+    return [
+      for (var i = 0; i < stops.length; i++)
+        if (!carIdx.contains(i))
+          stops[i]
+        else
+          withLegCost(stops[i], i == carIdx.first ? sum : 0),
+    ];
+  }
+
   /// จุดรวมของทุกการแก้ไข (เพิ่ม/ลบ/สลับ) — คำนวณ stops + งบใหม่ตามกติกา
   /// ของแต่ละกรณี แล้วทั้งบันทึกกลับ server และวาดเส้นทางใหม่
   void _replaceSelectedDayStops(List<TravelStop> stops) {
@@ -1774,7 +1772,17 @@ class _PlanScreenState extends State<PlanScreen> {
           estimated = newStop.transportCost;
         }
       }
-      recalculatedStops = [...oldStops, newStop];
+      // เหมาน้ำมันทั้งวันไว้ขาแรกก่อนคิดงบ — ยอด transport เพิ่มแค่ส่วนต่างของวัน
+      recalculatedStops = _lumpDayFuelCost([...oldStops, newStop]);
+      double oldDayTransport = 0;
+      for (final s in oldStops) {
+        oldDayTransport += s.transportCost;
+      }
+      double newDayTransport = 0;
+      for (final s in recalculatedStops) {
+        newDayTransport += s.transportCost;
+      }
+      final transportDelta = newDayTransport - oldDayTransport;
 
       final days = [
         for (var index = 0; index < plan.days.length; index++)
@@ -1788,13 +1796,14 @@ class _PlanScreenState extends State<PlanScreen> {
       ];
       // บวกเพิ่มเท่านั้น ยอดรวมต้องเพิ่ม ไม่ลด
       final newBreakdown = Map<String, double>.from(plan.budgetBreakdown);
-      newBreakdown['transport'] = (newBreakdown['transport'] ?? 0) + estimated;
+      newBreakdown['transport'] =
+          (newBreakdown['transport'] ?? 0) + transportDelta;
       newBreakdown['food'] = (newBreakdown['food'] ?? 0) + newStop.foodCost;
       newBreakdown['activities'] =
           (newBreakdown['activities'] ?? 0) + newStop.entryCost;
       final newTotal =
           plan.totalEstimatedCost +
-          estimated +
+          transportDelta +
           newStop.foodCost +
           newStop.entryCost;
       updatedPlan = TravelPlan(
@@ -1811,11 +1820,14 @@ class _PlanScreenState extends State<PlanScreen> {
     } else {
       // ลบ/สลับลำดับ → ประมาณใหม่เฉพาะขาที่เปลี่ยน ที่เหลือคงค่า AI เดิม
       // จุดแรกของวันยึด departure semantics (arrival0 = departure + leg)
-      recalculatedStops = _rechainDay(
-        _recalculatedStopsPreservingCosts(
-          oldStops,
-          stops,
-          isFirstDay: plan.days[selectedIndex].day == 1,
+      // แล้วเหมาน้ำมันทั้งวันไว้ขาแรก (ยอดรวมเท่าเดิม)
+      recalculatedStops = _lumpDayFuelCost(
+        _rechainDay(
+          _recalculatedStopsPreservingCosts(
+            oldStops,
+            stops,
+            isFirstDay: plan.days[selectedIndex].day == 1,
+          ),
         ),
       );
       final days = [
