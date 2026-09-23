@@ -130,13 +130,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   void _selectTab(int index) {
     // กลับมา tab โปรไฟล์ให้รีเฟรชอัตโนมัติ — หน้าค้างใน IndexedStack (initState รันครั้งเดียว) ลิสต์แผนเลยเก่า
-    // (สร้างครั้งแรกข้ามไป initState โหลดให้อยู่แล้ว)
+    // (สร้างครั้งแรกข้ามไป initState โหลดใหม่ให้อยู่แล้ว)
     final refreshProfileOnReturn = index == 3 && _screens[3] != null;
     setState(() {
       _showingDiary = false;
       _showingFeedback = false;
       _showingFootprint = false;
       _showingAccountSettings = false;
+      if (index == 2) {
+        // แท็บแผนต้องเป็นหน้าวางแผนเสมอ — ถ้าค้างจอแผนเก่าที่เปิดจาก Profile
+        // (กด back จากจอนั้นจะเด้งไป Profile แทนที่จะอยู่หน้า plan) ให้รีเซ็ตเป็นฟอร์มเปล่า
+        final current = _screens[2];
+        if (current is PlanScreen && current.initialTripId != null) {
+          _screens[2] = const PlanScreen();
+        }
+      }
       _screens[index] ??= _createScreen(index);
       _selectedIndex = index;
     });
