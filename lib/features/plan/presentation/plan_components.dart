@@ -306,12 +306,11 @@ extension _PlanComponents on _PlanScreenState {
           selected: isSelected,
           selectedColor: const Color(0xffffe7a0),
           showCheckmark: false,
-          onSelected: (v) => _updateState(() {
-            if (v) {
-              selected.add(item.key);
-            } else if (selected.length > 1) {
-              selected.removeWhere((s) => s.toLowerCase() == keyLower);
-            }
+          // เลือกได้แบบเดียว — แตะอันไหนใช้อันนั้น (ต้องมี 1 อันเสมอ)
+          onSelected: (_) => _updateState(() {
+            selected
+              ..clear()
+              ..add(item.key);
           }),
         );
       }).toList(),

@@ -77,7 +77,7 @@ class _PlanScreenState extends State<PlanScreen> {
   final _planMapKey = GlobalKey();
   final _planNameController = TextEditingController();
   DateTimeRange? _dates;
-  double _budget = 60000;
+  double _budget = 30000;
   int _days = 3;
   // จุด 2: เวลาเริ่มเดินทาง + โหมดให้ AI ประเมินจำนวนวัน
   // _startTime เริ่ม 09:00 ตรงกับ DEFAULT_DAY_START_MINUTES ฝั่ง server
