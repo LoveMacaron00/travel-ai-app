@@ -592,10 +592,9 @@ extension _PlanMainView on _PlanScreenState {
                     ),
                   ),
                 ),
-                // จุด 3 + 5: คำเตือนจากระบบจัดตาราง (วันแน่น/ระยะไกล/ข้ามเกาะ)
+                // คำเตือนจากระบบจัดตาราง (วันแน่น/ระยะไกล/ข้ามเกาะ)
                 // มาจาก plan_data.warnings ที่ server คำนวณ — แยกจาก disclaimer ถาวร
-                // ทริป local (จุดเริ่มอยู่จังหวัดเดียวกับปลายทาง) ไม่ต้องโชว์ "ข้อควรรู้ก่อนเดินทาง"
-                if (plan.warnings.isNotEmpty && !_isLocalTrip(plan))
+                if (plan.warnings.isNotEmpty)
                   SliverToBoxAdapter(child: _planWarningsBanner(plan)),
                 SliverToBoxAdapter(
                   child: Container(
@@ -717,13 +716,6 @@ extension _PlanMainView on _PlanScreenState {
                     ),
                   ),
                 ],
-                // การ์ดขากลับใบเต็ม (ถ้า server คำนวณมา) — ไว้เหนือการ์ดยอดรวม
-                // โชว์เฉพาะตอนดูวันสุดท้ายของทริป (ขากลับออกจากจุดสุดท้ายของวันนั้น)
-                if (plan.returnLeg != null &&
-                    selectedDay != null &&
-                    plan.days.isNotEmpty &&
-                    selectedDay.day == plan.days.last.day)
-                  SliverToBoxAdapter(child: _returnLegCard(plan.returnLeg!)),
                 SliverToBoxAdapter(child: _costSummary(plan)),
                 SliverToBoxAdapter(
                   child: Padding(
@@ -850,8 +842,9 @@ extension _PlanMainView on _PlanScreenState {
   Widget _planMap(TravelPlan plan, {bool fullScreen = false}) {
     final day = _selectedDayFor(plan);
     final stops = day?.stops ?? const <TravelStop>[];
-    // day 1 ใช้จุดเริ่มต้นจริงเป็นจุดแรก — วันถัดไปพักค้างที่จุดสุดท้ายของวันก่อน
-    final start = _startPoint;
+    // day 1 ใช้จุดเริ่มต้นที่มีผลกับแผนเป็นจุดแรก (ทริปล่วงหน้า/อยู่นอกพื้นที่ไม่มีหมุดเริ่ม)
+    // วันอื่นใช้ลำดับ stops อย่างเดียว
+    final start = _calcOrigin;
     final showStartPin = day?.day == 1 && start != null;
     final mapPoints = [
       if (showStartPin) start,
@@ -966,9 +959,9 @@ extension _PlanMainView on _PlanScreenState {
               shape: const CircleBorder(),
               child: IconButton(
                 tooltip: context.l10n.currentGpsLocation,
-                onPressed: start == null
+                onPressed: _position == null
                     ? null
-                    : () => _map.move(start, 15),
+                    : () => _map.move(_position!, 15),
                 icon: const Icon(Icons.my_location, color: Color(0xff1877f2)),
               ),
             ),
@@ -986,17 +979,10 @@ extension _PlanMainView on _PlanScreenState {
     bool canNavigate = true,
     String? lockedMessage,
   }) {
-    // สีประจำประเภทจุด — ใช้ที่เดียวกันทั้งการ์ด (ขอบ+ป้ายเลข) และหมุดบนแผนที่
-    // ทอง=ที่เที่ยว / ม่วง=ที่พักค้างคืน / ฟ้า=จุดพักรายทาง
-    final typeColor = stop.isOvernight
-        ? const Color(0xff7b2cbf)
-        : stop.isRestStop
-        ? const Color(0xff2d7dd2)
-        : _gold;
-    // เลขบนพื้นทองใช้ตัวเข้ม (ขาวบนทองอ่านไม่ออก) ม่วง/ฟ้าคงตัวขาว
-    final onTypeColor = stop.isOvernight || stop.isRestStop
-        ? Colors.white
-        : _ink;
+    // ทุกจุดคือที่เที่ยว — ใช้สีทองชุดเดียวทั้งการ์ด (ขอบ+ป้ายเลข) และหมุดบนแผนที่
+    const typeColor = _gold;
+    // เลขบนพื้นทองใช้ตัวเข้ม (ขาวบนทองอ่านไม่ออก)
+    const onTypeColor = _ink;
     return KeyedSubtree(
       key: key,
       child: Material(
@@ -1026,12 +1012,8 @@ extension _PlanMainView on _PlanScreenState {
                               radius: 15,
                               backgroundColor: typeColor,
                               foregroundColor: onTypeColor,
-                              child: Icon(
-                                stop.isOvernight
-                                    ? Icons.hotel
-                                    : stop.isRestStop
-                                    ? restStopIcon(stop.restType)
-                                    : Icons.attractions,
+                              child: const Icon(
+                                Icons.attractions,
                                 size: 16,
                               ),
                             ),
@@ -1070,23 +1052,8 @@ extension _PlanMainView on _PlanScreenState {
                             ? Container(
                                 width: 76,
                                 height: 76,
-                                color: stop.isOvernight
-                                    ? const Color(0xfff1e8fb)
-                                    : stop.isRestStop
-                                    ? const Color(0xffe8f1fb)
-                                    : const Color(0xffeee7da),
-                                child: Icon(
-                                  stop.isOvernight
-                                      ? Icons.hotel
-                                      : stop.isRestStop
-                                      ? restStopIcon(stop.restType)
-                                      : Icons.landscape,
-                                  color: stop.isOvernight
-                                      ? const Color(0xff7b2cbf)
-                                      : stop.isRestStop
-                                      ? const Color(0xff2d7dd2)
-                                      : null,
-                                ),
+                                color: const Color(0xffeee7da),
+                                child: const Icon(Icons.landscape),
                               )
                             : mediaNetworkImage(
                                 AppServices.media.fullUrl(stop.imageUrl),
@@ -1153,19 +1120,7 @@ extension _PlanMainView on _PlanScreenState {
                             // จุด 2 + 6: โซ่เวลา ถึง→เที่ยว→ออก ต่อเนื่องทั้งวัน
                             // ถึง = arrivalTime, ออก = ถึง + เที่ยว, ขาเข้าอยู่ใน segments
                             // number เริ่มที่ 1 — จุดแรกของวันไม่มีขาเข้าจึงไม่แสดงเวลาเดินทาง
-                            Text(
-                              _stopChainLabel(stop, number),
-                              style: TextStyle(
-                                // เที่ยวดึกขึ้นแดงทันที — เห็นชัดแบบในภาพ (23:09 / 00:45)
-                                color: _isLateNightVisit(stop)
-                                    ? const Color(0xffb84d36)
-                                    : Colors.black45,
-                                fontSize: 12,
-                                fontWeight: _isLateNightVisit(stop)
-                                    ? FontWeight.w700
-                                    : FontWeight.normal,
-                              ),
-                            ),
+                            _stopChainInfo(stop, number),
                             // ป้ายเที่ยวดึก / อาจปิดแล้ว / เวลาเปิด-ปิด (จาก DB ผ่าน server)
                             ..._timeWarningChips(stop),
                             const SizedBox(height: 5),
@@ -1174,8 +1129,8 @@ extension _PlanMainView on _PlanScreenState {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                color: Colors.black54,
-                                height: 1.3,
+                                color: Color(0xff4a443b),
+                                height: 1.45,
                               ),
                             ),
                           ],
@@ -1211,15 +1166,15 @@ extension _PlanMainView on _PlanScreenState {
                                 decoration: BoxDecoration(
                                   color: routeLineColor(
                                     segment.mode,
-                                  ).withValues(alpha: .14),
+                                  ).withValues(alpha: .18),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
-                                  '${_modeLabel(segment.mode, rentalCar: stop.rentalCar)} · ${segment.estimatedMinutes} ${context.l10n.minutesShort} · ฿${_money(segment.estimatedCost)}',
+                                  '${_modeLabel(segment.mode)} · ${_prettyMinutes(segment.estimatedMinutes)} · ฿${_money(segment.estimatedCost)}',
                                   style: TextStyle(
-                                    fontSize: 11,
+                                    fontSize: 12,
                                     color: routeLabelColor(segment.mode),
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                               ),
@@ -1230,9 +1185,7 @@ extension _PlanMainView on _PlanScreenState {
                   Row(
                     children: [
                       _price(
-                        stop.isOvernight
-                            ? Icons.hotel_outlined
-                            : Icons.confirmation_number_outlined,
+                        Icons.confirmation_number_outlined,
                         stop.entryCost,
                       ),
                       const SizedBox(width: 8),
@@ -1268,20 +1221,20 @@ extension _PlanMainView on _PlanScreenState {
                   // อธิบายใต้ปุ่มว่าทำไมล็อก + ปลดวันไหน
                   if (!canNavigate && lockedMessage != null) ...[
                     const SizedBox(height: 8),
-                    Row(
+                      Row(
                       children: [
                         const Icon(
                           Icons.lock_outline,
                           size: 13,
-                          color: Colors.black45,
+                          color: Color(0xff6b6257),
                         ),
                         const SizedBox(width: 5),
                         Expanded(
                           child: Text(
                             lockedMessage,
                             style: const TextStyle(
-                              color: Colors.black45,
-                              fontSize: 11,
+                              color: Color(0xff6b6257),
+                              fontSize: 12,
                             ),
                           ),
                         ),

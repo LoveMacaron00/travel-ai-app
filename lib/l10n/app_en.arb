@@ -303,6 +303,10 @@
   "@placeAdded": {
     "placeholders": {"name": {"type": "String"}}
   },
+  "placesAdded": "Added {count} places",
+  "@placesAdded": {
+    "placeholders": {"count": {"type": "int"}}
+  },
   "placeRemoved": "Removed {name}",
   "@placeRemoved": {
     "placeholders": {"name": {"type": "String"}}
@@ -360,12 +364,11 @@
   "locationUnavailable": "Location unavailable",
   "searchPlacesThailand": "Search places in Thailand",
   "transportCar": "Car",
-  "transportRentalCar": "Rental car",
   "transportWalking": "Walking",
   "transportBus": "Bus",
   "transportTrain": "Train",
   "transportFerry": "Ferry",
-  "transportFlight": "Flight",
+  "transportBicycle": "Bicycle",
   "couldNotCreatePlan": "Could not create a plan.",
   "estimatedStopCost": "Estimated cost for this stop",
   "admissionDetailsTat": "Admission details from TAT",
@@ -373,12 +376,7 @@
   "transport": "Transport",
   "activities": "Activities",
   "accommodation": "Accommodation",
-  "returnTripTitle": "Return trip",
   "kmShort": "km",
-  "returnVia": "via {route}",
-  "@returnVia": {
-    "placeholders": {"route": {"type": "String"}}
-  },
   "stopTotal": "Stop total",
   "journeyDetails": "Journey details",
   "navigateToPlace": "Navigate to this place",
@@ -471,6 +469,7 @@
   "@navigationLocked": {
     "placeholders": {"date": {"type": "String"}}
   },
+  "navigationLockedOutsideArea": "Navigation is available when you're in the trip province.",
   "gpsCheckIn": "GPS Check-in",
   "startDiaryWithCheckIn": "Check in to start a diary",
   "selectCheckInForDiary": "Choose a check-in to write a diary",

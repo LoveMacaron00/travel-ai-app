@@ -3,8 +3,7 @@ part of 'plan_screen.dart';
 // Bottom sheet รายละเอียดสถานที่และกติกาแสดงค่าเข้าชม
 extension _PlanDetailsView on _PlanScreenState {
   void _showStopDetails(TravelStop stop, int number) {
-    // จุดแวะพัก OSM ไม่มี destination detail ใน DB — ใช้ข้อมูลในตัว stop เลย ไม่ยิง API
-    final destinationId = stop.isRestStop ? null : int.tryParse(stop.destinationId);
+    final destinationId = int.tryParse(stop.destinationId);
     final detailFuture = destinationId == null
         ? null
         : _loadStopDetails(destinationId);
@@ -124,17 +123,7 @@ extension _PlanDetailsView on _PlanScreenState {
                   ],
                   const SizedBox(height: 4),
                   // โซ่เวลาเดียวกับการ์ด: ถึง → เที่ยว → ออก (+ เวลาเดินทางขาเข้า)
-                  Text(
-                    _stopChainLabel(stop, number),
-                    style: TextStyle(
-                      color: _isLateNightVisit(stop)
-                          ? const Color(0xffb84d36)
-                          : Colors.black54,
-                      fontWeight: _isLateNightVisit(stop)
-                          ? FontWeight.w700
-                          : FontWeight.normal,
-                    ),
-                  ),
+                  _stopChainInfo(stop, number),
                   ..._timeWarningChips(stop),
                   const SizedBox(height: 12),
                   Text(
@@ -149,8 +138,8 @@ extension _PlanDetailsView on _PlanScreenState {
                     Text(
                       description,
                       style: const TextStyle(
-                        color: Colors.black54,
-                        height: 1.45,
+                        color: Color(0xff4a443b),
+                        height: 1.5,
                       ),
                     ),
                   ],
@@ -182,12 +171,8 @@ extension _PlanDetailsView on _PlanScreenState {
                   ),
                   const SizedBox(height: 10),
                   _detailCostRow(
-                    stop.isOvernight
-                        ? Icons.hotel_outlined
-                        : Icons.confirmation_number_outlined,
-                    stop.isOvernight
-                        ? context.l10n.roomPricePerNight
-                        : context.l10n.admission,
+                    Icons.confirmation_number_outlined,
+                    context.l10n.admission,
                     stop.entryCost,
                   ),
                   if (admissionDetails.isNotEmpty)
@@ -202,9 +187,7 @@ extension _PlanDetailsView on _PlanScreenState {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            stop.isOvernight
-                                ? context.l10n.roomPricePerNight
-                                : context.l10n.admissionDetailsTat,
+                            context.l10n.admissionDetailsTat,
                             style: const TextStyle(
                               color: Color(0xff876100),
                               fontSize: 12,
@@ -261,7 +244,7 @@ extension _PlanDetailsView on _PlanScreenState {
                           child: Icon(Icons.route),
                         ),
                         title: Text(
-                          '${_modeLabel(segment.mode, rentalCar: stop.rentalCar)} · ${segment.estimatedMinutes} ${context.l10n.minutesShort}',
+                          '${_modeLabel(segment.mode)} · ${_prettyMinutes(segment.estimatedMinutes)}',
                         ),
                         subtitle: Text(
                           [
@@ -352,7 +335,7 @@ extension _PlanDetailsView on _PlanScreenState {
 
   List<String> _formatAdmissionFee(Map fee) {
     final lines = <String>[];
-    // ที่พักค้างคืน: sync พับ TAT minPrice/maxPrice ลง roomMinPrice/roomMaxPrice
+    // ข้อมูลห้องพักจาก TAT (minPrice/maxPrice พับเป็น roomMinPrice/roomMaxPrice)
     // แสดงราคาห้อง + ดาว/เช็คอิน-เอาต์ก่อนค่าเข้าชม (ถ้ามีปนกันก็แสดงทั้งคู่)
     final roomPrice = resolveRoomPriceText(fee);
     if (roomPrice.isNotEmpty) {
@@ -420,97 +403,8 @@ extension _PlanDetailsView on _PlanScreenState {
     ),
   );
 
+  // ทุกจุดคือที่เที่ยว — หมุดทองแบบเดียว
   Widget _buildPlanStopMarker(TravelStop stop, int number) {
-    // ที่พักค้างคืนใช้หมุดม่วงแยกจากจุดพักรายทางสีฟ้าและหมุดทองของสถานที่ท่องเที่ยว
-    if (stop.isOvernight) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              color: const Color(0xff7b2cbf),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: const Icon(Icons.hotel, color: Colors.white, size: 18),
-          ),
-          const SizedBox(height: 4),
-          Container(
-            constraints: const BoxConstraints(maxWidth: 128),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-            decoration: BoxDecoration(
-              color: const Color(0xfff1e8fb),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: const Color(0xff7b2cbf)),
-            ),
-            child: Text(
-              stop.place,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: Color(0xff5a1f8f),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-    // จุดแวะพัก OSM ใช้หมุดเล็กสีฟ้าแยกจากหมุดทองของสถานที่ท่องเที่ยว
-    if (stop.isRestStop) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              color: const Color(0xff2d7dd2),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Icon(restStopIcon(stop.restType), color: Colors.white, size: 18),
-          ),
-          const SizedBox(height: 4),
-          Container(
-            constraints: const BoxConstraints(maxWidth: 128),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-            decoration: BoxDecoration(
-              color: const Color(0xffe8f1fb),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: const Color(0xff2d7dd2)),
-            ),
-            child: Text(
-              stop.place,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: Color(0xff1f5f9f),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [

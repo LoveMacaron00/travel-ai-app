@@ -41,12 +41,18 @@ extension _PlanComponents on _PlanScreenState {
               children: [
                 Text(
                   _title(e.key),
-                  style: const TextStyle(color: Colors.black54),
+                  style: const TextStyle(
+                    color: Color(0xff4a443b),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 const Spacer(),
                 Text(
                   '฿${_money(e.value)}',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xff3f3a33),
+                  ),
                 ),
               ],
             ),
@@ -55,85 +61,11 @@ extension _PlanComponents on _PlanScreenState {
         const SizedBox(height: 10),
         Text(
           context.l10n.estimateDisclaimer,
-          style: const TextStyle(color: Colors.black38, fontSize: 11),
-        ),
-      ],
-    ),
-  );
-
-  // การ์ดขากลับใบเต็มต่อจากการ์ดค่าใช้จ่าย: จากสถานที่ปลายทางกลับจุดเริ่มต้น
-  // ตัวเลขตรงจาก planData.returnLeg ฝั่ง server (โหมด/กม./นาที/บาท) ไม่คำนวณซ้ำ
-  // ขากลับเครื่องบินมีบรรทัด via ("DMK → HKT") เพิ่ม
-  Widget _returnLegCard(TravelReturnLeg leg) => Container(
-    margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: _gold, width: 1.5),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const CircleAvatar(
-          radius: 15,
-          backgroundColor: _gold,
-          foregroundColor: _ink,
-          child: Icon(Icons.keyboard_return, size: 16),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      context.l10n.returnTripTitle,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    '฿${_money(leg.estimatedCost)}',
-                    style: const TextStyle(
-                      color: _gold,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${leg.from} → ${leg.to}',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '${_modeLabel(leg.mode)} · '
-                '${leg.distanceKm.toStringAsFixed(1)} ${context.l10n.kmShort} · '
-                '${leg.estimatedMinutes} ${context.l10n.minutesShort}',
-                style: const TextStyle(color: Colors.black45, fontSize: 12),
-              ),
-              if (leg.via.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    context.l10n.returnVia(leg.via),
-                    style: const TextStyle(
-                      color: Colors.black38,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-            ],
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Color(0xff6b6257),
+            fontSize: 11,
+            height: 1.4,
           ),
         ),
       ],
@@ -202,7 +134,8 @@ extension _PlanComponents on _PlanScreenState {
   );
 
   Widget _locationTile() {
-    final start = _startPoint;
+    // โชว์จุดเริ่มที่มีผลกับแผนจริง (ทริปล่วงหน้า/อยู่นอกพื้นที่ GPS จะถูกตัดออก)
+    final start = _calcOrigin;
     final isCustom = _customStartPoint != null;
     return InkWell(
       borderRadius: BorderRadius.circular(15),
@@ -327,14 +260,14 @@ extension _PlanComponents on _PlanScreenState {
   }
 
   // ไอคอน fallback รายโหมดให้ตรง [Image 1] หน้า plan option:
-  // รถยนต์/เดิน/บัส/รถไฟ/เรือ/เครื่องบิน — ใช้เมื่อ DB ไม่มี icon_url
+  // รถยนต์/เดิน/บัส/รถไฟ/เรือ — ใช้เมื่อ DB ไม่มี icon_url
   IconData _transportFallbackIcon(String keyLower) => switch (keyLower) {
     'car' => Icons.directions_car,
     'walking' || 'walk' => Icons.directions_walk,
     'bus' => Icons.directions_bus,
     'train' => Icons.train,
     'ferry' || 'boat' || 'ship' => Icons.directions_boat,
-    'flight' || 'plane' => Icons.flight,
+    'bicycle' || 'bike' || 'cycling' => Icons.directions_bike,
     _ => Icons.route,
   };
 
@@ -478,6 +411,8 @@ extension _PlanComponents on _PlanScreenState {
 
     String query = '';
     String selectedCategory = 'all';
+    // รายการที่ติ๊กเลือกไว้ (id) — ยังไม่เพิ่มจริงจนกว่าจะกดยืนยัน
+    final selectedIds = <String>{};
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -486,7 +421,9 @@ extension _PlanComponents on _PlanScreenState {
         builder: (context, setSheet) => AnimatedBuilder(
           animation: _locationService,
           builder: (context, _) {
-            final origin = _startPoint;
+            // เรียง/โชว์ระยะเฉพาะเมื่อมีจุดเริ่มที่มีผลกับแผน
+            // (ทริปล่วงหน้า/อยู่นอกพื้นที่ — ไม่เรียงตาม GPS ปัจจุบัน)
+            final origin = _calcOrigin;
             final queryLower = query.toLowerCase();
             final matches = _places
                 .where(
@@ -575,11 +512,15 @@ extension _PlanComponents on _PlanScreenState {
                             itemCount: filtered.length,
                             itemBuilder: (_, i) {
                               final p = filtered[i];
+                              final isSelected = selectedIds.contains(p.id);
                               final description = stripHtmlText(p.description);
                               final distanceLabel = origin == null
                                   ? null
                                   : _distanceLabel(origin, p);
                               return ListTile(
+                                selected: isSelected,
+                                selectedTileColor: const Color(0xfffff6d7),
+                                selectedColor: Colors.black87,
                                 leading: ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
                                   child: p.imageUrl.isEmpty
@@ -663,11 +604,9 @@ extension _PlanComponents on _PlanScreenState {
                                     GestureDetector(
                                       behavior: HitTestBehavior.opaque,
                                       onTap: () {
-                                        // เคสเพิ่มเข้าวันที่เลือกของแผนที่สร้างแล้ว —
-                                        // ต้องกันซ้ำก่อนเสมอ (เทียบทั้ง id และชื่อ)
-                                        if (_plan != null &&
-                                            _isDuplicateInSelectedDay(p)) {
-                                          Navigator.pop(sheetContext);
+                                        // ติ๊กเลือก/ยกเลิก — ยังไม่เพิ่มจริงจนกว่าจะกดยืนยัน
+                                        // รายการซ้ำแจ้งเตือนทันที ไม่ให้ติ๊ก
+                                        if (_isPlaceAlreadyPicked(p)) {
                                           _showPlanSnack(
                                             context.l10n.placeAlreadyAdded(
                                               p.title,
@@ -675,63 +614,16 @@ extension _PlanComponents on _PlanScreenState {
                                           );
                                           return;
                                         }
-                                        // เคสฟอร์ม (ยังไม่มีแผน) — must-visit ซ้ำ
-                                        // ก็แจ้งเตือนด้วย ไม่ใช่เงียบ
-                                        if (_plan == null &&
-                                            _mustVisit.any(
-                                              (x) =>
-                                                  x.id == p.id ||
-                                                  _placeKey(x.title) ==
-                                                      _placeKey(p.title),
-                                            )) {
-                                          Navigator.pop(sheetContext);
-                                          _showPlanSnack(
-                                            context.l10n.placeAlreadyAdded(
-                                              p.title,
-                                            ),
-                                          );
-                                          return;
-                                        }
-                                        if (!_mustVisit.any(
-                                          (x) => x.id == p.id,
-                                        )) {
-                                          if (_mustVisit.length >=
-                                              _PlanScreenState
-                                                  ._maxMustVisitPlaces) {
-                                            Navigator.pop(sheetContext);
-                                            _showPlanSnack(
-                                              context
-                                                  .l10n
-                                                  .mustVisitLimitReached,
-                                            );
-                                            return;
+                                        setSheet(() {
+                                          if (!selectedIds.remove(p.id)) {
+                                            selectedIds.add(p.id);
                                           }
-                                          _mustVisit.add(p);
-                                        }
-                                        Navigator.pop(sheetContext);
-                                        if (_plan != null) {
-                                          final added = _addStopToSelectedDay(
-                                            p,
-                                          );
-                                          _showPlanSnack(
-                                            added
-                                                ? context.l10n.placeAdded(
-                                                    p.title,
-                                                  )
-                                                : context.l10n
-                                                      .placeAlreadyAdded(
-                                                        p.title,
-                                                      ),
-                                          );
-                                        } else if (mounted) {
-                                          _updateState(() {});
-                                          _showPlanSnack(
-                                            context.l10n.placeAdded(p.title),
-                                          );
-                                        }
+                                        });
                                       },
-                                      child: const Icon(
-                                        Icons.add_circle,
+                                      child: Icon(
+                                        isSelected
+                                            ? Icons.check_circle
+                                            : Icons.add_circle,
                                         color: _gold,
                                       ),
                                     ),
@@ -755,6 +647,45 @@ extension _PlanComponents on _PlanScreenState {
                             },
                           ),
                   ),
+                  // แถบยืนยัน — กดทีเดียวเพิ่มทุกที่ที่ติ๊กไว้
+                  SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _gold,
+                            foregroundColor: Colors.black,
+                            disabledBackgroundColor: const Color(
+                              0xffeee7da,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          onPressed: selectedIds.isEmpty
+                              ? null
+                              : () => _confirmSelectedPlaces(
+                                  sheetContext,
+                                  selectedIds,
+                                ),
+                          icon: const Icon(Icons.check),
+                          label: Text(
+                            selectedIds.isEmpty
+                                ? context.l10n.addAPlace
+                                : '${context.l10n.addAPlace} (${selectedIds.length})',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             );
@@ -762,6 +693,62 @@ extension _PlanComponents on _PlanScreenState {
         ),
       ),
     );
+  }
+
+  // ที่นี้ถูกเลือกไปแล้วหรือยัง — ผลลัพธ์กันซ้ำในวันที่เลือก, ฟอร์มกันซ้ำใน must-visit
+  // (เทียบทั้ง id และชื่อ กัน AI/DB เขียนชื่อเพี้ยน)
+  bool _isPlaceAlreadyPicked(PlaceMarker p) {
+    if (_plan != null) return _isDuplicateInSelectedDay(p);
+    return _mustVisit.any(
+      (x) => x.id == p.id || _placeKey(x.title) == _placeKey(p.title),
+    );
+  }
+
+  // ยืนยันรายการที่ติ๊กไว้ — เพิ่มทีเดียวหลายที่พร้อมกัน
+  // ฟอร์ม: ลง must-visit / ผลลัพธ์: ลง must-visit + วันที่เลือก (กันซ้ำ + จำกัดจำนวนเหมือนเดิม)
+  void _confirmSelectedPlaces(
+    BuildContext sheetContext,
+    Set<String> selectedIds,
+  ) {
+    final selected = <PlaceMarker>[];
+    for (final id in selectedIds) {
+      final match = _places.where((p) => p.id == id).firstOrNull;
+      if (match != null) selected.add(match);
+    }
+    Navigator.pop(sheetContext);
+    if (selected.isEmpty || !mounted) return;
+
+    var added = 0;
+    var limited = false;
+    String lastAddedName = '';
+    for (final p in selected) {
+      if (_plan != null && _isDuplicateInSelectedDay(p)) continue;
+      if (!_mustVisit.any((x) => x.id == p.id)) {
+        if (_mustVisit.length >= _PlanScreenState._maxMustVisitPlaces) {
+          limited = true;
+          continue;
+        }
+        _mustVisit.add(p);
+      }
+      if (_plan != null) {
+        if (_addStopToSelectedDay(p)) {
+          added++;
+          lastAddedName = p.title;
+        }
+      } else {
+        added++;
+        lastAddedName = p.title;
+      }
+    }
+    if (!mounted) return;
+    _updateState(() {});
+    if (added == 0) {
+      _showPlanSnack(context.l10n.mustVisitLimitReached);
+    } else if (added == 1 && !limited) {
+      _showPlanSnack(context.l10n.placeAdded(lastAddedName));
+    } else {
+      _showPlanSnack(context.l10n.placesAdded(added));
+    }
   }
 
   String _distanceLabel(LatLng origin, PlaceMarker place) {
@@ -858,9 +845,16 @@ extension _PlanComponents on _PlanScreenState {
     ),
     child: Row(
       children: [
-        Icon(icon, size: 15, color: Colors.black45),
+        Icon(icon, size: 15, color: const Color(0xff6b6257)),
         const SizedBox(width: 5),
-        Text('฿${_money(value)}', style: const TextStyle(fontSize: 12)),
+        Text(
+          '฿${_money(value)}',
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Color(0xff3f3a33),
+          ),
+        ),
       ],
     ),
   );
@@ -899,54 +893,88 @@ extension _PlanComponents on _PlanScreenState {
     (m) => ',',
   );
 
-  // ป้ายโซ่เวลาของจุดแวะ:
-  // - ที่เที่ยว: "ถึง HH:MM · เที่ยว N นาที · ออก HH:MM" (+ "· เดินทาง M นาที" ขาเข้า)
-  // - จุดพักรายทาง (ปั๊ม/คาเฟ่/osm:/stopType rest): ใช้ "พัก" แทน "เที่ยว"
-  // - ที่พักค้างคืน (overnight): "ถึง HH:MM · เช็คอิน" เท่านั้น — ไม่มีเที่ยว/ออก/เดินทางต่อ
-  //   (ชิป segments ด้านล่างบอกเวลาเดินทางขาเข้าอยู่แล้ว ใส่ซ้ำท้ายป้ายจะอ่านเหมือนเดินทางต่อ)
+  // หน่วยนาทีสำหรับโชว์ — เกินชั่วโมงย่อเป็น ชม.
+  // (เช่น 120 → "2 ชั่วโมง", 125 → "2 ชั่วโมง 5 นาที" แทนตัวเลขดิบยาว ๆ)
+  String _prettyMinutes(int minutes) {
+    if (minutes < 60) return '$minutes ${context.l10n.minutesShort}';
+    final hours = minutes ~/ 60;
+    final rest = minutes % 60;
+    if (rest == 0) return context.l10n.diaryHours(hours);
+    return context.l10n.diaryHoursMinutes(hours, rest);
+  }
+
+  // กล่องโซ่เวลาของจุดแวะ — แยก 2 บรรทัดให้อ่านง่าย:
+  // บรรทัดหลัก: ถึง → เที่ยว → ออก / บรรทัดรอง (ถ้ามีขาเข้า): ออก → เดินทาง → ถึง
   // จุดแรกของวันที่มีขาเข้า (departure→stop0): day start คือ DEPARTURE
-  // จึงนำหน้าด้วย "ออก HH:MM · เดินทาง M นาที" (ออก = ถึง − เดินทาง)
-  String _stopChainLabel(TravelStop stop, int selectedDayOrder) {
-    // ที่พักค้างคืนคือจุดจบของวัน — โชว์แค่เวลาเช็คอิน ไม่คำนวณเวลาออก/เดินทางต่อ
-    if (stop.isOvernight) {
-      return '${context.l10n.arriveLabel} ${stop.arrivalTime} · ${context.l10n.checkIn}';
-    }
-    final isRest = stop.isRestStop || stop.stopType.toLowerCase() == 'rest';
-    // สนามบิน (transfer) ใช้คำว่า "เปลี่ยนเครื่อง" แทน "พัก" — ยังไม่มี key ใน l10n
-    // ใช้ตามภาษาแอปตรงนี้ก่อนเหมือน "พัก"/"rest" (th: เปลี่ยนเครื่อง / en: transfer)
-    final isAirport = stop.restType.toLowerCase() == 'airport';
-    final visitWord = isAirport
-        ? (Localizations.localeOf(context).languageCode == 'th'
-              ? 'เปลี่ยนเครื่อง'
-              : 'transfer')
-        : isRest
-        ? (Localizations.localeOf(context).languageCode == 'th'
-              ? 'พัก'
-              : 'rest')
-        : context.l10n.visitLabel;
+  // จึงโชว์ "ออก HH:MM" ต้นทางในบรรทัดรอง (ออก = ถึง − เดินทาง)
+  // เที่ยวดึกขึ้นแดงทั้งบรรทัดหลัก — เห็นชัดแบบในภาพ (23:09 / 00:45)
+  Widget _stopChainInfo(TravelStop stop, int selectedDayOrder) {
+    final lateNight = _isLateNightVisit(stop);
+    final visitWord = context.l10n.visitLabel;
     final arrive = stop.arrivalTime;
     final leave =
         _clockFromMinutes(_clockToMinutes(arrive) + stop.durationMinutes);
-    final visit =
+    final mainLine =
         '${context.l10n.arriveLabel} $arrive · $visitWord '
-        '${stop.durationMinutes} ${context.l10n.minutesShort} · '
+        '${_prettyMinutes(stop.durationMinutes)} · '
         '${context.l10n.leaveLabel} $leave';
-    if (stop.segments.isEmpty) return visit;
-    final leg = stop.segments.first.estimatedMinutes;
-    if (selectedDayOrder <= 1) {
-      final depart = _clockFromMinutes(_clockToMinutes(arrive) - leg);
-      return '${context.l10n.leaveLabel} $depart · '
-          '${context.l10n.travelLabel} $leg ${context.l10n.minutesShort} · '
-          '$visit';
+    String? subLine;
+    if (stop.segments.isNotEmpty) {
+      final leg = stop.segments.first.estimatedMinutes;
+      if (selectedDayOrder <= 1) {
+        final depart = _clockFromMinutes(_clockToMinutes(arrive) - leg);
+        subLine =
+            '${context.l10n.leaveLabel} $depart · ${context.l10n.travelLabel} ${_prettyMinutes(leg)}';
+      } else {
+        subLine = '${context.l10n.travelLabel} ${_prettyMinutes(leg)}';
+      }
     }
-    return '$visit · ${context.l10n.travelLabel} $leg ${context.l10n.minutesShort}';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          mainLine,
+          style: TextStyle(
+            color: lateNight
+                ? const Color(0xffb84d36)
+                : const Color(0xff5b5347),
+            fontSize: 13,
+            height: 1.5,
+            fontWeight: lateNight ? FontWeight.w700 : FontWeight.w600,
+          ),
+        ),
+        if (subLine != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.directions,
+                  size: 13,
+                  color: Color(0xff6b6257),
+                ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    subLine,
+                    style: const TextStyle(
+                      color: Color(0xff6b6257),
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
   }
 
   // --- เวลาเปิด-ปิด + กันเที่ยวดึก (mirror ฝั่ง server planScheduler) ---
-  // ที่เที่ยวต้องถึงก่อน 21:00 / ออกไม่เกิน 22:00 — ที่พัก overnight / จุดพัก rest ยกเว้น
+  // ที่เที่ยวต้องถึงก่อน 21:00 / ออกไม่เกิน 22:00
   bool _isLateNightVisit(TravelStop stop) {
-    if (stop.isOvernight || stop.isRestStop) return false;
-    if (stop.destinationId.startsWith('osm:')) return false;
     final arrival = _strictClockToMinutes(stop.arrivalTime);
     if (arrival == null) return false;
     final departure = arrival + stop.durationMinutes;
@@ -1001,10 +1029,8 @@ extension _PlanComponents on _PlanScreenState {
     return '${fmt(open)}–${fmt(close)}';
   }
 
-  // ถึง/ออกอยู่นอกเวลาเปิด-ปิดไหม — ไม่รู้เวลาเปิดถือว่าผ่าน, overnight/rest ข้าม
+  // ถึง/ออกอยู่นอกเวลาเปิด-ปิดไหม — ไม่รู้เวลาเปิดถือว่าผ่าน
   bool _isOutsideOpeningHours(TravelStop stop) {
-    if (stop.isOvernight || stop.isRestStop) return false;
-    if (stop.destinationId.startsWith('osm:')) return false;
     final open = _flexibleTimeToMinutes(stop.openingTime);
     final close = _flexibleTimeToMinutes(stop.closingTime);
     if (open == null || close == null) return false;
@@ -1110,11 +1136,8 @@ extension _PlanComponents on _PlanScreenState {
     return chips;
   }
 
-  // rentalCar = ขารถเช่าหลังบิน (ธงจาก server) — โชว์ป้าย "รถเช่า" แทน "รถยนต์"
-  // เช็กก่อน label DB เพราะ DB ไม่มีโหมดรถเช่า (เป็นความหมายเพิ่มฝั่ง client)
-  String _modeLabel(String value, {bool rentalCar = false}) {
+  String _modeLabel(String value) {
     final keyLower = value.toLowerCase();
-    if (rentalCar && keyLower == 'car') return context.l10n.transportRentalCar;
     // ใช้ label จาก DB ก่อน (รองรับ mode ใหม่ที่ admin เพิ่ม) แล้วค่อย fallback เป็น l10n
     for (final item in _dynamicModes) {
       if (item.key.toLowerCase() == keyLower) return item.label;
@@ -1125,7 +1148,7 @@ extension _PlanComponents on _PlanScreenState {
       'bus' => context.l10n.transportBus,
       'train' => context.l10n.transportTrain,
       'ferry' => context.l10n.transportFerry,
-      'flight' => context.l10n.transportFlight,
+      'bicycle' || 'bike' || 'cycling' => context.l10n.transportBicycle,
       _ => _title(value),
     };
   }

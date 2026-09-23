@@ -303,6 +303,10 @@
   "@placeAdded": {
     "placeholders": {"name": {"type": "String"}}
   },
+  "placesAdded": "เพิ่ม {count} สถานที่แล้ว",
+  "@placesAdded": {
+    "placeholders": {"count": {"type": "int"}}
+  },
   "placeRemoved": "นำ {name} ออกแล้ว",
   "@placeRemoved": {
     "placeholders": {"name": {"type": "String"}}
@@ -360,12 +364,11 @@
   "locationUnavailable": "ไม่พบตำแหน่ง",
   "searchPlacesThailand": "ค้นหาสถานที่ในประเทศไทย",
   "transportCar": "รถยนต์",
-  "transportRentalCar": "รถเช่า",
   "transportWalking": "เดิน",
   "transportBus": "รถโดยสาร",
   "transportTrain": "รถไฟ",
   "transportFerry": "เรือ",
-  "transportFlight": "เครื่องบิน",
+  "transportBicycle": "จักรยาน",
   "couldNotCreatePlan": "ไม่สามารถสร้างแผนได้",
   "estimatedStopCost": "ค่าใช้จ่ายโดยประมาณของจุดนี้",
   "admissionDetailsTat": "รายละเอียดค่าเข้าชมจาก TAT",
@@ -373,12 +376,7 @@
   "transport": "การเดินทาง",
   "activities": "กิจกรรม",
   "accommodation": "ที่พัก",
-  "returnTripTitle": "เดินทางกลับ",
   "kmShort": "กม.",
-  "returnVia": "ผ่าน {route}",
-  "@returnVia": {
-    "placeholders": {"route": {"type": "String"}}
-  },
   "stopTotal": "รวมจุดนี้",
   "journeyDetails": "รายละเอียดการเดินทาง",
   "navigateToPlace": "นำทางไปสถานที่นี้",
@@ -471,6 +469,7 @@
   "@navigationLocked": {
     "placeholders": {"date": {"type": "String"}}
   },
+  "navigationLockedOutsideArea": "ต้องอยู่ในจังหวัดที่ทำทริปจึงนำทางได้",
   "gpsCheckIn": "เช็คอินจุดนี้ (GPS)",
   "startDiaryWithCheckIn": "เช็คอินเพื่อเริ่มเขียนไดอารี่",
   "selectCheckInForDiary": "เลือกจุด Check-in เพื่อเขียนไดอารี่",

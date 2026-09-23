@@ -761,6 +761,11 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
+  String placesAdded(int count) {
+    return 'เพิ่ม $count สถานที่แล้ว';
+  }
+
+  @override
   String placeRemoved(String name) {
     return 'นำ $name ออกแล้ว';
   }
@@ -892,9 +897,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get transportCar => 'รถยนต์';
 
   @override
-  String get transportRentalCar => 'รถเช่า';
-
-  @override
   String get transportWalking => 'เดิน';
 
   @override
@@ -907,7 +909,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get transportFerry => 'เรือ';
 
   @override
-  String get transportFlight => 'เครื่องบิน';
+  String get transportBicycle => 'จักรยาน';
 
   @override
   String get couldNotCreatePlan => 'ไม่สามารถสร้างแผนได้';
@@ -931,15 +933,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get accommodation => 'ที่พัก';
 
   @override
-  String get returnTripTitle => 'เดินทางกลับ';
-
-  @override
   String get kmShort => 'กม.';
-
-  @override
-  String returnVia(String route) {
-    return 'ผ่าน $route';
-  }
 
   @override
   String get stopTotal => 'รวมจุดนี้';
@@ -1164,6 +1158,10 @@ class AppLocalizationsTh extends AppLocalizations {
   String navigationLocked(String date) {
     return 'นำทางได้เมื่อถึงวันที่ $date';
   }
+
+  @override
+  String get navigationLockedOutsideArea =>
+      'ต้องอยู่ในจังหวัดที่ทำทริปจึงนำทางได้';
 
   @override
   String get gpsCheckIn => 'เช็คอินจุดนี้ (GPS)';

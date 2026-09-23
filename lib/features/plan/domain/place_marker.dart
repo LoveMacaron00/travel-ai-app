@@ -8,6 +8,11 @@ class PlaceMarker {
   final String category;
   final String province;
 
+  /// เวลาเปิด-ปิดจาก DB ("08:00"/"18:00") — '' คือไม่ระบุ
+  /// ใช้ตรวจว่า must-visit ที่ผู้ใช้เพิ่มเองเกินเวลาทำการไหม (ชิป "อาจปิดแล้ว")
+  final String openingTime;
+  final String closingTime;
+
   PlaceMarker({
     required this.id,
     required this.title,
@@ -17,5 +22,7 @@ class PlaceMarker {
     required this.imageUrl,
     required this.category,
     this.province = '',
+    this.openingTime = '',
+    this.closingTime = '',
   });
 }

@@ -1508,6 +1508,12 @@ abstract class AppLocalizations {
   /// **'Added {name}'**
   String placeAdded(String name);
 
+  /// No description provided for @placesAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Added {count} places'**
+  String placesAdded(int count);
+
   /// No description provided for @placeRemoved.
   ///
   /// In en, this message translates to:
@@ -1742,12 +1748,6 @@ abstract class AppLocalizations {
   /// **'Car'**
   String get transportCar;
 
-  /// No description provided for @transportRentalCar.
-  ///
-  /// In en, this message translates to:
-  /// **'Rental car'**
-  String get transportRentalCar;
-
   /// No description provided for @transportWalking.
   ///
   /// In en, this message translates to:
@@ -1772,11 +1772,11 @@ abstract class AppLocalizations {
   /// **'Ferry'**
   String get transportFerry;
 
-  /// No description provided for @transportFlight.
+  /// No description provided for @transportBicycle.
   ///
   /// In en, this message translates to:
-  /// **'Flight'**
-  String get transportFlight;
+  /// **'Bicycle'**
+  String get transportBicycle;
 
   /// No description provided for @couldNotCreatePlan.
   ///
@@ -1820,23 +1820,11 @@ abstract class AppLocalizations {
   /// **'Accommodation'**
   String get accommodation;
 
-  /// No description provided for @returnTripTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Return trip'**
-  String get returnTripTitle;
-
   /// No description provided for @kmShort.
   ///
   /// In en, this message translates to:
   /// **'km'**
   String get kmShort;
-
-  /// No description provided for @returnVia.
-  ///
-  /// In en, this message translates to:
-  /// **'via {route}'**
-  String returnVia(String route);
 
   /// No description provided for @stopTotal.
   ///
@@ -2245,6 +2233,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Navigation unlocks on {date}'**
   String navigationLocked(String date);
+
+  /// No description provided for @navigationLockedOutsideArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation is available when you\'re in the trip province.'**
+  String get navigationLockedOutsideArea;
 
   /// No description provided for @gpsCheckIn.
   ///

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 /// ใช้เส้นทางถนนจริง (OSRM) หรือเส้นตรงจุดถึงจุด — กติกาเดียวทั้งหน้าแผน/นำทาง
 /// (รวม `_usesRoadRoute` ที่เคยนิยามซ้ำกันใน plan_components กับ plan_navigation_screen)
 bool usesRoadRoute(String mode) =>
-    const {'car', 'walking', 'bus'}.contains(mode.toLowerCase());
+    const {'car', 'walking', 'bus', 'bicycle', 'cycling'}.contains(
+      mode.toLowerCase(),
+    );
 
 /// สีเส้นตามพาหนะ — หน้าแผนกับหน้านำทางเคยนิยามซ้ำกัน ต่างกันแค่สี fallback
 /// จึงรับ fallback เป็น param เพื่อให้พิกเซลเหมือนเดิมทุกประการ
@@ -17,6 +19,7 @@ Color routeLineColor(
   'train' => const Color(0xff7b2cbf),
   'ferry' => const Color(0xff0096c7),
   'flight' => const Color(0xffe76f51),
+  'bicycle' || 'bike' || 'cycling' => const Color(0xff2e9e62),
   _ => fallback,
 };
 
@@ -27,5 +30,6 @@ Color routeLabelColor(String mode) => switch (mode.toLowerCase()) {
   'train' => const Color(0xff61208f),
   'ferry' => const Color(0xff00779e),
   'flight' => const Color(0xffb84d36),
+  'bicycle' || 'bike' || 'cycling' => const Color(0xff1e7a4c),
   _ => const Color(0xff7a5800),
 };

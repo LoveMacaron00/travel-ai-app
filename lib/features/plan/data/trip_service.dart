@@ -110,46 +110,6 @@ class TripService {
     }
   }
 
-  // GET /api/mobile/rest-stops — ค้นจุดแวะพัก OSM รอบพิกัด (ปั๊ม/สะดวกซื้อ/คาเฟ่)
-  // ไม่เจอคืนค่าว่างเสมอ (caller ทำงานต่อได้โดยไม่มีจุดพัก)
-  // ใช้โดย: plan_screen.dart (_enrichDayRestStops ตอนเพิ่มสถานที่ไกล)
-  Future<({List<Map<String, dynamic>> stops, String attribution})>
-  searchRestStops({
-    required double latitude,
-    required double longitude,
-    int radius = 5000,
-    String? types,
-    int limit = 3,
-  }) async {
-    const empty = (stops: <Map<String, dynamic>>[], attribution: '');
-    try {
-      final params = <String, String>{
-        'lat': '$latitude',
-        'lon': '$longitude',
-        'radius': '$radius',
-        'limit': '$limit',
-        if (types != null && types.isNotEmpty) 'types': types,
-      };
-      final query = params.entries
-          .map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value)}')
-          .join('&');
-      final response = await _client.get('/mobile/rest-stops?$query');
-      if (response.statusCode != 200) return empty;
-      final decoded = ApiClient.decodeMap(response.body);
-      final data = decoded?['data'];
-      if (data is! List) return empty;
-      return (
-        stops: data
-            .whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList(),
-        attribution: '${decoded?['attribution'] ?? ''}',
-      );
-    } catch (_) {
-      // OSM/เน็ตล่มก็ข้าม — แผนเดิมยังใช้ได้โดยไม่มีจุดพัก
-      return empty;
-    }
-  }
   // GET /api/trips — ประวัติแผนเที่ยวที่ผู้ใช้เคยสร้าง (20 รายการล่าสุด)
   // ใช้โดย: profile_screen.dart (_loadTrips)
   Future<Map<String, dynamic>> listMyPlans() async {
@@ -203,7 +163,7 @@ class TripService {
   }
 
   // GET {osrmBaseUrl}/route/v1/:profile/:from;:to — ขอเส้นทางถนนจริงจาก OSRM
-  // ใช้กับเฉพาะ car/walking/bus (mode อื่นใช้เส้นตรงบนแผนที่แทน)
+  // ใช้กับเฉพาะ car/walking/bus/bicycle (mode อื่นใช้เส้นตรงบนแผนที่แทน)
   // ใช้โดย: plan_screen.dart (_buildRoute), plan_navigation_screen.dart
   Future<List<List<double>>> getRoadRoute({
     required double fromLat,
@@ -212,12 +172,19 @@ class TripService {
     required double toLng,
     String mode = 'driving',
   }) async {
-    if (!const {'car', 'walking', 'bus', 'cycling', 'driving'}.contains(mode)) {
+    if (!const {
+      'car',
+      'walking',
+      'bus',
+      'bicycle',
+      'cycling',
+      'driving',
+    }.contains(mode)) {
       return const [];
     }
     final profile = mode == 'walking'
         ? 'foot'
-        : mode == 'cycling'
+        : mode == 'cycling' || mode == 'bicycle'
         ? 'bike'
         : 'driving';
     try {

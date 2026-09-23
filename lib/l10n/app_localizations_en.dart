@@ -773,6 +773,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String placesAdded(int count) {
+    return 'Added $count places';
+  }
+
+  @override
   String placeRemoved(String name) {
     return 'Removed $name';
   }
@@ -905,9 +910,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get transportCar => 'Car';
 
   @override
-  String get transportRentalCar => 'Rental car';
-
-  @override
   String get transportWalking => 'Walking';
 
   @override
@@ -920,7 +922,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get transportFerry => 'Ferry';
 
   @override
-  String get transportFlight => 'Flight';
+  String get transportBicycle => 'Bicycle';
 
   @override
   String get couldNotCreatePlan => 'Could not create a plan.';
@@ -944,15 +946,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accommodation => 'Accommodation';
 
   @override
-  String get returnTripTitle => 'Return trip';
-
-  @override
   String get kmShort => 'km';
-
-  @override
-  String returnVia(String route) {
-    return 'via $route';
-  }
 
   @override
   String get stopTotal => 'Stop total';
@@ -1178,6 +1172,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String navigationLocked(String date) {
     return 'Navigation unlocks on $date';
   }
+
+  @override
+  String get navigationLockedOutsideArea =>
+      'Navigation is available when you\'re in the trip province.';
 
   @override
   String get gpsCheckIn => 'GPS Check-in';

@@ -33,10 +33,6 @@ class TravelStop {
   final String openingTime;
   final String closingTime;
 
-  /// ขารถเช่า (บินไปต่างจังหวัดแล้วไม่มีรถส่วนตัว) — คิดเรทเช่า ~10 บาท/กม. ไม่ใช่น้ำมันรถตัวเอง
-  /// server ปักธงผ่าน markRentalCarLegs (ขารถหลังขาบินขาแรก) PUT กลับคงค่าผ่าน toJson
-  final bool rentalCar;
-
   const TravelStop({
     required this.destinationId,
     required this.place,
@@ -58,7 +54,6 @@ class TravelStop {
     this.stopType = '',
     this.openingTime = '',
     this.closingTime = '',
-    this.rentalCar = false,
   });
 
   factory TravelStop.fromJson(Map<String, dynamic> j) => TravelStop(
@@ -86,7 +81,6 @@ class TravelStop {
     stopType: '${j['stopType'] ?? ''}',
     openingTime: '${j['openingTime'] ?? j['opening_time'] ?? ''}',
     closingTime: '${j['closingTime'] ?? j['closing_time'] ?? ''}',
-    rentalCar: j['rentalCar'] == true,
   );
 
   Map<String, dynamic> toJson() => {
@@ -110,7 +104,6 @@ class TravelStop {
     if (stopType.isNotEmpty) 'stopType': stopType,
     if (openingTime.isNotEmpty) 'openingTime': openingTime,
     if (closingTime.isNotEmpty) 'closingTime': closingTime,
-    if (rentalCar) 'rentalCar': true,
   };
 
   TravelStop copyWith({
@@ -134,7 +127,6 @@ class TravelStop {
     String? stopType,
     String? openingTime,
     String? closingTime,
-    bool? rentalCar,
   }) => TravelStop(
     destinationId: destinationId ?? this.destinationId,
     place: place ?? this.place,
@@ -156,7 +148,6 @@ class TravelStop {
     stopType: stopType ?? this.stopType,
     openingTime: openingTime ?? this.openingTime,
     closingTime: closingTime ?? this.closingTime,
-    rentalCar: rentalCar ?? this.rentalCar,
   );
 }
 
@@ -217,51 +208,6 @@ class TravelDay {
   };
 }
 
-class TravelReturnLeg {
-  final String from;
-  final String to;
-  final double distanceKm;
-  final int estimatedMinutes;
-  final double estimatedCost;
-  final String mode;
-
-  /// เส้นทางบินขากลับ ("DMK → HKT") — '' คือขากลับภาคพื้น
-  /// server เติมให้เฉพาะขากลับเครื่องบิน (computeReturnLeg)
-  final String via;
-
-  const TravelReturnLeg({
-    required this.from,
-    required this.to,
-    required this.distanceKm,
-    required this.estimatedMinutes,
-    required this.estimatedCost,
-    required this.mode,
-    this.via = '',
-  });
-
-  factory TravelReturnLeg.fromJson(Map<String, dynamic> j) => TravelReturnLeg(
-    from: '${j['from'] ?? ''}',
-    to: '${j['to'] ?? ''}',
-    distanceKm: _number(j['distanceKm'] ?? j['distance_km'] ?? j['km']),
-    estimatedMinutes: _number(
-      j['estimatedMinutes'] ?? j['estimated_minutes'],
-    ).round(),
-    estimatedCost: _number(j['estimatedCost'] ?? j['estimated_cost']),
-    mode: '${j['mode'] ?? 'car'}',
-    via: '${j['via'] ?? ''}',
-  );
-
-  Map<String, dynamic> toJson() => {
-    'from': from,
-    'to': to,
-    'distanceKm': distanceKm,
-    'estimatedMinutes': estimatedMinutes,
-    'estimatedCost': estimatedCost,
-    'mode': mode,
-    if (via.isNotEmpty) 'via': via,
-  };
-}
-
 class TravelPlan {
   final int tripId;
 
@@ -283,8 +229,6 @@ class TravelPlan {
   /// ใช้แสดงหัวข้อแต่ละวันเป็นวันที่จริง (start + day - 1) แม้เปิดแผนเก่าจาก Profile
   final String startDate;
 
-  /// ขากลับจากจุดสุดท้ายไปยังจุดเริ่มต้น — null คือแผนเก่าที่ server ยังไม่ได้คำนวณ
-  final TravelReturnLeg? returnLeg;
   const TravelPlan({
     required this.tripId,
     this.title = '',
@@ -295,7 +239,6 @@ class TravelPlan {
     required this.tips,
     this.warnings = const [],
     this.startDate = '',
-    this.returnLeg,
   });
 
   TravelPlan copyWith({
@@ -308,7 +251,6 @@ class TravelPlan {
     List<String>? tips,
     List<String>? warnings,
     String? startDate,
-    TravelReturnLeg? returnLeg,
   }) => TravelPlan(
     tripId: tripId ?? this.tripId,
     title: title ?? this.title,
@@ -319,7 +261,6 @@ class TravelPlan {
     tips: tips ?? this.tips,
     warnings: warnings ?? this.warnings,
     startDate: startDate ?? this.startDate,
-    returnLeg: returnLeg ?? this.returnLeg,
   );
   factory TravelPlan.fromJson(
     Map<String, dynamic> j, {
@@ -346,11 +287,6 @@ class TravelPlan {
       warnings: ((j['warnings'] as List?) ?? const [])
           .map((e) => '$e')
           .toList(),
-      returnLeg: (j['returnLeg'] as Map?) == null
-          ? null
-          : TravelReturnLeg.fromJson(
-              Map<String, dynamic>.from(j['returnLeg'] as Map),
-            ),
     );
   }
 
@@ -361,7 +297,6 @@ class TravelPlan {
     'days': days.map((e) => e.toJson()).toList(),
     'tips': tips,
     'warnings': warnings,
-    if (returnLeg != null) 'returnLeg': returnLeg!.toJson(),
   };
 
   /// มุมมองแบบแบนสำหรับ Map/Navigation ที่ไม่ต้องสนใจการแบ่งวัน

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// ไอคอนตามประเภทจุดแวะพัก OSM — ใช้ร่วมกันทั้งหน้าแผน/นำทาง
-/// (รวม `_restStopIcon` ที่เคยนิยามซ้ำกันใน plan_details กับ plan_navigation_screen)
+/// ไอคอนตามประเภทจุด transfer (เช่น สนามบิน) — ใช้ในหน้านำทาง
 IconData restStopIcon(String restType) => switch (restType.toLowerCase()) {
   'fuel' => Icons.local_gas_station,
   'cafe' => Icons.local_cafe,
