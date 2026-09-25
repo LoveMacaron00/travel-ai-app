@@ -269,7 +269,7 @@
   "days": "วัน",
   "tripStartTime": "เวลาเริ่มเดินทาง",
   "tripLength": "จำนวนวัน",
-  "autoDays": "อัตโนมัติ",
+  "autoDays": "จำนวนวันอัตโนมัติ",
   "autoDaysHint": "AI ประเมินจำนวนวันที่เหมาะสมจากสถานที่และระยะทางให้เอง",
   "farPlaceWarning": "สถานที่ที่เลือกอยู่ไกลจากจุดเริ่มต้น ~{distance} กม. ใช้เวลาเดินทาง ~{hours} ชม. ด้วย{mode} — ควรเพิ่มวันหรือเลือกสถานที่ใกล้ขึ้น",
   "@farPlaceWarning": {
@@ -296,9 +296,7 @@
   "whatDoYouEnjoy": "เลือกสิ่งที่คุณสนใจ",
   "howCanYouTravel": "คุณเดินทางแบบใดได้บ้าง",
   "mustVisitPlaces": "สถานที่ที่ต้องไป",
-  "mustVisitOptional": "เลือกแล้วจะถูกใส่ในทริปเสมอ",
   "addAPlace": "เพิ่มสถานที่",
-  "mustVisitLimitReached": "เพิ่มสถานที่ที่ต้องไปได้สูงสุด 5 แห่ง",
   "placeAdded": "เพิ่ม {name} แล้ว",
   "@placeAdded": {
     "placeholders": {"name": {"type": "String"}}

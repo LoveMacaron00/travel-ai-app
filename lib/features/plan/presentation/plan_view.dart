@@ -350,15 +350,11 @@ extension _PlanMainView on _PlanScreenState {
         _section(
           number: 4,
           title: context.l10n.mustVisitPlaces,
-          subtitle: context.l10n.mustVisitOptional,
-          // ตัวนับเหมือน counter ของ TextField (0/120) — บอก limit 5 ที่ก่อนกดเพิ่ม
+          // ตัวนับจำนวนที่เลือกไว้ — ไม่จำกัดจำนวนแล้ว
           trailing: Text(
-            '${_mustVisit.length}/${_PlanScreenState._maxMustVisitPlaces}',
-            style: TextStyle(
-              color: _mustVisit.length >=
-                      _PlanScreenState._maxMustVisitPlaces
-                  ? Colors.redAccent
-                  : Colors.black45,
+            '${_mustVisit.length}',
+            style: const TextStyle(
+              color: Colors.black45,
               fontSize: 13,
               fontWeight: FontWeight.w800,
             ),

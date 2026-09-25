@@ -715,7 +715,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripLength => 'Trip length';
 
   @override
-  String get autoDays => 'Auto';
+  String get autoDays => 'Auto days';
 
   @override
   String get autoDaysHint =>
@@ -759,13 +759,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mustVisitPlaces => 'Must-visit places';
 
   @override
-  String get mustVisitOptional => 'Selected places are always included';
-
-  @override
   String get addAPlace => 'Add a place';
-
-  @override
-  String get mustVisitLimitReached => 'You can add up to 5 must-visit places.';
 
   @override
   String placeAdded(String name) {

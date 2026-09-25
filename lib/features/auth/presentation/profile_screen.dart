@@ -430,6 +430,21 @@ class ProfileScreenState extends State<ProfileScreen> {
         ? null
         : DateFormat('d MMM yyyy', Localizations.localeOf(context).languageCode)
               .format(createdAt);
+    // start_date "YYYY-MM-DD" — วันเริ่มทริปจริง (null = ยังไม่ระบุ)
+    DateTime? tripStart;
+    final startParts = '${plan['start_date'] ?? ''}'.substring(0, 10).split('-');
+    if (startParts.length == 3) {
+      final y = int.tryParse(startParts[0]);
+      final m = int.tryParse(startParts[1]);
+      final d = int.tryParse(startParts[2]);
+      if (y != null && m != null && d != null && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+        tripStart = DateTime(y, m, d);
+      }
+    }
+    final startText = tripStart == null
+        ? null
+        : DateFormat('d MMM yyyy', Localizations.localeOf(context).languageCode)
+              .format(tripStart);
         
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -462,10 +477,14 @@ class ProfileScreenState extends State<ProfileScreen> {
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              dateText == null
-                  ? l10n.savedPlanDuration(days)
-                  : '${l10n.savedPlanDuration(days)} · ${l10n.planCreatedAt(dateText)}',
+              [
+                l10n.savedPlanDuration(days),
+                if (startText != null) l10n.planStartsOn(startText),
+                if (dateText != null) l10n.planCreatedAt(dateText),
+              ].join(' · '),
               style: const TextStyle(fontSize: 12, color: Colors.grey),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           trailing: PopupMenuButton<String>(

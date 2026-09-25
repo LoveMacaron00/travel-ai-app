@@ -403,11 +403,7 @@ extension _PlanComponents on _PlanScreenState {
 
   void _showPlacePicker() {
     // ทริปล่วงหน้าเพิ่มสถานที่ได้ตามปกติ — มีแค่ระบบนำทางที่ล็อกจนถึงวันเดินทาง
-    if (_mustVisit.length >= _PlanScreenState._maxMustVisitPlaces) {
-      _showPlanSnack(context.l10n.mustVisitLimitReached);
-      return;
-    }
-
+    // (ไม่จำกัดจำนวนที่เลือกแล้ว)
     String query = '';
     String selectedCategory = 'all';
     // รายการที่ติ๊กเลือกไว้ (id) — ยังไม่เพิ่มจริงจนกว่าจะกดยืนยัน
@@ -703,8 +699,8 @@ extension _PlanComponents on _PlanScreenState {
     );
   }
 
-  // ยืนยันรายการที่ติ๊กไว้ — เพิ่มทีเดียวหลายที่พร้อมกัน
-  // ฟอร์ม: ลง must-visit / ผลลัพธ์: ลง must-visit + วันที่เลือก (กันซ้ำ + จำกัดจำนวนเหมือนเดิม)
+  // ยืนยันรายการที่ติ๊กไว้ — เพิ่มทีเดียวหลายที่พร้อมกัน (ไม่จำกัดจำนวน)
+  // ฟอร์ม: ลง must-visit / ผลลัพธ์: ลง must-visit + วันที่เลือก (กันซ้ำเหมือนเดิม)
   void _confirmSelectedPlaces(
     BuildContext sheetContext,
     Set<String> selectedIds,
@@ -718,15 +714,10 @@ extension _PlanComponents on _PlanScreenState {
     if (selected.isEmpty || !mounted) return;
 
     var added = 0;
-    var limited = false;
     String lastAddedName = '';
     for (final p in selected) {
       if (_plan != null && _isDuplicateInSelectedDay(p)) continue;
       if (!_mustVisit.any((x) => x.id == p.id)) {
-        if (_mustVisit.length >= _PlanScreenState._maxMustVisitPlaces) {
-          limited = true;
-          continue;
-        }
         _mustVisit.add(p);
       }
       if (_plan != null) {
@@ -739,11 +730,9 @@ extension _PlanComponents on _PlanScreenState {
         lastAddedName = p.title;
       }
     }
-    if (!mounted) return;
+    if (!mounted || added == 0) return;
     _updateState(() {});
-    if (added == 0) {
-      _showPlanSnack(context.l10n.mustVisitLimitReached);
-    } else if (added == 1 && !limited) {
+    if (added == 1) {
       _showPlanSnack(context.l10n.placeAdded(lastAddedName));
     } else {
       _showPlanSnack(context.l10n.placesAdded(added));

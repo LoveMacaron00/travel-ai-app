@@ -703,7 +703,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get tripLength => 'จำนวนวัน';
 
   @override
-  String get autoDays => 'อัตโนมัติ';
+  String get autoDays => 'จำนวนวันอัตโนมัติ';
 
   @override
   String get autoDaysHint =>
@@ -747,13 +747,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get mustVisitPlaces => 'สถานที่ที่ต้องไป';
 
   @override
-  String get mustVisitOptional => 'เลือกแล้วจะถูกใส่ในทริปเสมอ';
-
-  @override
   String get addAPlace => 'เพิ่มสถานที่';
-
-  @override
-  String get mustVisitLimitReached => 'เพิ่มสถานที่ที่ต้องไปได้สูงสุด 5 แห่ง';
 
   @override
   String placeAdded(String name) {

@@ -1409,7 +1409,7 @@ abstract class AppLocalizations {
   /// No description provided for @autoDays.
   ///
   /// In en, this message translates to:
-  /// **'Auto'**
+  /// **'Auto days'**
   String get autoDays;
 
   /// No description provided for @autoDaysHint.
@@ -1484,23 +1484,11 @@ abstract class AppLocalizations {
   /// **'Must-visit places'**
   String get mustVisitPlaces;
 
-  /// No description provided for @mustVisitOptional.
-  ///
-  /// In en, this message translates to:
-  /// **'Selected places are always included'**
-  String get mustVisitOptional;
-
   /// No description provided for @addAPlace.
   ///
   /// In en, this message translates to:
   /// **'Add a place'**
   String get addAPlace;
-
-  /// No description provided for @mustVisitLimitReached.
-  ///
-  /// In en, this message translates to:
-  /// **'You can add up to 5 must-visit places.'**
-  String get mustVisitLimitReached;
 
   /// No description provided for @placeAdded.
   ///

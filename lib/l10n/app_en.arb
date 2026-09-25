@@ -269,7 +269,7 @@
   "days": "days",
   "tripStartTime": "Start time",
   "tripLength": "Trip length",
-  "autoDays": "Auto",
+  "autoDays": "Auto days",
   "autoDaysHint": "AI estimates the right number of days from your places and distances",
   "farPlaceWarning": "The selected place is ~{distance} km from your start (~{hours} h by {mode}) — consider adding days or choosing closer places",
   "@farPlaceWarning": {
@@ -296,9 +296,7 @@
   "whatDoYouEnjoy": "What are you interested in?",
   "howCanYouTravel": "How can you travel?",
   "mustVisitPlaces": "Must-visit places",
-  "mustVisitOptional": "Selected places are always included",
   "addAPlace": "Add a place",
-  "mustVisitLimitReached": "You can add up to 5 must-visit places.",
   "placeAdded": "Added {name}",
   "@placeAdded": {
     "placeholders": {"name": {"type": "String"}}

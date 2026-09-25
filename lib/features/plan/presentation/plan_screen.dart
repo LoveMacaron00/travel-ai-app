@@ -66,9 +66,6 @@ class _PreferenceOptionItem {
 }
 
 class _PlanScreenState extends State<PlanScreen> {
-  // จำกัดจำนวนสถานที่ที่ผู้ใช้บังคับให้ไป เพื่อไม่ให้ AI วางแผนวันนั้นแน่นเกิน
-  static const _maxMustVisitPlaces = 5;
-
   // ชื่อแผนยาวสุด 120 ตัวอักษร — ตรงกับ CHECK ฝั่ง backend (PATCH /trips/:id)
   static const _maxPlanNameLength = 120;
 
