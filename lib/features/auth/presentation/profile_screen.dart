@@ -430,14 +430,15 @@ class ProfileScreenState extends State<ProfileScreen> {
         ? null
         : DateFormat('d MMM yyyy', Localizations.localeOf(context).languageCode)
               .format(createdAt);
-    // start_date "YYYY-MM-DD" — วันเริ่มทริปจริง (null = ยังไม่ระบุ)
+    // start_date "YYYY-MM-DD" — วันเริ่มทริปจริง (null = ยังไม่ระบุ เช่น ทริป auto ไม่เลือกวัน)
     DateTime? tripStart;
-    final startParts = '${plan['start_date'] ?? ''}'.substring(0, 10).split('-');
-    if (startParts.length == 3) {
-      final y = int.tryParse(startParts[0]);
-      final m = int.tryParse(startParts[1]);
-      final d = int.tryParse(startParts[2]);
-      if (y != null && m != null && d != null && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+    final startMatch = RegExp(r'^(\d{4})-(\d{1,2})-(\d{1,2})')
+        .firstMatch('${plan['start_date'] ?? ''}');
+    if (startMatch != null) {
+      final y = int.parse(startMatch.group(1)!);
+      final m = int.parse(startMatch.group(2)!);
+      final d = int.parse(startMatch.group(3)!);
+      if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
         tripStart = DateTime(y, m, d);
       }
     }

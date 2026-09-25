@@ -866,12 +866,11 @@ extension _PlanComponents on _PlanScreenState {
 
   // "YYYY-MM-DD" จาก trips.start_date → DateTime — ใช้ไม่ได้คืน null (โชว์แค่เลขวัน)
   DateTime? _parsePlanStartDate(String value) {
-    final parts = value.trim().split('-');
-    if (parts.length < 3) return null;
-    final year = int.tryParse(parts[0]);
-    final month = int.tryParse(parts[1]);
-    final day = int.tryParse(parts[2].substring(0, 2));
-    if (year == null || month == null || day == null) return null;
+    final match = RegExp(r'^(\d{4})-(\d{1,2})-(\d{1,2})').firstMatch(value.trim());
+    if (match == null) return null;
+    final year = int.parse(match.group(1)!);
+    final month = int.parse(match.group(2)!);
+    final day = int.parse(match.group(3)!);
     if (year < 2000 || year > 2100 || month < 1 || month > 12) return null;
     if (day < 1 || day > 31) return null;
     return DateTime(year, month, day);
@@ -976,11 +975,10 @@ extension _PlanComponents on _PlanScreenState {
 
   // "HH:MM" แบบเข้ม — แปลงไม่ได้คืน null (ไม่ fallback เป็น startTime กันเตือนมั่ว)
   int? _strictClockToMinutes(String clock) {
-    final parts = clock.split(':');
-    if (parts.length < 2) return null;
-    final hour = int.tryParse(parts[0]);
-    final minute = int.tryParse(parts[1].substring(0, 2));
-    if (hour == null || minute == null) return null;
+    final match = RegExp(r'^(\d{1,2}):(\d{1,2})').firstMatch(clock.trim());
+    if (match == null) return null;
+    final hour = int.parse(match.group(1)!);
+    final minute = int.parse(match.group(2)!);
     if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
     return hour * 60 + minute;
   }

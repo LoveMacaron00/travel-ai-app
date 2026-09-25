@@ -1300,13 +1300,31 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     );
   }
 
-  /// แกลเลอรีรูป — 1 รูปโชว์เต็ม, หลายรูปโชว์ 2 รูปแรก
+  /// เปิดดูรูปเต็มจอ — ปัดซ้ายขวาเปลี่ยนรูป, pinch/drag ซูมได้
+  void _openImageViewer(List<String> images, int initialIndex) {
+    if (images.isEmpty) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => _DiaryImageViewer(
+          images: images,
+          initialIndex: initialIndex.clamp(0, images.length - 1),
+        ),
+      ),
+    );
+  }
+
+  /// แกลเลอรีรูป — 1 รูปโชว์เต็ม, หลายรูปโชว์ 2 รูปแรก (แตะเพื่อดูเต็มจอ)
   Widget _imagesWidget(List<String> images) {
     if (images.isEmpty) return const SizedBox.shrink();
     if (images.length == 1) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(13),
-        child: SizedBox(height: 180, child: _image(images.first)),
+      return GestureDetector(
+        onTap: () => _openImageViewer(images, 0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(13),
+          child: SizedBox(height: 180, child: _image(images.first)),
+        ),
       );
     }
     return SizedBox(
@@ -1316,27 +1334,30 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
           for (var index = 0; index < images.take(2).length; index++) ...[
             if (index > 0) const SizedBox(width: 6),
             Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(13),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    _image(images[index]),
-                    if (index == 1 && images.length > 2)
-                      ColoredBox(
-                        color: Colors.black38,
-                        child: Center(
-                          child: Text(
-                            '+${images.length - 2}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
+              child: GestureDetector(
+                onTap: () => _openImageViewer(images, index),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(13),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _image(images[index]),
+                      if (index == 1 && images.length > 2)
+                        ColoredBox(
+                          color: Colors.black38,
+                          child: Center(
+                            child: Text(
+                              '+${images.length - 2}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1356,6 +1377,81 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     color: Color(0xffeeeeee),
     child: Center(
       child: Icon(Icons.image_not_supported_outlined, color: Colors.black26),
+    ),
+  );
+}
+
+/// ดูรูปไดอารี่เต็มจอ — ปัดซ้ายขวาเปลี่ยนรูป, pinch/drag ซูม/เลื่อนได้
+class _DiaryImageViewer extends StatefulWidget {
+  const _DiaryImageViewer({required this.images, required this.initialIndex});
+
+  final List<String> images;
+  final int initialIndex;
+
+  @override
+  State<_DiaryImageViewer> createState() => _DiaryImageViewerState();
+}
+
+class _DiaryImageViewerState extends State<_DiaryImageViewer> {
+  late final PageController _controller;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _controller = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.black,
+    appBar: AppBar(
+      backgroundColor: Colors.black,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      leading: IconButton(
+        tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+        onPressed: () => Navigator.pop(context),
+        icon: const Icon(Icons.close),
+      ),
+      title: Text(
+        '${_currentIndex + 1} / ${widget.images.length}',
+        style: const TextStyle(color: Colors.white, fontSize: 15),
+      ),
+      centerTitle: true,
+    ),
+    body: PageView.builder(
+      controller: _controller,
+      itemCount: widget.images.length,
+      onPageChanged: (index) => setState(() => _currentIndex = index),
+      itemBuilder: (_, index) => InteractiveViewer(
+        panEnabled: true,
+        minScale: 1,
+        maxScale: 4,
+        child: Center(
+          child: mediaNetworkImage(
+            widget.images[index],
+            fit: BoxFit.contain,
+            errorBuilder: (_, _, _) => const ColoredBox(
+              color: Colors.black,
+              child: Center(
+                child: Icon(
+                  Icons.image_not_supported_outlined,
+                  color: Colors.white54,
+                  size: 48,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     ),
   );
 }
