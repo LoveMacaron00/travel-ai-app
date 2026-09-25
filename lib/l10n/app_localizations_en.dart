@@ -1168,6 +1168,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String navigationLockedBoth(String date) {
+    return 'Navigation unlocks on $date and requires being in the trip province.';
+  }
+
+  @override
   String get navigationLockedOutsideArea =>
       'Navigation is available when you\'re in the trip province.';
 

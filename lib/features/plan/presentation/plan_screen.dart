@@ -390,16 +390,19 @@ class _PlanScreenState extends State<PlanScreen> {
     return false;
   }
 
-  // ข้อความอธิบายปุ่มนำทางที่ล็อก — มีวันที่บอกชัดเจน / อยู่นอกพื้นที่บอกให้เข้าพื้นที่ก่อน
+  // ข้อความอธิบายปุ่มนำทางที่ล็อก — แจ้งครบ 2 เงื่อนไขเสมอ: วันที่ต้องถึง + ต้องอยู่ในจังหวัดที่ทำทริป
   String _navigationLockedMessage(TravelPlan plan) {
     final dayDate = _selectedDayDate(plan);
-    if (dayDate != null && _todayDate().isBefore(dayDate)) {
-      return context.l10n.navigationLocked(_date(dayDate));
+    final dateLocked = dayDate != null && _todayDate().isBefore(dayDate);
+    final areaLocked = !_isGpsNearSelectedDay(plan);
+    if (!dateLocked && !areaLocked) return context.l10n.planSavedViewOnly;
+    // ยังไม่ถึงวัน — บอกทั้งวันที่ต้องถึงและเงื่อนไขจังหวัดในข้อความเดียว
+    if (dateLocked) {
+      return context.l10n.navigationLockedBoth(_date(dayDate));
     }
-    if (!_isGpsNearSelectedDay(plan)) {
-      return context.l10n.navigationLockedOutsideArea;
-    }
-    return context.l10n.planSavedViewOnly;
+    // ถึงวันแล้วแต่อยู่นอกพื้นที่ — บอกวันที่ของวันนี้ + เงื่อนไขจังหวัด
+    final when = dayDate == null ? '' : '${_date(dayDate)} · ';
+    return '$when${context.l10n.navigationLockedOutsideArea}';
   }
 
   /// โหลดตัวเลือกความสนใจ/พาหนะจาก DB — ไม่มี hardcode fallback

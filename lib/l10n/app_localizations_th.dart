@@ -1154,6 +1154,11 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
+  String navigationLockedBoth(String date) {
+    return 'นำทางได้เมื่อถึงวันที่ $date และต้องอยู่ในจังหวัดที่ทำทริป';
+  }
+
+  @override
   String get navigationLockedOutsideArea =>
       'ต้องอยู่ในจังหวัดที่ทำทริปจึงนำทางได้';
 

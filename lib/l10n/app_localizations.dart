@@ -2222,6 +2222,12 @@ abstract class AppLocalizations {
   /// **'Navigation unlocks on {date}'**
   String navigationLocked(String date);
 
+  /// No description provided for @navigationLockedBoth.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation unlocks on {date} and requires being in the trip province.'**
+  String navigationLockedBoth(String date);
+
   /// No description provided for @navigationLockedOutsideArea.
   ///
   /// In en, this message translates to:

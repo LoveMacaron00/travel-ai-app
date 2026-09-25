@@ -467,6 +467,10 @@
   "@navigationLocked": {
     "placeholders": {"date": {"type": "String"}}
   },
+  "navigationLockedBoth": "Navigation unlocks on {date} and requires being in the trip province.",
+  "@navigationLockedBoth": {
+    "placeholders": {"date": {"type": "String"}}
+  },
   "navigationLockedOutsideArea": "Navigation is available when you're in the trip province.",
   "gpsCheckIn": "GPS Check-in",
   "startDiaryWithCheckIn": "Check in to start a diary",

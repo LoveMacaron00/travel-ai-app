@@ -467,6 +467,10 @@
   "@navigationLocked": {
     "placeholders": {"date": {"type": "String"}}
   },
+  "navigationLockedBoth": "นำทางได้เมื่อถึงวันที่ {date} และต้องอยู่ในจังหวัดที่ทำทริป",
+  "@navigationLockedBoth": {
+    "placeholders": {"date": {"type": "String"}}
+  },
   "navigationLockedOutsideArea": "ต้องอยู่ในจังหวัดที่ทำทริปจึงนำทางได้",
   "gpsCheckIn": "เช็คอินจุดนี้ (GPS)",
   "startDiaryWithCheckIn": "เช็คอินเพื่อเริ่มเขียนไดอารี่",
