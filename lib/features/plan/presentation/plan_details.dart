@@ -2,7 +2,7 @@ part of 'plan_screen.dart';
 
 // Bottom sheet รายละเอียดสถานที่และกติกาแสดงค่าเข้าชม
 extension _PlanDetailsView on _PlanScreenState {
-  void _showStopDetails(TravelStop stop, int number) {
+  void _showStopDetails(TravelStop stop, int number, {DateTime? dayDate}) {
     final destinationId = int.tryParse(stop.destinationId);
     final detailFuture = destinationId == null
         ? null
@@ -124,7 +124,7 @@ extension _PlanDetailsView on _PlanScreenState {
                   const SizedBox(height: 4),
                   // โซ่เวลาเดียวกับการ์ด: ถึง → เที่ยว → ออก (+ เวลาเดินทางขาเข้า)
                   _stopChainInfo(stop, number),
-                  ..._timeWarningChips(stop),
+                  ..._timeWarningChips(stop, dayDate: dayDate),
                   const SizedBox(height: 12),
                   Text(
                     stop.activity,

@@ -496,5 +496,6 @@
   "timeElapsed": "Time",
   "lateNightTag": "Late night",
   "moveToDaytimeHint": "Move to daytime",
-  "maybeClosedTag": "May be closed"
+  "maybeClosedTag": "May be closed",
+  "closedToday": "Closed today"
 }

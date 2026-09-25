@@ -713,6 +713,7 @@ extension _PlanMainView on _PlanScreenState {
                       reorderIndex: i,
                       canNavigate: _canNavigateNow(plan),
                       lockedMessage: _navigationLockedMessage(plan),
+                      dayDate: _selectedDayDate(plan),
                     ),
                   ),
                 ],
@@ -978,6 +979,7 @@ extension _PlanMainView on _PlanScreenState {
     required int reorderIndex,
     bool canNavigate = true,
     String? lockedMessage,
+    DateTime? dayDate,
   }) {
     // ทุกจุดคือที่เที่ยว — ใช้สีทองชุดเดียวทั้งการ์ด (ขอบ+ป้ายเลข) และหมุดบนแผนที่
     const typeColor = _gold;
@@ -989,7 +991,7 @@ extension _PlanMainView on _PlanScreenState {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: () => _showStopDetails(stop, number),
+          onTap: () => _showStopDetails(stop, number, dayDate: dayDate),
           child: Container(
             margin: const EdgeInsets.fromLTRB(16, 5, 16, 7),
             padding: const EdgeInsets.all(14),
@@ -1122,7 +1124,10 @@ extension _PlanMainView on _PlanScreenState {
                             // number เริ่มที่ 1 — จุดแรกของวันไม่มีขาเข้าจึงไม่แสดงเวลาเดินทาง
                             _stopChainInfo(stop, number),
                             // ป้ายเที่ยวดึก / อาจปิดแล้ว / เวลาเปิด-ปิด (จาก DB ผ่าน server)
-                            ..._timeWarningChips(stop),
+                            ..._timeWarningChips(
+                              stop,
+                              dayDate: dayDate,
+                            ),
                             const SizedBox(height: 5),
                             Text(
                               stop.activity,

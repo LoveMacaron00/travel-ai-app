@@ -2383,6 +2383,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'May be closed'**
   String get maybeClosedTag;
+
+  /// No description provided for @closedToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed today'**
+  String get closedToday;
 }
 
 class _AppLocalizationsDelegate

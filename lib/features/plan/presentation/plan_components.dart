@@ -1047,10 +1047,72 @@ extension _PlanComponents on _PlanScreenState {
     return departureClock > close + 15;
   }
 
-  // ชิปเตือนใต้โซ่เวลา: เที่ยวดึก (แดง) / อาจปิดแล้ว+เวลาเปิด (ส้ม) / เวลาเปิดเฉย ๆ (เทา)
+  // ชื่อวันแบบย่อสำหรับชิปปิดทำการ ("ส–อา" หรือ "จ,พ,ศ")
+  String _openDaysShort(List<int> days) {
+    const th = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
+    const en = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final names = Localizations.localeOf(context).languageCode == 'th'
+        ? th
+        : en;
+    final sorted = [...days]..sort();
+    var contiguous = sorted.length > 1;
+    for (var i = 1; i < sorted.length; i++) {
+      if (sorted[i] != sorted[i - 1] + 1) {
+        contiguous = false;
+        break;
+      }
+    }
+    if (contiguous) {
+      return '${names[sorted.first - 1]}–${names[sorted.last - 1]}';
+    }
+    return sorted.map((d) => names[d - 1]).join(',');
+  }
+
+  // ชิปเตือนใต้โซ่เวลา: ปิดทำการวันนี้ (แดง) / เที่ยวดึก (แดง) /
+  // อาจปิดแล้ว+เวลาเปิด (ส้ม) / เวลาเปิดเฉย ๆ (เทา)
   // คืน [] ถ้าไม่มีอะไรต้องเตือน — ใช้ทั้งการ์ด (_stopTile) และ bottom sheet
-  List<Widget> _timeWarningChips(TravelStop stop) {
+  // dayDate = วันที่จริงของวันนี้ (null = ไม่รู้วัน ข้ามเช็กวันเปิด)
+  List<Widget> _timeWarningChips(TravelStop stop, {DateTime? dayDate}) {
     final chips = <Widget>[];
+    // ปิดทำการวันนี้ (เช่น ถนนคนเดินเปิดแค่เสาร์-อาทิตย์) — สำคัญสุด
+    if (dayDate != null && stop.openDays.isNotEmpty) {
+      final clean = stop.openDays.where((d) => d >= 1 && d <= 7).toSet();
+      if (clean.isNotEmpty && !clean.contains(dayDate.weekday)) {
+        chips.add(
+          Container(
+            margin: const EdgeInsets.only(top: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xfffde2e2),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xffe76f51)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.block_outlined,
+                  size: 13,
+                  color: Color(0xffb84d36),
+                ),
+                const SizedBox(width: 5),
+                Flexible(
+                  child: Text(
+                    '${context.l10n.closedToday} (${context.l10n.openingHours} ${_openDaysShort(clean.toList())})',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xffb84d36),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+        return chips;
+      }
+    }
     if (_isLateNightVisit(stop)) {
       chips.add(
         Container(

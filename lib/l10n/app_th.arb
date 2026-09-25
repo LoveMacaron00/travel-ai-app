@@ -496,5 +496,6 @@
   "timeElapsed": "เวลา",
   "lateNightTag": "เที่ยวดึก",
   "moveToDaytimeHint": "ควรย้ายไปกลางวัน",
-  "maybeClosedTag": "อาจปิดแล้ว"
+  "maybeClosedTag": "อาจปิดแล้ว",
+  "closedToday": "วันนี้ปิดทำการ"
 }

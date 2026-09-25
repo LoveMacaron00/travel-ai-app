@@ -33,6 +33,10 @@ class TravelStop {
   final String openingTime;
   final String closingTime;
 
+  /// วันเปิดทำการ [1..7] (จันทร์..อาทิตย์ ตรงกับ DateTime.weekday)
+  /// ว่าง = ไม่รู้/เปิดทุกวัน — server เติมจากการค้นเว็บเมื่อ DB ไม่มี
+  final List<int> openDays;
+
   const TravelStop({
     required this.destinationId,
     required this.place,
@@ -54,6 +58,7 @@ class TravelStop {
     this.stopType = '',
     this.openingTime = '',
     this.closingTime = '',
+    this.openDays = const [],
   });
 
   factory TravelStop.fromJson(Map<String, dynamic> j) => TravelStop(
@@ -81,6 +86,12 @@ class TravelStop {
     stopType: '${j['stopType'] ?? ''}',
     openingTime: '${j['openingTime'] ?? j['opening_time'] ?? ''}',
     closingTime: '${j['closingTime'] ?? j['closing_time'] ?? ''}',
+    openDays: ((j['openDays'] as List?) ?? const [])
+        .map((e) => int.tryParse('$e') ?? 0)
+        .where((d) => d >= 1 && d <= 7)
+        .toSet()
+        .toList()
+      ..sort(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -104,6 +115,7 @@ class TravelStop {
     if (stopType.isNotEmpty) 'stopType': stopType,
     if (openingTime.isNotEmpty) 'openingTime': openingTime,
     if (closingTime.isNotEmpty) 'closingTime': closingTime,
+    if (openDays.isNotEmpty) 'openDays': openDays,
   };
 
   TravelStop copyWith({
@@ -127,6 +139,7 @@ class TravelStop {
     String? stopType,
     String? openingTime,
     String? closingTime,
+    List<int>? openDays,
   }) => TravelStop(
     destinationId: destinationId ?? this.destinationId,
     place: place ?? this.place,
@@ -148,6 +161,7 @@ class TravelStop {
     stopType: stopType ?? this.stopType,
     openingTime: openingTime ?? this.openingTime,
     closingTime: closingTime ?? this.closingTime,
+    openDays: openDays ?? this.openDays,
   );
 }
 

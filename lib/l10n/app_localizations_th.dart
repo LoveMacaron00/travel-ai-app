@@ -1237,4 +1237,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get maybeClosedTag => 'อาจปิดแล้ว';
+
+  @override
+  String get closedToday => 'วันนี้ปิดทำการ';
 }

@@ -1251,4 +1251,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get maybeClosedTag => 'May be closed';
+
+  @override
+  String get closedToday => 'Closed today';
 }
