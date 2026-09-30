@@ -291,9 +291,9 @@ extension _PlanMainView on _PlanScreenState {
                         ),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               _daysStepper(),
-              const SizedBox(height: 12),
+              const SizedBox(height: 20),
               // เวลาเริ่มเดินทาง (TimePicker) — มีผลรอบสร้างแผนถัดไป
               InkWell(
                 onTap: _pickStartTime,

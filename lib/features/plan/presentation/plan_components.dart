@@ -349,21 +349,24 @@ extension _PlanComponents on _PlanScreenState {
   // โหมด Auto ช่องวันที่แสดง hint อยู่แล้ว จึงคืน shrink กันข้อความซ้ำสองที่
   Widget _daysStepper() {
     if (_autoDays) return const SizedBox.shrink();
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
             context.l10n.tripLength,
             style: const TextStyle(fontWeight: FontWeight.w700),
           ),
-        ),
-        Text(
-          _dates == null
-              ? '– ${context.l10n.days}'
-              : '$_days ${context.l10n.days}',
-          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
-        ),
-      ],
+          const SizedBox(width: 8),
+          Text(
+            _dates == null
+                ? '– ${context.l10n.days}'
+                : '$_days ${context.l10n.days}',
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+          ),
+        ],
+      ),
     );
   }
 
