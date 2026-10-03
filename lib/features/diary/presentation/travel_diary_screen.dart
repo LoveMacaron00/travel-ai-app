@@ -1080,6 +1080,9 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     TravelDiaryEntry entry,
     DiarySubEntry sub, {
     bool includeInsight = false,
+    // ซ่อนปุ่มแก้ไข/ลบของรายการ AI (รูป+คำอธิบาย AI)
+    // ไดอารี่ที่ผู้ใช้เพิ่มเอง (hideActions=false) ยังมีเหมือนเดิม
+    bool hideActions = false,
   }) {
     final expandedIds = _expandedInsightIds;
     final toggleId = entry.id;
@@ -1103,41 +1106,42 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
                 ),
               ),
               const Spacer(),
-              SizedBox(
-                width: 28,
-                height: 22,
-                child: PopupMenuButton<String>(
-                  padding: EdgeInsets.zero,
-                  icon: const Icon(
-                    Icons.more_horiz,
-                    size: 16,
-                    color: Colors.black45,
+              if (!hideActions)
+                SizedBox(
+                  width: 28,
+                  height: 22,
+                  child: PopupMenuButton<String>(
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(
+                      Icons.more_horiz,
+                      size: 16,
+                      color: Colors.black45,
+                    ),
+                    onSelected: (val) {
+                      if (val == 'edit') _editDiarySubEntry(entry, sub);
+                      if (val == 'delete') _deleteDiarySubEntry(entry, sub);
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.edit_outlined, size: 16),
+                            const SizedBox(width: 8),
+                            Text(context.l10n.editDiaryEntry),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Text(
+                          context.l10n.deleteDiaryEntry,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
                   ),
-                  onSelected: (val) {
-                    if (val == 'edit') _editDiarySubEntry(entry, sub);
-                    if (val == 'delete') _deleteDiarySubEntry(entry, sub);
-                  },
-                  itemBuilder: (_) => [
-                    PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          const Icon(Icons.edit_outlined, size: 16),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.editDiaryEntry),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Text(
-                        context.l10n.deleteDiaryEntry,
-                        style: const TextStyle(color: Colors.red),
-                      ),
-                    ),
-                  ],
                 ),
-              ),
             ],
           ),
           if (!includeInsight && sub.imageUrls.isNotEmpty) ...[
@@ -1228,6 +1232,16 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     );
   }
 
+  /// รายการ AI อัตโนมัติ (รูป+คำอธิบาย AI) = sub ตัวแรกที่ไม่มีโน้ตผู้ใช้
+  /// ของ entry ที่ไม่ได้สร้างเอง (gps/aiCamera) — ซ่อนปุ่มแก้ไข/ลบ
+  /// ส่วนไดอารี่ที่ผู้ใช้เพิ่มเอง (มีโน้ต / index>0 / source manual) มีเหมือนเดิม
+  bool _isAiAutoSub(TravelDiaryEntry entry, DiarySubEntry sub, int index) {
+    if (entry.source == 'manual') return false;
+    if (index != 0) return false;
+    if (sub.note.trim().isNotEmpty) return false;
+    return true;
+  }
+
   Widget _entryCard(TravelDiaryEntry entry) {
     final isFocused =
         widget.focusEntryId != null && widget.focusEntryId == entry.id;
@@ -1267,10 +1281,15 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
               entry,
               entry.subEntries.first,
               includeInsight: entry.insight.isNotEmpty,
+              hideActions: _isAiAutoSub(entry, entry.subEntries.first, 0),
             ),
             for (var i = 1; i < entry.subEntries.length; i++) ...[
               const SizedBox(height: 10),
-              _subEntryWidget(entry, entry.subEntries[i]),
+              _subEntryWidget(
+                entry,
+                entry.subEntries[i],
+                hideActions: _isAiAutoSub(entry, entry.subEntries[i], i),
+              ),
             ],
           ],
           const SizedBox(height: 10),
