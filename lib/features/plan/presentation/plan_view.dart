@@ -152,18 +152,19 @@ extension _PlanMainView on _PlanScreenState {
     Widget? action,
   }) => Padding(
     padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-    child: Row(
+    child: Stack(
+      alignment: Alignment.center,
       children: [
-        if (back != null) _roundIcon(Icons.arrow_back, back),
-        if (back != null) const SizedBox(width: 12),
-        Expanded(
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: (back != null || action != null) ? 56 : 0,
+          ),
           child: Column(
-            crossAxisAlignment: back == null
-                ? CrossAxisAlignment.center
-                : CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 eyebrow,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Color(0xff8c7b60),
                   fontSize: 12,
@@ -172,6 +173,7 @@ extension _PlanMainView on _PlanScreenState {
               ),
               Text(
                 title,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: _ink,
                   fontSize: 22,
@@ -181,10 +183,13 @@ extension _PlanMainView on _PlanScreenState {
             ],
           ),
         ),
-        if (action != null) ...[
-          const SizedBox(width: 8),
-          action,
-        ],
+        if (back != null)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: _roundIcon(Icons.arrow_back, back),
+          ),
+        if (action != null)
+          Align(alignment: Alignment.centerRight, child: action),
       ],
     ),
   );
@@ -197,7 +202,11 @@ extension _PlanMainView on _PlanScreenState {
         _header(
           context.l10n.aiPlanTravel,
           context.l10n.buildYourTrip,
-          back: Navigator.canPop(context) ? () => Navigator.pop(context) : null,
+          // เป็น tab หลัก (canPop == false) ให้กลับหน้าหลักเหมือนหน้าอื่นๆ
+          // ถูก push เป็น route ย่อยให้ pop ตามปกติ
+          back: Navigator.canPop(context)
+              ? () => Navigator.pop(context)
+              : widget.onBackToHome,
         ),
         _hero(),
         _section(

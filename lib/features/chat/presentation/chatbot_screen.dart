@@ -95,8 +95,9 @@ class ChatMessage {
 /// และใช้ private image URL เมื่อโหลดข้อความเดิมจาก server
 class ChatbotScreen extends StatefulWidget {
   final bool openScannerOnStart;
+  final VoidCallback? onBack;
 
-  const ChatbotScreen({super.key, this.openScannerOnStart = false});
+  const ChatbotScreen({super.key, this.openScannerOnStart = false, this.onBack});
 
   @override
   State<ChatbotScreen> createState() => _ChatbotScreenState();
@@ -591,7 +592,13 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (widget.onBack != null) {
+              widget.onBack!();
+            } else if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+          },
         ),
         title: Text(
           context.l10n.appTitle,

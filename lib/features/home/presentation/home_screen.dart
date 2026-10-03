@@ -15,6 +15,8 @@ class HomeScreen extends StatefulWidget {
   final VoidCallback onPlanTap;
   final VoidCallback onDiaryTap;
   final ValueChanged<int> onExploreDestination;
+  final VoidCallback? onChatbotTap;
+  final VoidCallback? onScanTap;
 
   const HomeScreen({
     super.key,
@@ -22,6 +24,8 @@ class HomeScreen extends StatefulWidget {
     required this.onPlanTap,
     required this.onDiaryTap,
     required this.onExploreDestination,
+    this.onChatbotTap,
+    this.onScanTap,
   });
 
   @override
@@ -253,12 +257,16 @@ class _HomeScreenState extends State<HomeScreen> {
                               l10n.chatbot,
                               brandGold,
                               onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const ChatbotScreen(),
-                                  ),
-                                );
+                                if (widget.onChatbotTap != null) {
+                                  widget.onChatbotTap!();
+                                } else {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const ChatbotScreen(),
+                                    ),
+                                  );
+                                }
                               },
                             ),
                             HomeFeatureItem(
@@ -266,14 +274,18 @@ class _HomeScreenState extends State<HomeScreen> {
                               l10n.scanWithAi,
                               brandGold,
                               onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const ChatbotScreen(
-                                      openScannerOnStart: true,
+                                if (widget.onScanTap != null) {
+                                  widget.onScanTap!();
+                                } else {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const ChatbotScreen(
+                                        openScannerOnStart: true,
+                                      ),
                                     ),
-                                  ),
-                                );
+                                  );
+                                }
                               },
                             ),
                             HomeFeatureItem(

@@ -10,6 +10,7 @@ import 'package:myapp/features/feedback/presentation/feedback_history_screen.dar
 import 'package:myapp/features/auth/presentation/account_settings_screen.dart';
 import 'package:myapp/features/map/data/location_service.dart';
 import 'package:myapp/core/di/app_services.dart';
+import 'package:myapp/features/chat/presentation/chatbot_screen.dart';
 
 /// Shell หลังเข้าสู่ระบบ เก็บแต่ละ tab ไว้ใน IndexedStack เพื่อรักษา state
 /// เช่น ตำแหน่งแผนที่และรายการแผน เมื่อผู้ใช้สลับแท็บไปมา
@@ -26,6 +27,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   bool _showingFeedback = false;
   bool _showingFootprint = false;
   bool _showingAccountSettings = false;
+  bool _showingChatbot = false;
+  bool _chatOpenScanner = false;
+  int _chatOpenCount = 0;
   late final List<Widget?> _screens;
   final GlobalKey<MapScreenState> _mapScreenKey = GlobalKey<MapScreenState>();
   final GlobalKey<ProfileScreenState> _profileScreenKey =
@@ -85,14 +89,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _showingFeedback = false;
       _showingFootprint = false;
       _showingAccountSettings = false;
+      _showingChatbot = false;
       _selectedIndex = 2;
       // ใช้ UniqueKey เพื่อให้กดดู trip เดิมซ้ำหลังกดย้อนกลับแล้วยังโหลดใหม่ได้ (ไม่ติด state เดิมที่ _plan==null)
       _screens[2] = PlanScreen(
         key: ValueKey('plan_${tripId}_${DateTime.now().millisecondsSinceEpoch}'),
         initialTripId: tripId,
+        onBackToHome: () => _selectTab(0),
         onBackFromSavedView: () {
           setState(() {
-            _screens[2] = const PlanScreen();
+            _screens[2] = PlanScreen(onBackToHome: () => _selectTab(0));
             _selectedIndex = 3;
           });
         },
@@ -109,11 +115,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           onPlanTap: () => _selectTab(2),
           onDiaryTap: _showDiary,
           onExploreDestination: _showDestinationOnMap,
+          onChatbotTap: () => _showChatbot(openScanner: false),
+          onScanTap: () => _showChatbot(openScanner: true),
         );
       case 1:
         return MapScreen(key: _mapScreenKey);
       case 2:
-        return const PlanScreen();
+        return PlanScreen(onBackToHome: () => _selectTab(0));
       case 3:
         return ProfileScreen(
           key: _profileScreenKey,
@@ -137,12 +145,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _showingFeedback = false;
       _showingFootprint = false;
       _showingAccountSettings = false;
+      _showingChatbot = false;
       if (index == 2) {
         // แท็บแผนต้องเป็นหน้าวางแผนเสมอ — ถ้าค้างจอแผนเก่าที่เปิดจาก Profile
         // (กด back จากจอนั้นจะเด้งไป Profile แทนที่จะอยู่หน้า plan) ให้รีเซ็ตเป็นฟอร์มเปล่า
         final current = _screens[2];
         if (current is PlanScreen && current.initialTripId != null) {
-          _screens[2] = const PlanScreen();
+          _screens[2] = PlanScreen(onBackToHome: () => _selectTab(0));
         }
       }
       _screens[index] ??= _createScreen(index);
@@ -160,6 +169,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _showingFeedback = false;
       _showingFootprint = false;
       _showingAccountSettings = false;
+      _showingChatbot = false;
       _showingDiary = true;
     });
   }
@@ -169,6 +179,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _showingDiary = false;
       _showingFootprint = false;
       _showingAccountSettings = false;
+      _showingChatbot = false;
       _showingFeedback = true;
     });
   }
@@ -178,6 +189,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _showingDiary = false;
       _showingFeedback = false;
       _showingAccountSettings = false;
+      _showingChatbot = false;
       _showingFootprint = true;
     });
   }
@@ -187,8 +199,25 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _showingDiary = false;
       _showingFeedback = false;
       _showingFootprint = false;
+      _showingChatbot = false;
       _showingAccountSettings = true;
     });
+  }
+
+  void _showChatbot({bool openScanner = false}) {
+    setState(() {
+      _showingDiary = false;
+      _showingFeedback = false;
+      _showingFootprint = false;
+      _showingAccountSettings = false;
+      _chatOpenScanner = openScanner;
+      _chatOpenCount++;
+      _showingChatbot = true;
+    });
+  }
+
+  void _hideChatbot() {
+    setState(() => _showingChatbot = false);
   }
 
   void _hideAccountSettings() {
@@ -210,6 +239,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _showingFeedback = false;
       _showingFootprint = false;
       _showingAccountSettings = false;
+      _showingChatbot = false;
     });
     if (_selectedIndex != 1) {
       _selectTab(1);
@@ -359,10 +389,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       canPop: !_showingDiary &&
           !_showingFeedback &&
           !_showingFootprint &&
-          !_showingAccountSettings,
+          !_showingAccountSettings &&
+          !_showingChatbot,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        if (_showingDiary) {
+        if (_showingChatbot) {
+          _hideChatbot();
+        } else if (_showingDiary) {
           setState(() => _showingDiary = false);
         } else if (_showingFeedback) {
           setState(() => _showingFeedback = false);
@@ -373,7 +406,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         }
       },
       child: Scaffold(
-        body: _showingDiary
+        body: _showingChatbot
+            ? ChatbotScreen(
+                key: ValueKey('chat_$_chatOpenCount'),
+                openScannerOnStart: _chatOpenScanner,
+                onBack: _hideChatbot,
+              )
+            : _showingDiary
             ? TravelDiaryScreen(
                 onBack: () => setState(() => _showingDiary = false),
                 onOpenFootprint: _showFootprint,

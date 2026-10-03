@@ -40,13 +40,22 @@ class _PlanRouteLeg {
 
 /// สร้างและแสดงแผนเที่ยวจาก AI ก่อนส่งจุดแวะไปยังหน้าจอนำทาง
 class PlanScreen extends StatefulWidget {
-  const PlanScreen({super.key, this.initialTripId, this.onBackFromSavedView});
+  const PlanScreen({
+    super.key,
+    this.initialTripId,
+    this.onBackFromSavedView,
+    this.onBackToHome,
+  });
 
   /// เปิดด้วยแผนที่บันทึกไว้แล้ว (โหลดจาก GET /trips/:id)
   final int? initialTripId;
 
   /// ใช้เมื่อเปิดจาก Profile (tab) แล้วกดย้อนกลับ ต้องการกลับไปหน้า Profile แทนการโชว์ฟอร์มเปล่า
   final VoidCallback? onBackFromSavedView;
+
+  /// ใช้เมื่อฝังเป็น tab ใน MainNavigationScreen — ปุ่มกลับบนหน้าฟอร์ม
+  /// จะกลับไปหน้าหลัก (tab home) แทนการซ่อนปุ่ม เหมือนหน้าอื่นๆ
+  final VoidCallback? onBackToHome;
 
   @override
   State<PlanScreen> createState() => _PlanScreenState();
