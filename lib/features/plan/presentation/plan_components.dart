@@ -411,17 +411,21 @@ extension _PlanComponents on _PlanScreenState {
     String selectedCategory = 'all';
     // รายการที่ติ๊กเลือกไว้ (id) — ยังไม่เพิ่มจริงจนกว่าจะกดยืนยัน
     final selectedIds = <String>{};
+    // snapshot จุดเริ่มตอนเปิด sheet — กัน re-sort กลางคันขณะเลื่อน
+    // (AnimatedBuilder ที่ฟัง GPS ทุก tick แล้ว sort ใหม่คือสาเหตุ
+    // RenderBox was not laid out / hit test no size บน web)
+    final sheetOrigin = _calcOrigin;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: _canvas,
       builder: (sheetContext) => StatefulBuilder(
-        builder: (context, setSheet) => AnimatedBuilder(
-          animation: _locationService,
-          builder: (context, _) {
-            // เรียง/โชว์ระยะเฉพาะเมื่อมีจุดเริ่มที่มีผลกับแผน
+        builder: (context, setSheet) {
+            // จังหวัดที่เลือก (หรือจังหวัดหลักของแผน) ดันขึ้นก่อนเสมอ
+            // แล้วค่อยเรียงระยะจากจุดเริ่มภายในกลุ่มเดียวกัน
             // (ทริปล่วงหน้า/อยู่นอกพื้นที่ — ไม่เรียงตาม GPS ปัจจุบัน)
-            final origin = _calcOrigin;
+            final origin = sheetOrigin;
+            final provinceBias = _placePickerProvinceBias;
             final queryLower = query.toLowerCase();
             final matches = _places
                 .where(
@@ -432,24 +436,60 @@ extension _PlanComponents on _PlanScreenState {
                           p.province.toLowerCase().contains(queryLower)),
                 )
                 .toList();
-            if (origin != null) {
-              matches.sort(
-                (a, b) => const Distance()
-                    .as(
-                      LengthUnit.Kilometer,
-                      origin,
-                      LatLng(a.latitude, a.longitude),
-                    )
-                    .compareTo(
-                      const Distance().as(
-                        LengthUnit.Kilometer,
-                        origin,
-                        LatLng(b.latitude, b.longitude),
-                      ),
-                    ),
+            double distKm(PlaceMarker place) {
+              if (origin == null) return 0;
+              return const Distance().as(
+                LengthUnit.Kilometer,
+                origin,
+                LatLng(place.latitude, place.longitude),
               );
             }
+
+            matches.sort((a, b) {
+              if (provinceBias != null && provinceBias.trim().isNotEmpty) {
+                final aIn =
+                    _provinceMatchesSelected(a.province, provinceBias)
+                        ? 0
+                        : 1;
+                final bIn =
+                    _provinceMatchesSelected(b.province, provinceBias)
+                        ? 0
+                        : 1;
+                if (aIn != bIn) return aIn.compareTo(bIn);
+              }
+              if (origin != null) {
+                return distKm(a).compareTo(distKm(b));
+              }
+              return 0;
+            });
             final filtered = matches.take(30).toList();
+            // ป้ายบอกจังหวัดที่ดันขึ้นก่อน + จำนวนที่เข้าเงื่อนไข (ไม่ต้องเพิ่ม key l10n
+            // ใหม่ — โชว์ชื่อจังหวัดกับตัวเลขล้วนๆ ภาษาไหนก็เข้าใจ)
+            String? biasDisplay;
+            var biasCount = 0;
+            if (provinceBias != null && provinceBias.trim().isNotEmpty) {
+              biasCount = matches
+                  .where(
+                    (p) => _provinceMatchesSelected(p.province, provinceBias),
+                  )
+                  .length;
+              biasDisplay = provinceBias;
+              for (final opt in _provinceOptions) {
+                if (opt.value == provinceBias) {
+                  biasDisplay = opt.label;
+                  break;
+                }
+              }
+              if (biasDisplay == provinceBias) {
+                for (final opt in _provinceOptions) {
+                  if (_canonBangkok(opt.label) ==
+                      _canonBangkok(provinceBias)) {
+                    biasDisplay = opt.label;
+                    break;
+                  }
+                }
+              }
+            }
             return DraggableScrollableSheet(
               expand: false,
               initialChildSize: .78,
@@ -482,6 +522,44 @@ extension _PlanComponents on _PlanScreenState {
                     onSelected: (key) =>
                         setSheet(() => selectedCategory = key),
                   ),
+                  if (biasDisplay != null &&
+                      biasDisplay.trim().isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xffffe7a0),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on,
+                              size: 14,
+                              color: Color(0xff986b00),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                '$biasDisplay ($biasCount)',
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xff986b00),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Expanded(
                     child: filtered.isEmpty
@@ -519,19 +597,38 @@ extension _PlanComponents on _PlanScreenState {
                                 selected: isSelected,
                                 selectedTileColor: const Color(0xfffff6d7),
                                 selectedColor: Colors.black87,
-                                leading: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: p.imageUrl.isEmpty
-                                      ? const SizedBox(
-                                          width: 52,
-                                          child: Icon(Icons.place),
-                                        )
-                                      : mediaNetworkImage(
-                                          p.imageUrl,
-                                          width: 52,
-                                          height: 52,
-                                          fit: BoxFit.cover,
-                                        ),
+                                // ล็อก 52x52 เสมอ — กัน ListTile วัด leading ได้เท่า
+                                // tile width ตอนรูปพัง (เช่น AVIF ถอดไม่ได้บน web)
+                                // errorBuilder เปลี่ยน decode-fail เป็น placeholder
+                                // แทน EXCEPTION CAUGHT BY IMAGE RESOURCE SERVICE
+                                leading: SizedBox(
+                                  width: 52,
+                                  height: 52,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: p.imageUrl.isEmpty
+                                        ? Container(
+                                            color: const Color(0xfff4f0e8),
+                                            child: const Icon(
+                                              Icons.place,
+                                              color: Colors.black38,
+                                            ),
+                                          )
+                                        : mediaNetworkImage(
+                                            p.imageUrl,
+                                            width: 52,
+                                            height: 52,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) =>
+                                                Container(
+                                              color: const Color(0xfff4f0e8),
+                                              child: const Icon(
+                                                Icons.broken_image_outlined,
+                                                color: Colors.black38,
+                                              ),
+                                            ),
+                                          ),
+                                  ),
                                 ),
                                 title: Text(
                                   p.title,
@@ -688,7 +785,6 @@ extension _PlanComponents on _PlanScreenState {
               ),
             );
           },
-        ),
       ),
     );
   }

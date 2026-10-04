@@ -212,6 +212,43 @@ class _PlanScreenState extends State<PlanScreen> {
     return aliases.contains(norm) ? 'กรุงเทพมหานคร' : norm;
   }
 
+  // จังหวัดที่ใช้ดันสถานที่ขึ้นก่อนใน place picker:
+  // 1) จังหวัดที่เลือกในฟอร์ม (ถ้ามี) — เคสหลักตอนวางแผน
+  // 2) fallback จังหวัดที่เจอบ่อยสุดในแผนปัจจุบัน (เปิดแผนเก่าจาก Profile
+  //    ที่ _selectedProvince เป็น null) — กัน picker เรียงมั่ว
+  // คืน null = ไม่ bias (คงพฤติกรรมเดิม: เรียงระยะอย่างเดียว)
+  String? get _placePickerProvinceBias {
+    final selected = _selectedProvince;
+    if (selected != null && selected.trim().isNotEmpty) return selected;
+    final plan = _plan;
+    if (plan == null || plan.allStops.isEmpty) return null;
+    final counts = <String, int>{};
+    for (final stop in plan.allStops) {
+      final province = _provinceForStop(stop);
+      if (province.trim().isEmpty) continue;
+      final key = _canonBangkok(province);
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
+    if (counts.isEmpty) return null;
+    var topKey = counts.entries.first.key;
+    var topCount = counts.entries.first.value;
+    for (final entry in counts.entries.skip(1)) {
+      if (entry.value > topCount) {
+        topKey = entry.key;
+        topCount = entry.value;
+      }
+    }
+    // คืนชื่อจังหวัดจริง (display) ของ topKey เพื่อให้ _provinceMatchesSelected
+    // เทียบ canon ตรงกัน — หาไม่เจอคืน topKey ที่เป็น canon ไปตรงๆ ก็ยังเทียบได้
+    for (final stop in plan.allStops) {
+      final province = _provinceForStop(stop);
+      if (province.trim().isNotEmpty && _canonBangkok(province) == topKey) {
+        return province;
+      }
+    }
+    return topKey;
+  }
+
   // extension view เรียกผ่าน wrapper นี้แทน protected State.setState โดยตรง
   void _updateState(VoidCallback update) => setState(update);
 

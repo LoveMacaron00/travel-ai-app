@@ -469,6 +469,9 @@ extension _PlanMainView on _PlanScreenState {
             : DecorationImage(
                 image: mediaImageProvider(image),
                 fit: BoxFit.cover,
+                // รูปพัง (เช่น AVIF ถอดไม่ได้บน web) ให้เหลือพื้น _ink
+                // แทน EXCEPTION CAUGHT BY IMAGE RESOURCE SERVICE
+                onError: (_, __) {},
                 colorFilter: ColorFilter.mode(
                   Colors.black.withValues(alpha: .36),
                   BlendMode.darken,
@@ -708,19 +711,26 @@ extension _PlanMainView on _PlanScreenState {
                         ),
                       ),
                     ),
-                  SliverReorderableList(
-                    itemCount: selectedDay.stops.length,
-                    onReorder: _reorderStops,
-                    itemBuilder: (_, i) => _stopTile(
-                      selectedDay.stops[i],
-                      i + 1,
-                      key: ValueKey(selectedDay.stops[i]),
-                      reorderIndex: i,
-                      canNavigate: _canNavigateNow(plan),
-                      lockedMessage: _navigationLockedMessage(plan),
-                      dayDate: _selectedDayDate(plan),
+                  // guard ว่างไว้กัน sliver zero-size hit-test ตอนเลื่อน
+                  // key ใช้ _stopIdentity (id/ชื่อ) แทน object identity
+                  // กัน key เปลี่ยนทุกครั้งที่ sanitize สร้าง TravelStop ใหม่
+                  if (selectedDay.stops.isNotEmpty)
+                    SliverReorderableList(
+                      itemCount: selectedDay.stops.length,
+                      onReorder: _reorderStops,
+                      itemBuilder: (_, i) {
+                        final stop = selectedDay.stops[i];
+                        return _stopTile(
+                          stop,
+                          i + 1,
+                          key: ValueKey(_stopIdentity(stop)),
+                          reorderIndex: i,
+                          canNavigate: _canNavigateNow(plan),
+                          lockedMessage: _navigationLockedMessage(plan),
+                          dayDate: _selectedDayDate(plan),
+                        );
+                      },
                     ),
-                  ),
                 ],
                 SliverToBoxAdapter(child: _costSummary(plan)),
                 SliverToBoxAdapter(
