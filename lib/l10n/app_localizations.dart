@@ -335,7 +335,7 @@ abstract class AppLocalizations {
   /// No description provided for @diaryAutoDescription.
   ///
   /// In en, this message translates to:
-  /// **'Keep GPS on to record nearby places automatically, or take a photo with AI Camera to create a diary entry with place insights.'**
+  /// **'Keep GPS on to record nearby places automatically.'**
   String get diaryAutoDescription;
 
   /// No description provided for @openAiCamera.
@@ -343,12 +343,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open AI Camera'**
   String get openAiCamera;
-
-  /// No description provided for @diarySavedAutomatically.
-  ///
-  /// In en, this message translates to:
-  /// **'The AI photo and insights were added to your diary automatically.'**
-  String get diarySavedAutomatically;
 
   /// No description provided for @diaryDay.
   ///
@@ -1339,12 +1333,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set the basics'**
   String get setTheBasics;
-
-  /// No description provided for @locationStartingPoint.
-  ///
-  /// In en, this message translates to:
-  /// **'Your location is the starting point.'**
-  String get locationStartingPoint;
 
   /// No description provided for @selectProvince.
   ///

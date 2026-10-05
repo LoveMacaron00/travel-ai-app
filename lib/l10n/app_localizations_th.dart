@@ -127,14 +127,10 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get diaryAutoDescription =>
-      'เปิด GPS ไว้เพื่อบันทึกสถานที่ที่คุณไปอัตโนมัติ หรือถ่ายภาพผ่าน AI Camera เพื่อสร้างบันทึกพร้อมข้อมูลสถานที่';
+      'เปิด GPS ไว้เพื่อบันทึกสถานที่ที่คุณไปอัตโนมัติ';
 
   @override
   String get openAiCamera => 'เปิด AI Camera';
-
-  @override
-  String get diarySavedAutomatically =>
-      'เพิ่มรูปและข้อมูลจาก AI ลง Diary อัตโนมัติแล้ว';
 
   @override
   String diaryDay(int day, String place) {
@@ -668,9 +664,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get setTheBasics => 'กำหนดข้อมูลเบื้องต้น';
-
-  @override
-  String get locationStartingPoint => 'ตำแหน่งของคุณคือจุดเริ่มต้น';
 
   @override
   String get selectProvince => 'เลือกจังหวัด';

@@ -259,7 +259,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     }
     final imageBytes = await image.readAsBytes();
 
-    // รูปที่ถ่ายสดใช้ GPS ปัจจุบันสร้าง Smart Diary อัตโนมัติได้
+    // รูปที่ถ่ายสดแนบ GPS ปัจจุบันไปกับคำขอวิเคราะห์ (บริบทสถานที่ใกล้เคียง)
     // ส่วนรูปจาก Gallery อาจถ่ายคนละเวลา จึงไม่ผูกตำแหน่งปัจจุบันให้
     final shouldAttachCurrentLocation = source == ImageSource.camera;
     var position = shouldAttachCurrentLocation
@@ -275,8 +275,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     final userMessageIndex = _messages.length;
     ScanResult? completedScanResult;
     String completedAnswer = '';
-    String completedImageUrl = '';
-    var scanSucceeded = false;
     setState(() {
       _messages.add(
         ChatMessage(
@@ -307,10 +305,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
     setState(() {
       if (result['success'] == true) {
-        scanSucceeded = true;
         final data = Map<String, dynamic>.from(result['data'] ?? {});
         completedAnswer = (data['answer'] ?? '').toString();
-        completedImageUrl = (data['image_url'] ?? '').toString();
         final userMessageId = int.tryParse('${data['user_message_id'] ?? ''}');
         if (userMessageIndex < _messages.length) {
           _messages[userMessageIndex] = _messages[userMessageIndex].copyWith(
@@ -349,33 +345,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       _isSending = false;
       _activeScanMode = null;
     });
-    if (source == ImageSource.camera && scanSucceeded) {
-      final diaryResult =
-          completedScanResult ??
-          ScanResult(
-            mode: mode,
-            title: _scanModeTitle(context, mode),
-            subtitle: completedAnswer,
-            confidence: 0,
-            sections: const [],
-            candidates: const [],
-            originalText: '',
-            translatedText: '',
-          );
-      unawaited(
-        AppServices.diaryAutomation
-            .recordAiCapture(
-              result: diaryResult,
-              imageUrl: completedImageUrl,
-              position: position,
-            )
-            .then((saved) {
-              if (mounted && saved) {
-                _showNotice(context.l10n.diarySavedAutomatically);
-              }
-            }),
-      );
-    }
     _scrollToBottom();
   }
 

@@ -39,9 +39,8 @@
   "travelDiary": "Diary",
   "smartTravelDiary": "Travel Diary",
   "travelDiarySubtitle": "Keep each day's photos, location, and memories",
-  "diaryAutoDescription": "Keep GPS on to record nearby places automatically, or take a photo with AI Camera to create a diary entry with place insights.",
+  "diaryAutoDescription": "Keep GPS on to record nearby places automatically.",
   "openAiCamera": "Open AI Camera",
-  "diarySavedAutomatically": "The AI photo and insights were added to your diary automatically.",
   "diaryDay": "Day {day} : {place}",
   "@diaryDay": {
     "placeholders": {
@@ -258,7 +257,6 @@
   "aiPlanTravel": "AI PLAN TRAVEL",
   "buildYourTrip": "Build your trip",
   "setTheBasics": "Set the basics",
-  "locationStartingPoint": "Your location is the starting point.",
   "selectProvince": "Choose a province",
   "loadingProvinces": "Loading provinces…",
   "databaseProvinceOnly": "Optional",

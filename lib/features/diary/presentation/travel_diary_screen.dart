@@ -1087,25 +1087,42 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     final expandedIds = _expandedInsightIds;
     final toggleId = entry.id;
     final isExpanded = expandedIds.contains(toggleId);
+    // เวลา sub ตรงกับเวลา check-in (entry) พอดี — ไม่ต้องโชว์ซ้ำบนรูปภาพ
+    // (เวลาบน header มีอยู่แล้ว) โชว์เฉพาะเวลาที่ต่างกันจริงๆ เช่น เขียนบันทึกเพิ่มคนละเวลา
+    final sameMoment =
+        sub.time.year == entry.date.year &&
+        sub.time.month == entry.date.month &&
+        sub.time.day == entry.date.day &&
+        sub.time.hour == entry.date.hour &&
+        sub.time.minute == entry.date.minute;
+    // ไม่มีเวลาต้องโชว์และไม่มีปุ่ม action (รายการ AI อัตโนมัติ) — ไม่ต้องวาดแถวนี้เลย
+    final hideHeaderRow = sameMoment && hideActions;
 
     return Padding(
       padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              const Icon(Icons.access_time, size: 13, color: Colors.black45),
-              const SizedBox(width: 5),
-              Text(
-                _formatTime(sub.time),
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
+          if (!hideHeaderRow)
+            Row(
+              children: [
+                if (!sameMoment) ...[
+                  const Icon(
+                    Icons.access_time,
+                    size: 13,
+                    color: Colors.black45,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    _formatTime(sub.time),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+                const Spacer(),
               if (!hideActions)
                 SizedBox(
                   width: 28,

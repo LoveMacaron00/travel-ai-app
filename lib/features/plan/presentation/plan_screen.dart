@@ -86,8 +86,8 @@ class _PlanScreenState extends State<PlanScreen> {
   double _budget = 30000;
   int _days = 3;
   // จุด 2: เวลาเริ่มเดินทาง + โหมดให้ AI ประเมินจำนวนวัน
-  // _startTime เริ่ม 09:00 ตรงกับ DEFAULT_DAY_START_MINUTES ฝั่ง server
-  TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
+  // _startTime เริ่ม 07:30 ตรงกับ DEFAULT_DAY_START_MINUTES ฝั่ง server
+  TimeOfDay _startTime = const TimeOfDay(hour: 7, minute: 30);
   bool _autoDays = false;
   LatLng? _position;
   // จุดเริ่มต้นที่ผู้ใช้ปักเองบนแผนที่ (null = ใช้ GPS ปัจจุบันถ้าเข้าเงื่อนไข)

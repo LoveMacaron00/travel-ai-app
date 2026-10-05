@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:myapp/features/chat/domain/scan_result.dart';
 import 'package:myapp/features/diary/domain/travel_diary_entry.dart';
 import 'package:myapp/features/destinations/data/destination_service.dart';
 import 'package:myapp/features/map/data/location_service.dart';
@@ -93,81 +92,6 @@ class TravelDiaryAutomationService {
     _lastEvaluation = null;
   }
 
-  Future<bool> recordAiCapture({
-    required ScanResult result,
-    required String imageUrl,
-    required LatLng? position,
-  }) async {
-    await start();
-    if (!_started) return false;
-    if (_destinations.isEmpty) await _loadDestinations();
-
-    final now = DateTime.now();
-    // สแกนป้ายไม่มีชื่อสถานที่ จึงใช้ข้อความ OCR บรรทัดแรกเป็นชื่อ entry แทนหัวข้อ generic
-    final scanTitle = _scanTitle(result);
-    final nearestCandidate = position == null
-        ? null
-        : _nearestDestination(position);
-    final nearest =
-        nearestCandidate != null && nearestCandidate.distanceMeters <= 1000
-        ? nearestCandidate
-        : null;
-    final entries = await _diary.load();
-    TravelDiaryEntry? matching;
-    for (final entry in entries) {
-      final closeInTime =
-          now.difference(entry.date).abs() < const Duration(hours: 4);
-      final resultTitle = scanTitle.trim().toLowerCase();
-      final samePlace =
-          resultTitle.isNotEmpty &&
-          entry.title.trim().toLowerCase() == resultTitle;
-      final closeInDistance =
-          position != null &&
-          entry.hasLocation &&
-          Geolocator.distanceBetween(
-                position.latitude,
-                position.longitude,
-                entry.latitude!,
-                entry.longitude!,
-              ) <
-              450;
-      if (closeInTime && (samePlace || closeInDistance)) {
-        matching = entry;
-        break;
-      }
-    }
-
-    final imageUrls = [...?matching?.imageUrls];
-    for (final candidate in [imageUrl, nearest?.imageUrl ?? '']) {
-      if (candidate.isNotEmpty && !imageUrls.contains(candidate)) {
-        imageUrls.add(candidate);
-      }
-    }
-    final insight = _scanInsight(result);
-    final title = matching?.title.isNotEmpty == true
-        ? matching!.title
-        : scanTitle.isNotEmpty
-        ? scanTitle
-        : nearest?.title ?? '';
-    final updated = TravelDiaryEntry(
-      id: matching?.id ?? 'camera_${now.microsecondsSinceEpoch}',
-      date: matching?.date ?? now,
-      lastSeenAt: now,
-      title: title,
-      note: matching?.note ?? '',
-      province: matching?.province.isNotEmpty == true
-          ? matching!.province
-          : nearest?.province ?? '',
-      insight: insight.isNotEmpty ? insight : matching?.insight ?? '',
-      imageUrls: imageUrls,
-      latitude: position?.latitude ?? matching?.latitude,
-      longitude: position?.longitude ?? matching?.longitude,
-      destinationId: matching?.destinationId ?? nearest?.id,
-      source: 'aiCamera',
-    );
-    return _diary.upsert(updated);
-  }
-
   void _onLocationChanged() {
     unawaited(_evaluatePosition());
   }
@@ -253,23 +177,6 @@ class TravelDiaryAutomationService {
       }
     }
     return nearest;
-  }
-
-  // สแกนป้ายไม่มีชื่อสถานที่ จึงใช้ข้อความ OCR บรรทัดแรกเป็นชื่อ entry แทนหัวข้อ generic
-  String _scanTitle(ScanResult result) {
-    if (result.mode != ScanMode.sign) return result.title.trim();
-    final ocrLine = result.originalText
-        .split('\n')
-        .map((line) => line.trim())
-        .firstWhere((line) => line.isNotEmpty, orElse: () => '');
-    return ocrLine.isNotEmpty ? ocrLine : result.title.trim();
-  }
-
-  String _scanInsight(ScanResult result) {
-    for (final section in result.sections) {
-      if (section.body.trim().isNotEmpty) return section.body.trim();
-    }
-    return result.subtitle.trim();
   }
 }
 

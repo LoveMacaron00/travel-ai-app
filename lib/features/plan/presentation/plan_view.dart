@@ -212,7 +212,6 @@ extension _PlanMainView on _PlanScreenState {
         _section(
           number: 1,
           title: context.l10n.setTheBasics,
-          subtitle: context.l10n.locationStartingPoint,
           child: Column(
             children: [
               TextField(
@@ -1208,6 +1207,8 @@ extension _PlanMainView on _PlanScreenState {
                         Icons.confirmation_number_outlined,
                         stop.entryCost,
                       ),
+                      const SizedBox(width: 8),
+                      _price(Icons.restaurant_outlined, stop.foodCost),
                       const SizedBox(width: 8),
                       _price(Icons.route, stop.transportCost),
                       const Spacer(),

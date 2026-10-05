@@ -39,9 +39,8 @@
   "travelDiary": "ไดอารี่",
   "smartTravelDiary": "ไดอารี่การเดินทาง",
   "travelDiarySubtitle": "เก็บรูป พิกัด และความทรงจำในแต่ละวัน",
-  "diaryAutoDescription": "เปิด GPS ไว้เพื่อบันทึกสถานที่ที่คุณไปอัตโนมัติ หรือถ่ายภาพผ่าน AI Camera เพื่อสร้างบันทึกพร้อมข้อมูลสถานที่",
+  "diaryAutoDescription": "เปิด GPS ไว้เพื่อบันทึกสถานที่ที่คุณไปอัตโนมัติ",
   "openAiCamera": "เปิด AI Camera",
-  "diarySavedAutomatically": "เพิ่มรูปและข้อมูลจาก AI ลง Diary อัตโนมัติแล้ว",
   "diaryDay": "วันที่ {day} : {place}",
   "@diaryDay": {
     "placeholders": {
@@ -258,7 +257,6 @@
   "aiPlanTravel": "AI วางแผนเที่ยว",
   "buildYourTrip": "สร้างทริปของคุณ",
   "setTheBasics": "กำหนดข้อมูลเบื้องต้น",
-  "locationStartingPoint": "ตำแหน่งของคุณคือจุดเริ่มต้น",
   "selectProvince": "เลือกจังหวัด",
   "loadingProvinces": "กำลังโหลดจังหวัด…",
   "databaseProvinceOnly": "ไม่บังคับ",

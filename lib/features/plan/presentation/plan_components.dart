@@ -639,30 +639,87 @@ extension _PlanComponents on _PlanScreenState {
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    if (p.province.isNotEmpty)
-                                      Container(
-                                        margin: const EdgeInsets.only(
-                                          bottom: 4,
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xffffe7a0),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          p.province,
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xff986b00),
-                                          ),
-                                        ),
+                                    if (p.province.isNotEmpty ||
+                                        p.category.isNotEmpty)
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 4,
+                                        crossAxisAlignment:
+                                            WrapCrossAlignment.center,
+                                        children: [
+                                          if (p.province.isNotEmpty)
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 2,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: const Color(
+                                                  0xffffe7a0,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                p.province,
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Color(0xff986b00),
+                                                ),
+                                              ),
+                                            ),
+                                          if (p.category.isNotEmpty)
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 2,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    placeCategoryColor(
+                                                      p.category,
+                                                    ).withValues(alpha: .12),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    placeCategoryIcon(
+                                                      p.category,
+                                                    ),
+                                                    size: 11,
+                                                    color: placeCategoryColor(
+                                                      p.category,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 3),
+                                                  Text(
+                                                    placeCategoryLabel(
+                                                      context.l10n,
+                                                      p.category,
+                                                    ),
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: placeCategoryColor(
+                                                        p.category,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                        ],
                                       ),
+                                    if (p.province.isNotEmpty ||
+                                        p.category.isNotEmpty)
+                                      const SizedBox(height: 4),
                                     if (description.isNotEmpty)
                                       Text(
                                         description,
