@@ -80,7 +80,6 @@ class DiaryManualResult {
 }
 
 const _sheetGold = Color(0xfff4b400);
-const _sheetPaleGold = Color(0xffffefbd);
 
 /// Shows unified manual diary sheet for both add and edit.
 /// [entryTitle] is null for add ("New Memory"), otherwise "Edit Memory".
@@ -602,18 +601,15 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                     vertical: 18,
                   ),
                   decoration: BoxDecoration(
-                    border: Border.all(
-                      color: _entryDate != null ? _sheetGold : Colors.grey,
-                      width: _entryDate != null ? 2 : 1,
-                    ),
+                    border: Border.all(color: Colors.grey),
                     borderRadius: BorderRadius.circular(14),
-                    color: _entryDate != null ? _sheetPaleGold : Colors.white,
+                    color: Colors.white,
                   ),
                   child: Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.calendar_month_outlined,
-                        color: _entryDate != null ? _sheetGold : Colors.grey,
+                        color: Colors.grey,
                       ),
                       const SizedBox(width: 12),
                       Expanded(child: _entryDateLabel()),
@@ -645,23 +641,13 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                   vertical: 18,
                 ),
                 decoration: BoxDecoration(
-                  border: Border.all(
-                    color: _selectedLocation != null ? _sheetGold : Colors.grey,
-                    width: _selectedLocation != null ? 2 : 1,
-                  ),
+                  border: Border.all(color: Colors.grey),
                   borderRadius: BorderRadius.circular(14),
-                  color: _selectedLocation != null
-                      ? _sheetPaleGold
-                      : Colors.white,
+                  color: Colors.white,
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.map_outlined,
-                      color: _selectedLocation != null
-                          ? _sheetGold
-                          : Colors.grey,
-                    ),
+                    const Icon(Icons.map_outlined, color: Colors.grey),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
