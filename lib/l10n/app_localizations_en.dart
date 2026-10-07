@@ -752,6 +752,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mustVisitPlaces => 'Must-visit places';
 
   @override
+  String get unspecifiedCost => 'Not specified';
+
+  @override
+  String get clearAllPlaces => 'Clear all';
+
+  @override
+  String get mustVisitCleared => 'Removed all must-visit places';
+
+  @override
   String get addAPlace => 'Add a place';
 
   @override
@@ -823,6 +832,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get removeFromPlan => 'Remove from plan';
+
+  @override
+  String get moveToDay => 'Move to another day';
+
+  @override
+  String moveStopTitle(String name) {
+    return 'Which day should $name move to?';
+  }
+
+  @override
+  String placeMoved(String name, int day) {
+    return 'Moved $name to Day $day';
+  }
 
   @override
   String get addDay => 'Add day';

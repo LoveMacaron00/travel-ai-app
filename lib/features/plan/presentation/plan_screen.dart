@@ -1683,6 +1683,79 @@ class _PlanScreenState extends State<PlanScreen> {
     _showPlanSnack(context.l10n.placeRemoved(removed.place));
   }
 
+  // ย้ายจุดแวะไปวันอื่น — ถอดจากวันต้นทางแล้วต่อท้ายวันปลายทาง
+  // เวลา/ค่าเดินทางของทั้งสองวันต่อโซ่ใหม่แบบคงค่า AI (กติกาเดียวกับลบ/สลับลำดับ)
+  // งบปรับแบบ delta ทั้งแผน แล้วย้ายมุมมองตามไปวันที่ปลายทางให้เห็นผลทันที
+  void _moveStopToDay(int stopIndex, int targetDayIndex) {
+    final plan = _plan;
+    if (plan == null) return;
+    final sourceIndex = _selectedDayIndex.clamp(0, plan.days.length - 1);
+    if (targetDayIndex < 0 ||
+        targetDayIndex >= plan.days.length ||
+        targetDayIndex == sourceIndex) {
+      return;
+    }
+    final sourceDay = plan.days[sourceIndex];
+    if (stopIndex < 0 || stopIndex >= sourceDay.stops.length) return;
+    final targetDay = plan.days[targetDayIndex];
+    final moved = sourceDay.stops[stopIndex];
+
+    // กันซ้ำในวันปลายทาง — เทียบทั้ง id และชื่อเหมือนตอนเพิ่มสถานที่
+    final movedKey = _stopIdentity(moved);
+    final duplicate = targetDay.stops.any(
+      (stop) => _stopIdentity(stop) == movedKey,
+    );
+    if (duplicate) {
+      _showPlanSnack(context.l10n.placeAlreadyAdded(moved.place));
+      return;
+    }
+
+    // วันต้นทาง: ถอดออกแล้วต่อโซ่เวลา/ค่าเดินทางใหม่
+    final sourceStops = List<TravelStop>.from(sourceDay.stops)
+      ..removeAt(stopIndex);
+    final newSourceStops = _lumpDayFuelCost(
+      _rechainDay(
+        _recalculatedStopsPreservingCosts(
+          sourceDay.stops,
+          sourceStops,
+          isFirstDay: sourceDay.day == 1,
+        ),
+      ),
+    );
+    // วันปลายทาง: ต่อท้ายแล้วต่อโซ่ใหม่ (ขาเข้าของจุดที่ย้ายคำนวณจากจุดก่อนหน้าใหม่)
+    final newTargetStops = _lumpDayFuelCost(
+      _rechainDay(
+        _recalculatedStopsPreservingCosts(
+          targetDay.stops,
+          [...targetDay.stops, moved],
+          isFirstDay: targetDay.day == 1,
+        ),
+      ),
+    );
+
+    final days = [
+      for (var i = 0; i < plan.days.length; i++)
+        TravelDay(
+          day: plan.days[i].day,
+          theme: plan.days[i].theme,
+          stops: i == sourceIndex
+              ? newSourceStops
+              : i == targetDayIndex
+              ? newTargetStops
+              : List<TravelStop>.from(plan.days[i].stops),
+        ),
+    ];
+    final updated = _withDeltaBudget(plan, days);
+    setState(() {
+      _plan = updated;
+      _selectedDayIndex = targetDayIndex;
+      _route = [];
+    });
+    _showPlanSnack(context.l10n.placeMoved(moved.place, targetDay.day));
+    unawaited(_savePlanChanges(updated));
+    unawaited(_buildRoute(updated));
+  }
+
   // เช็คว่าสถานที่นี้อยู่ในวันที่เลือกแล้วหรือยัง — เทียบทั้ง id และชื่อ
   // (กัน AI เขียนชื่อเพี้ยน / destinationId ว่าง)
   bool _isDuplicateInSelectedDay(PlaceMarker place) {

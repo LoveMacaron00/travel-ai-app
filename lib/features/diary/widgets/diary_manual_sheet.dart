@@ -51,6 +51,13 @@ class _DiaryProvince {
         nameTh.toLowerCase().contains(q) ||
         nameEn.toLowerCase().contains(q);
   }
+
+  /// ชื่อสำหรับโชว์ใน dropdown — ไทยหลัก + อังกฤษในวงเล็บ (ถ้ามี)
+  String get displayName {
+    final other = label == nameTh ? nameEn : nameTh;
+    if (other.isEmpty || other == label) return label;
+    return '$label ($other)';
+  }
 }
 
 /// Result from diary manual sheet — unified for add/edit to remove duplication.
@@ -160,10 +167,10 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
   late List<String> _existingImageUrls;
   // วันที่ของบันทึก — กรอกใหม่ตั้งจากปฏิทินได้, แก้ไขคงวันเดิม (ไม่แก้)
   DateTime? _entryDate;
-  // รายการ 77 จังหวัดจาก server — โหลดไม่ได้ใช้ช่องพิมพ์ฟรีเหมือนเดิม
+  // รายการ 77 จังหวัดจาก server — dropdown ทั่วไป (เลือกได้อย่างเดียว)
   List<_DiaryProvince> _provinces = [];
   _DiaryProvince? _selectedProvince;
-  bool _showProvinceSuggestions = false;
+  bool _provincesLoaded = false;
 
   @override
   void initState() {
@@ -186,12 +193,15 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
     final provinces = rows.map(_DiaryProvince.fromJson).toList();
     setState(() {
       _provinces = provinces;
+      _provincesLoaded = true;
       // ค่าเดิมที่เคยบันทึกไว้ (ไทย/อังกฤษ) จับคู่กลับเป็นรายการให้เลย
-      // ตอนบันทึกจะได้ชื่อมาตรฐาน — ไม่เปลี่ยนข้อความที่โชว์ถ้าจับคู่ไม่เจอ
       final initial = widget.initialProvince?.trim() ?? '';
-      if (initial.isNotEmpty) {
+      // ข้อความที่พิมพ์ค้างในช่องฟรี (กรณีโหลดช้า) ก็จับคู่ด้วย
+      final current = _provinceCtrl.text.trim();
+      final toMatch = initial.isNotEmpty ? initial : current;
+      if (toMatch.isNotEmpty) {
         for (final province in provinces) {
-          if (province.matches(initial)) {
+          if (province.matches(toMatch)) {
             _selectedProvince = province;
             break;
           }
@@ -200,56 +210,11 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
     });
   }
 
-  // ชื่อจังหวัดที่จะบันทึก — เลือกจาก dropdown ได้ name_th มาตรฐาน,
-  // พิมพ์เองใช้ข้อความเดิม (รองรับข้อมูลเก่า + ตอน server ยังไม่มีข้อมูล)
-  String get _provinceInput =>
-      _selectedProvince?.value ?? _provinceCtrl.text.trim();
-
-  // กล่องรายชื่อจังหวัดใต้ช่องกรอก — กรองตามข้อความ (ไทย/อังกฤษ) สูงสุด 8 แถว
-  // ตรงเป๊ะรายการเดียวซ่อนไปเลย (ถือว่าเลือกแล้ว)
-  Widget _provinceSuggestionsBox() {
-    if (_provinces.isEmpty) return const SizedBox.shrink();
-    final query = _provinceCtrl.text;
-    final suggestions = _provinces
-        .where((province) => province.contains(query))
-        .take(8)
-        .toList();
-    if (suggestions.isEmpty) return const SizedBox.shrink();
-    if (suggestions.length == 1 &&
-        suggestions.first.matches(query)) {
-      return const SizedBox.shrink();
-    }
-    return Container(
-      margin: const EdgeInsets.only(top: 6),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE1E4EA)),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      constraints: const BoxConstraints(maxHeight: 216),
-      child: ListView.builder(
-        padding: EdgeInsets.zero,
-        shrinkWrap: true,
-        itemCount: suggestions.length,
-        itemBuilder: (_, index) {
-          final province = suggestions[index];
-          final other = province.label == province.nameTh
-              ? province.nameEn
-              : province.nameTh;
-          return ListTile(
-            dense: true,
-            title: Text(province.label),
-            subtitle: other.isEmpty ? null : Text(other),
-            onTap: () {
-              setState(() {
-                _selectedProvince = province;
-                _provinceCtrl.text = province.label;
-                _showProvinceSuggestions = false;
-              });
-            },
-          );
-        },
-      ),
-    );
+  // ชื่อจังหวัดที่จะบันทึก — เลือกจาก dropdown ได้ value มาตรฐาน,
+  // โหลดไม่สำเร็จ (fallback พิมพ์ฟรี) ใช้ข้อความเดิม
+  String get _provinceInput {
+    if (_provinces.isNotEmpty) return _selectedProvince?.value ?? '';
+    return _provinceCtrl.text.trim();
   }
 
   @override
@@ -548,47 +513,52 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
               ),
             ),
             const SizedBox(height: 14),
-            // จังหวัดที่ไป — พิมพ์ค้นจาก 77 จังหวัด (ไทย/อังกฤษ) แล้วแตะเลือก
-            // โหลดไม่ได้ใช้ช่องพิมพ์ฟรีเหมือนเดิม กัน block ฟอร์ม
-            TextField(
-              controller: _provinceCtrl,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                labelText: context.l10n.provinceVisited,
-                hintText: context.l10n.provinceHint,
-                prefixIcon: const Icon(Icons.flag_outlined),
-                suffixIcon: _provinces.isEmpty
-                    ? null
-                    : const Icon(Icons.arrow_drop_down),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+            // จังหวัดที่ไป — dropdown ทั่วไป เลือกจาก 77 จังหวัด
+            // โหลดไม่สำเร็จใช้ช่องพิมพ์ฟรีเหมือนเดิม กัน block ฟอร์ม
+            if (_provinces.isNotEmpty)
+              DropdownButtonFormField<_DiaryProvince>(
+                initialValue: _selectedProvince,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  labelText: context.l10n.provinceVisited,
+                  hintText: context.l10n.provinceHint,
+                  prefixIcon: const Icon(Icons.flag_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                hint: Text(context.l10n.provinceHint),
+                items: _provinces
+                    .map(
+                      (province) => DropdownMenuItem<_DiaryProvince>(
+                        value: province,
+                        child: Text(
+                          province.displayName,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (province) {
+                  setState(() => _selectedProvince = province);
+                },
+              )
+            else
+              TextField(
+                controller: _provinceCtrl,
+                textCapitalization: TextCapitalization.sentences,
+                enabled: _provincesLoaded,
+                decoration: InputDecoration(
+                  labelText: context.l10n.provinceVisited,
+                  hintText: _provincesLoaded
+                      ? context.l10n.provinceHint
+                      : '${context.l10n.provinceHint}...',
+                  prefixIcon: const Icon(Icons.flag_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
-              onTap: () {
-                if (_provinces.isNotEmpty &&
-                    !_showProvinceSuggestions) {
-                  setState(() => _showProvinceSuggestions = true);
-                }
-              },
-              onTapOutside: (_) {
-                if (_showProvinceSuggestions) {
-                  setState(() => _showProvinceSuggestions = false);
-                }
-              },
-              onChanged: (text) {
-                // พิมพ์เองจนไม่ตรงรายการที่เลือกไว้ → กลับเป็นข้อความอิสระ
-                // setState ทุกครั้งที่พิมพ์เพื่อให้รายชื่อกรองตามข้อความล่าสุด
-                final selected = _selectedProvince;
-                if (selected != null && !selected.matches(text)) {
-                  _selectedProvince = null;
-                }
-                if (_provinces.isNotEmpty) {
-                  setState(() => _showProvinceSuggestions = true);
-                }
-              },
-            ),
-            if (_showProvinceSuggestions)
-              _provinceSuggestionsBox(),
             const SizedBox(height: 14),
             // วันที่ของบันทึก — กรอกใหม่เท่านั้นที่แก้ได้ ผ่านปฏิทิน (ย้อนหลังได้อย่างเดียว)
             if (!widget.isEdit)

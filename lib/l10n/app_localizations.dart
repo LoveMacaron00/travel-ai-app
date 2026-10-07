@@ -1472,6 +1472,24 @@ abstract class AppLocalizations {
   /// **'Must-visit places'**
   String get mustVisitPlaces;
 
+  /// No description provided for @unspecifiedCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Not specified'**
+  String get unspecifiedCost;
+
+  /// No description provided for @clearAllPlaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get clearAllPlaces;
+
+  /// No description provided for @mustVisitCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed all must-visit places'**
+  String get mustVisitCleared;
+
   /// No description provided for @addAPlace.
   ///
   /// In en, this message translates to:
@@ -1597,6 +1615,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove from plan'**
   String get removeFromPlan;
+
+  /// No description provided for @moveToDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to another day'**
+  String get moveToDay;
+
+  /// No description provided for @moveStopTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which day should {name} move to?'**
+  String moveStopTitle(String name);
+
+  /// No description provided for @placeMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved {name} to Day {day}'**
+  String placeMoved(String name, int day);
 
   /// No description provided for @addDay.
   ///

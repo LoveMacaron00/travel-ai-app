@@ -172,10 +172,13 @@ class ProfileScreenState extends State<ProfileScreen> {
                     return FilterChip(
                       label: Text(_interestLabel(context, interest)),
                       selected: isSelected,
-                      selectedColor: const Color(
-                        0xFFF4C025,
-                      ).withValues(alpha: 0.25),
-                      checkmarkColor: const Color(0xFFF4C025),
+                      selectedColor: const Color(0xffffe7a0),
+                      checkmarkColor: const Color(0xff7a5a00),
+                      labelStyle: const TextStyle(
+                        color: Color(0xff7a5a00),
+                        fontWeight: FontWeight.w600,
+                      ),
+                      side: const BorderSide(color: Color(0xFFF4C025)),
                       onSelected: (selected) {
                         setStateDialog(() {
                           if (selected) {
@@ -662,13 +665,17 @@ class ProfileScreenState extends State<ProfileScreen> {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: brandGold.withValues(alpha: 0.12),
+                              color: const Color(0xffffe7a0),
                               borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: brandGold,
+                                width: 1,
+                              ),
                             ),
                             child: Text(
                               _interestLabel(context, interest),
                               style: const TextStyle(
-                                color: brandGold,
+                                color: Color(0xff7a5a00),
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                               ),

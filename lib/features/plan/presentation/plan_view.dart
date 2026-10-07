@@ -99,7 +99,7 @@ extension _PlanMainView on _PlanScreenState {
                     _stat('${plan.allStops.length}', context.l10n.places),
                     _stat('${plan.days.length}', context.l10n.days),
                     _stat(
-                      '฿${_money(plan.totalEstimatedCost)}',
+                      _costLabel(plan.totalEstimatedCost),
                       context.l10n.estimated,
                     ),
                   ],
@@ -270,8 +270,7 @@ extension _PlanMainView on _PlanScreenState {
                   const SizedBox(width: 8),
                   Switch(
                     value: _autoDays,
-                    onChanged: (on) =>
-                        _updateState(() => _autoDays = on),
+                    onChanged: (on) => _updateState(() => _autoDays = on),
                     // design เดียวกับสวิตช์หน้า profile (Auto Diary) —
                     // ตั้งแค่สี thumb ตอน on ที่เหลือใช้ default ของ Material
                     activeThumbColor: _gold,
@@ -325,7 +324,7 @@ extension _PlanMainView on _PlanScreenState {
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   Text(
-                    '฿${_money(_budget)}',
+                    _costLabel(_budget),
                     style: const TextStyle(
                       color: _gold,
                       fontSize: 18,
@@ -358,14 +357,40 @@ extension _PlanMainView on _PlanScreenState {
         _section(
           number: 4,
           title: context.l10n.mustVisitPlaces,
-          // ตัวนับจำนวนที่เลือกไว้ — ไม่จำกัดจำนวนแล้ว
-          trailing: Text(
-            '${_mustVisit.length}',
-            style: const TextStyle(
-              color: Colors.black45,
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-            ),
+          // ตัวนับจำนวนที่เลือกไว้ + ปุ่มลบทั้งหมด (โชว์เฉพาะตอนมีรายการ)
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${_mustVisit.length}',
+                style: const TextStyle(
+                  color: Colors.black45,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              if (_mustVisit.isNotEmpty)
+                TextButton.icon(
+                  onPressed: () {
+                    _updateState(() => _mustVisit.clear());
+                    _showPlanSnack(context.l10n.mustVisitCleared);
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    visualDensity: VisualDensity.compact,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  icon: const Icon(Icons.delete_sweep_outlined, size: 16),
+                  label: Text(
+                    context.l10n.clearAllPlaces,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -383,9 +408,7 @@ extension _PlanMainView on _PlanScreenState {
                           side: BorderSide.none,
                           onDeleted: () {
                             _updateState(() => _mustVisit.remove(p));
-                            _showPlanSnack(
-                              context.l10n.placeRemoved(p.title),
-                            );
+                            _showPlanSnack(context.l10n.placeRemoved(p.title));
                           },
                         ),
                       )
@@ -527,9 +550,7 @@ extension _PlanMainView on _PlanScreenState {
                 SliverToBoxAdapter(
                   child: _header(
                     context.l10n.aiGeneratedPlan,
-                    plan.title.isNotEmpty
-                        ? plan.title
-                        : context.l10n.yourRoute,
+                    plan.title.isNotEmpty ? plan.title : context.l10n.yourRoute,
                     back: _backToForm,
                     action: _roundIcon(
                       Icons.drive_file_rename_outline,
@@ -664,8 +685,7 @@ extension _PlanMainView on _PlanScreenState {
                                 horizontal: 10,
                                 vertical: 4,
                               ),
-                              tapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                             icon: _resettingPlan
                                 ? const SizedBox(
@@ -675,10 +695,7 @@ extension _PlanMainView on _PlanScreenState {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Icon(
-                                    Icons.restart_alt,
-                                    size: 18,
-                                  ),
+                                : const Icon(Icons.restart_alt, size: 18),
                             label: Text(
                               context.l10n.resetPlan,
                               style: const TextStyle(
@@ -699,9 +716,7 @@ extension _PlanMainView on _PlanScreenState {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: const Color(0xffeadcc2),
-                          ),
+                          border: Border.all(color: const Color(0xffeadcc2)),
                         ),
                         child: Text(
                           context.l10n.emptyDayHint,
@@ -900,9 +915,7 @@ extension _PlanMainView on _PlanScreenState {
               // เครดิตข้อมูลแผนที่ตามข้อกำหนด ODbL ของ OpenStreetMap
               const RichAttributionWidget(
                 attributions: [
-                  TextSourceAttribution(
-                    '© OpenStreetMap contributors',
-                  ),
+                  TextSourceAttribution('© OpenStreetMap contributors'),
                 ],
               ),
               if (_route.isNotEmpty)
@@ -1021,266 +1034,313 @@ extension _PlanMainView on _PlanScreenState {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            CircleAvatar(
-                              radius: 15,
-                              backgroundColor: typeColor,
-                              foregroundColor: onTypeColor,
-                              child: const Icon(
-                                Icons.attractions,
-                                size: 16,
-                              ),
+                        // ป้ายเลขลำดับ — วงกลมทองตัวเลขเข้ม ตรงกับเลขบนหมุดแผนที่
+                        Container(
+                          width: 30,
+                          height: 30,
+                          decoration: const BoxDecoration(
+                            color: typeColor,
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '$number',
+                            style: const TextStyle(
+                              color: onTypeColor,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
                             ),
-                            // ป้ายเลขลำดับมุมขวาล่างของไอคอน — ตรงกับเลขบนหมุดแผนที่
-                            Positioned(
-                              right: -4,
-                              bottom: -4,
-                              child: Container(
-                                width: 18,
-                                height: 18,
-                                decoration: BoxDecoration(
-                                  color: typeColor,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 2,
-                                  ),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  '$number',
-                                  style: TextStyle(
-                                    color: onTypeColor,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      const SizedBox(width: 12),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: stop.imageUrl.isEmpty
-                            ? Container(
-                                width: 76,
-                                height: 76,
-                                color: const Color(0xffeee7da),
-                                child: const Icon(Icons.landscape),
-                              )
-                            : mediaNetworkImage(
-                                AppServices.media.fullUrl(stop.imageUrl),
-                                width: 76,
-                                height: 76,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
+                        const SizedBox(width: 12),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: stop.imageUrl.isEmpty
+                              ? Container(
                                   width: 76,
                                   height: 76,
                                   color: const Color(0xffeee7da),
                                   child: const Icon(Icons.landscape),
+                                )
+                              : mediaNetworkImage(
+                                  AppServices.media.fullUrl(stop.imageUrl),
+                                  width: 76,
+                                  height: 76,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    width: 76,
+                                    height: 76,
+                                    color: const Color(0xffeee7da),
+                                    child: const Icon(Icons.landscape),
+                                  ),
+                                ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                stop.place,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              stop.place,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            if (_provinceForStop(stop).isNotEmpty)
-                              Container(
-                                margin: const EdgeInsets.only(
-                                  top: 4,
-                                  bottom: 2,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xffffe7a0),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.location_on,
-                                      size: 11,
-                                      color: Color(0xff986b00),
-                                    ),
-                                    const SizedBox(width: 3),
-                                    Flexible(
-                                      child: Text(
-                                        _provinceForStop(stop),
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xff986b00),
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
+                              if (_provinceForStop(stop).isNotEmpty)
+                                Container(
+                                  margin: const EdgeInsets.only(
+                                    top: 4,
+                                    bottom: 2,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xffffe7a0),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.location_on,
+                                        size: 11,
+                                        color: Color(0xff986b00),
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 3),
+                                      Flexible(
+                                        child: Text(
+                                          _provinceForStop(stop),
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xff986b00),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              // จุด 2 + 6: โซ่เวลา ถึง→เที่ยว→ออก ต่อเนื่องทั้งวัน
+                              // ถึง = arrivalTime, ออก = ถึง + เที่ยว, ขาเข้าอยู่ใน segments
+                              // number เริ่มที่ 1 — จุดแรกของวันไม่มีขาเข้าจึงไม่แสดงเวลาเดินทาง
+                              _stopChainInfo(stop, number),
+                              // ป้ายเที่ยวดึก / อาจปิดแล้ว / เวลาเปิด-ปิด (จาก DB ผ่าน server)
+                              ..._timeWarningChips(stop, dayDate: dayDate),
+                              const SizedBox(height: 5),
+                              Text(
+                                stop.activity,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Color(0xff4a443b),
+                                  height: 1.45,
                                 ),
                               ),
-                            // จุด 2 + 6: โซ่เวลา ถึง→เที่ยว→ออก ต่อเนื่องทั้งวัน
-                            // ถึง = arrivalTime, ออก = ถึง + เที่ยว, ขาเข้าอยู่ใน segments
-                            // number เริ่มที่ 1 — จุดแรกของวันไม่มีขาเข้าจึงไม่แสดงเวลาเดินทาง
-                            _stopChainInfo(stop, number),
-                            // ป้ายเที่ยวดึก / อาจปิดแล้ว / เวลาเปิด-ปิด (จาก DB ผ่าน server)
-                            ..._timeWarningChips(
-                              stop,
-                              dayDate: dayDate,
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              stop.activity,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Color(0xff4a443b),
-                                height: 1.45,
+                            ],
+                          ),
+                        ),
+                        PopupMenuButton<String>(
+                          onSelected: (v) {
+                            if (v == 'move') {
+                              _showMoveStopDialog(stop, reorderIndex);
+                            }
+                            if (v == 'remove') _removeStop(reorderIndex);
+                          },
+                          itemBuilder: (_) => [
+                            // ย้ายวันได้เฉพาะแผนที่มีมากกว่า 1 วัน
+                            if ((_plan?.days.length ?? 0) > 1)
+                              PopupMenuItem(
+                                value: 'move',
+                                child: Text(context.l10n.moveToDay),
                               ),
+                            PopupMenuItem(
+                              value: 'remove',
+                              child: Text(context.l10n.removeFromPlan),
                             ),
                           ],
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (stop.segments.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: stop.segments
+                              .map(
+                                (segment) => Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: routeLineColor(
+                                      segment.mode,
+                                    ).withValues(alpha: .18),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '${_modeLabel(segment.mode)} · ${_prettyMinutes(segment.estimatedMinutes)} · ${_costLabel(segment.estimatedCost, unspecifiedWhenZero: true)}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: routeLabelColor(segment.mode),
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
                       ),
-                      PopupMenuButton<String>(
-                        onSelected: (v) {
-                          if (v == 'remove') _removeStop(reorderIndex);
-                        },
-                        itemBuilder: (_) => [
-                          PopupMenuItem(
-                            value: 'remove',
-                            child: Text(context.l10n.removeFromPlan),
+                    Row(
+                      children: [
+                        _price(
+                          Icons.confirmation_number_outlined,
+                          stop.entryCost,
+                        ),
+                        const SizedBox(width: 8),
+                        _price(
+                          Icons.restaurant_outlined,
+                          stop.foodCost,
+                          unspecifiedWhenZero: true,
+                        ),
+                        const SizedBox(width: 8),
+                        _price(
+                          Icons.route,
+                          stop.transportCost,
+                          unspecifiedWhenZero: true,
+                        ),
+                        const Spacer(),
+                        FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _gold,
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                          ),
+                          // วันเดินทางยังไม่ถึง → ดูได้อย่างเดียว นำทางล็อกไว้ก่อน
+                          onPressed: canNavigate
+                              ? () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        PlanNavigationScreen(destination: stop),
+                                  ),
+                                )
+                              : null,
+                          icon: Icon(
+                            canNavigate ? Icons.navigation : Icons.lock_outline,
+                            size: 17,
+                          ),
+                          label: Text(context.l10n.navigate),
+                        ),
+                      ],
+                    ),
+                    // อธิบายใต้ปุ่มว่าทำไมล็อก + ปลดวันไหน
+                    if (!canNavigate && lockedMessage != null) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.lock_outline,
+                            size: 13,
+                            color: Color(0xff6b6257),
+                          ),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              lockedMessage,
+                              style: const TextStyle(
+                                color: Color(0xff6b6257),
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                  if (stop.segments.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: stop.segments
-                            .map(
-                              (segment) => Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: routeLineColor(
-                                    segment.mode,
-                                  ).withValues(alpha: .18),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  '${_modeLabel(segment.mode)} · ${_prettyMinutes(segment.estimatedMinutes)} · ฿${_money(segment.estimatedCost)}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: routeLabelColor(segment.mode),
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    ),
-                  Row(
-                    children: [
-                      _price(
-                        Icons.confirmation_number_outlined,
-                        stop.entryCost,
-                      ),
-                      const SizedBox(width: 8),
-                      _price(Icons.restaurant_outlined, stop.foodCost),
-                      const SizedBox(width: 8),
-                      _price(Icons.route, stop.transportCost),
-                      const Spacer(),
-                      FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: _gold,
-                          foregroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(13),
-                          ),
-                        ),
-                        // วันเดินทางยังไม่ถึง → ดูได้อย่างเดียว นำทางล็อกไว้ก่อน
-                        onPressed: canNavigate
-                            ? () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => PlanNavigationScreen(
-                                      destination: stop,
-                                    ),
-                                  ),
-                                )
-                            : null,
-                        icon: Icon(
-                          canNavigate ? Icons.navigation : Icons.lock_outline,
-                          size: 17,
-                        ),
-                        label: Text(context.l10n.navigate),
-                      ),
-                    ],
-                  ),
-                  // อธิบายใต้ปุ่มว่าทำไมล็อก + ปลดวันไหน
-                  if (!canNavigate && lockedMessage != null) ...[
-                    const SizedBox(height: 8),
-                      Row(
-                      children: [
-                        const Icon(
-                          Icons.lock_outline,
-                          size: 13,
-                          color: Color(0xff6b6257),
-                        ),
-                        const SizedBox(width: 5),
-                        Expanded(
-                          child: Text(
-                            lockedMessage,
-                            style: const TextStyle(
-                              color: Color(0xff6b6257),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
-                ],
-              ),
-              Positioned.fill(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: ReorderableDragStartListener(
-                    index: reorderIndex,
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(Icons.drag_handle, color: Colors.black45),
+                ),
+                Positioned.fill(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: ReorderableDragStartListener(
+                      index: reorderIndex,
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(Icons.drag_handle, color: Colors.black45),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
+
+  // ไดอะล็อกเลือกวันปลายทางสำหรับย้ายสถานที่ — โชว์ทุกวันพร้อมจำนวนที่และวันที่
+  // วันต้นทางกดไม่ได้ (มีเครื่องหมายบอก) แตะวันอื่นแล้วย้ายทันทีพร้อมสลับมุมมองตามไป
+  Future<void> _showMoveStopDialog(TravelStop stop, int stopIndex) async {
+    final plan = _plan;
+    if (plan == null || plan.days.length < 2) return;
+    final sourceIndex = _selectedDayIndex.clamp(0, plan.days.length - 1);
+    final targetIndex = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.moveStopTitle(stop.place)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: plan.days.length,
+            itemBuilder: (_, i) {
+              final day = plan.days[i];
+              final isSource = i == sourceIndex;
+              return ListTile(
+                enabled: !isSource,
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  backgroundColor: isSource ? const Color(0xffeee7da) : _gold,
+                  foregroundColor: isSource ? Colors.black45 : Colors.black,
+                  child: Text(
+                    '${day.day}',
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
+                title: Text(
+                  '${dialogContext.l10n.day} ${day.day}${_dayDateLabel(plan, day.day)}',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: Text(
+                  '${day.stops.length} ${dialogContext.l10n.places}',
+                ),
+                trailing: isSource
+                    ? const Icon(Icons.check_circle, color: Colors.black26)
+                    : const Icon(Icons.chevron_right),
+                onTap: isSource ? null : () => Navigator.pop(dialogContext, i),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(dialogContext.l10n.cancel),
+          ),
+        ],
+      ),
+    );
+    if (targetIndex == null || !mounted) return;
+    _moveStopToDay(stopIndex, targetIndex);
   }
 }

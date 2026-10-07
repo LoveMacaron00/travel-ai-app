@@ -9,10 +9,12 @@ extension _PlanDetailsView on _PlanScreenState {
         : _loadStopDetails(destinationId);
     // วันเดินทางของ day ที่เลือกอยู่ยังไม่ถึง → ดูรายละเอียดได้อย่างเดียว นำทางล็อก
     final currentPlan = _plan;
-    final canNavigate =
-        currentPlan == null ? true : _canNavigateNow(currentPlan);
-    final lockedMessage =
-        currentPlan == null ? null : _navigationLockedMessage(currentPlan);
+    final canNavigate = currentPlan == null
+        ? true
+        : _canNavigateNow(currentPlan);
+    final lockedMessage = currentPlan == null
+        ? null
+        : _navigationLockedMessage(currentPlan);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -212,11 +214,13 @@ extension _PlanDetailsView on _PlanScreenState {
                     Icons.restaurant_outlined,
                     context.l10n.food,
                     stop.foodCost,
+                    unspecifiedWhenZero: true,
                   ),
                   _detailCostRow(
                     Icons.route,
                     context.l10n.transport,
                     stop.transportCost,
+                    unspecifiedWhenZero: true,
                   ),
                   const Divider(height: 28),
                   _detailCostRow(
@@ -253,7 +257,10 @@ extension _PlanDetailsView on _PlanScreenState {
                           ].where((v) => v.isNotEmpty).join(' → '),
                         ),
                         trailing: Text(
-                          '฿${_money(segment.estimatedCost)}',
+                          _costLabel(
+                            segment.estimatedCost,
+                            unspecifiedWhenZero: true,
+                          ),
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                       ),
@@ -268,13 +275,12 @@ extension _PlanDetailsView on _PlanScreenState {
                       // วันเดินทางยังไม่ถึง → ดูได้อย่างเดียว นำทางล็อกไว้ก่อน
                       onPressed: canNavigate
                           ? () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => PlanNavigationScreen(
-                                    destination: stop,
-                                  ),
-                                ),
-                              )
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    PlanNavigationScreen(destination: stop),
+                              ),
+                            )
                           : null,
                       icon: Icon(
                         canNavigate ? Icons.navigation : Icons.lock_outline,
@@ -351,22 +357,22 @@ extension _PlanDetailsView on _PlanScreenState {
     if (checkOut.isNotEmpty) lines.add('${context.l10n.checkOut}: $checkOut');
     if (fee['thaiAdult'] != null) {
       lines.add(
-        '${context.l10n.thaiAdult}: ฿${_money(double.tryParse('${fee['thaiAdult']}') ?? 0)}',
+        '${context.l10n.thaiAdult}: ${_costLabel(double.tryParse('${fee['thaiAdult']}') ?? 0)}',
       );
     }
     if (fee['thaiChild'] != null) {
       lines.add(
-        '${context.l10n.thaiChild}: ฿${_money(double.tryParse('${fee['thaiChild']}') ?? 0)}',
+        '${context.l10n.thaiChild}: ${_costLabel(double.tryParse('${fee['thaiChild']}') ?? 0)}',
       );
     }
     if (fee['foreignerAdult'] != null) {
       lines.add(
-        '${context.l10n.foreignerAdult}: ฿${_money(double.tryParse('${fee['foreignerAdult']}') ?? 0)}',
+        '${context.l10n.foreignerAdult}: ${_costLabel(double.tryParse('${fee['foreignerAdult']}') ?? 0)}',
       );
     }
     if (fee['foreignerChild'] != null) {
       lines.add(
-        '${context.l10n.foreignerChild}: ฿${_money(double.tryParse('${fee['foreignerChild']}') ?? 0)}',
+        '${context.l10n.foreignerChild}: ${_costLabel(double.tryParse('${fee['foreignerChild']}') ?? 0)}',
       );
     }
     final detailText = stripHtmlText('${fee['detail'] ?? ''}');
@@ -379,6 +385,7 @@ extension _PlanDetailsView on _PlanScreenState {
     String label,
     double cost, {
     bool emphasis = false,
+    bool unspecifiedWhenZero = false,
   }) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 7),
     child: Row(
@@ -393,7 +400,7 @@ extension _PlanDetailsView on _PlanScreenState {
         ),
         const Spacer(),
         Text(
-          '฿${_money(cost)}',
+          _costLabel(cost, unspecifiedWhenZero: unspecifiedWhenZero),
           style: TextStyle(
             fontWeight: emphasis ? FontWeight.w900 : FontWeight.w700,
             color: emphasis ? _gold : _ink,
@@ -468,5 +475,4 @@ extension _PlanDetailsView on _PlanScreenState {
       ],
     );
   }
-
 }

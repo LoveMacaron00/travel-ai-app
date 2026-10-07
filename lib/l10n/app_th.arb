@@ -294,6 +294,9 @@
   "whatDoYouEnjoy": "เลือกสิ่งที่คุณสนใจ",
   "howCanYouTravel": "คุณเดินทางแบบใดได้บ้าง",
   "mustVisitPlaces": "สถานที่ที่ต้องไป",
+  "unspecifiedCost": "ไม่ระบุ",
+  "clearAllPlaces": "ลบทั้งหมด",
+  "mustVisitCleared": "นำสถานที่ที่ต้องไปออกทั้งหมดแล้ว",
   "addAPlace": "เพิ่มสถานที่",
   "placeAdded": "เพิ่ม {name} แล้ว",
   "@placeAdded": {
@@ -327,6 +330,18 @@
   "day": "วันที่",
   "addAnotherPlace": "เพิ่มสถานที่อีกแห่ง",
   "removeFromPlan": "นำออกจากแผน",
+  "moveToDay": "ย้ายไปวันอื่น",
+  "moveStopTitle": "จะย้าย “{name}” ไปวันไหน",
+  "@moveStopTitle": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "placeMoved": "ย้าย {name} ไปวันที่ {day} แล้ว",
+  "@placeMoved": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "day": {"type": "int"}
+    }
+  },
   "addDay": "เพิ่มวัน",
   "dayAdded": "เพิ่มวันที่ {day} แล้ว",
   "@dayAdded": {
@@ -373,7 +388,7 @@
   "activities": "กิจกรรม",
   "accommodation": "ที่พัก",
   "kmShort": "กม.",
-  "stopTotal": "รวมจุดนี้",
+  "stopTotal": "ยอดรวม",
   "journeyDetails": "รายละเอียดการเดินทาง",
   "navigateToPlace": "นำทางไปสถานที่นี้",
   "minutesShort": "นาที",

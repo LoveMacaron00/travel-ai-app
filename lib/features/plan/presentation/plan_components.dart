@@ -24,7 +24,7 @@ extension _PlanComponents on _PlanScreenState {
               ),
             ),
             Text(
-              '฿${_money(plan.totalEstimatedCost)}',
+              _costLabel(plan.totalEstimatedCost),
               style: const TextStyle(
                 color: _gold,
                 fontSize: 19,
@@ -48,7 +48,14 @@ extension _PlanComponents on _PlanScreenState {
                 ),
                 const Spacer(),
                 Text(
-                  '฿${_money(e.value)}',
+                  // หมวดเดินทาง/อาหาร/ที่พักเป็น 0 = ไม่ได้ประเมิน ไม่ใช่ฟรี
+                  _costLabel(
+                    e.value,
+                    unspecifiedWhenZero:
+                        e.key == 'transport' ||
+                        e.key == 'food' ||
+                        e.key == 'accommodation',
+                  ),
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     color: Color(0xff3f3a33),
@@ -121,10 +128,7 @@ extension _PlanComponents on _PlanScreenState {
                 ],
               ),
             ),
-            if (trailing != null) ...[
-              const SizedBox(width: 8),
-              trailing,
-            ],
+            if (trailing != null) ...[const SizedBox(width: 8), trailing],
           ],
         ),
         const SizedBox(height: 16),
@@ -421,150 +425,161 @@ extension _PlanComponents on _PlanScreenState {
       backgroundColor: _canvas,
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheet) {
-            // จังหวัดที่เลือก (หรือจังหวัดหลักของแผน) ดันขึ้นก่อนเสมอ
-            // แล้วค่อยเรียงระยะจากจุดเริ่มภายในกลุ่มเดียวกัน
-            // (ทริปล่วงหน้า/อยู่นอกพื้นที่ — ไม่เรียงตาม GPS ปัจจุบัน)
-            final origin = sheetOrigin;
-            final provinceBias = _placePickerProvinceBias;
-            final queryLower = query.toLowerCase();
-            final matches = _places
-                .where(
-                  (p) =>
-                      matchesPlaceCategory(p.category, selectedCategory) &&
-                      (query.isEmpty ||
-                          p.title.toLowerCase().contains(queryLower) ||
-                          p.province.toLowerCase().contains(queryLower)),
-                )
-                .toList();
-            double distKm(PlaceMarker place) {
-              if (origin == null) return 0;
-              return const Distance().as(
-                LengthUnit.Kilometer,
-                origin,
-                LatLng(place.latitude, place.longitude),
-              );
-            }
+          // จังหวัดที่เลือก (หรือจังหวัดหลักของแผน) ดันขึ้นก่อนเสมอ
+          // แล้วค่อยเรียงระยะจากจุดเริ่มภายในกลุ่มเดียวกัน
+          // (ทริปล่วงหน้า/อยู่นอกพื้นที่ — ไม่เรียงตาม GPS ปัจจุบัน)
+          final origin = sheetOrigin;
+          final provinceBias = _placePickerProvinceBias;
+          final queryLower = query.toLowerCase();
+          final matches = _places
+              .where(
+                (p) =>
+                    matchesPlaceCategory(p.category, selectedCategory) &&
+                    (query.isEmpty ||
+                        p.title.toLowerCase().contains(queryLower) ||
+                        p.province.toLowerCase().contains(queryLower)),
+              )
+              .toList();
+          double distKm(PlaceMarker place) {
+            if (origin == null) return 0;
+            return const Distance().as(
+              LengthUnit.Kilometer,
+              origin,
+              LatLng(place.latitude, place.longitude),
+            );
+          }
 
-            matches.sort((a, b) {
-              if (provinceBias != null && provinceBias.trim().isNotEmpty) {
-                final aIn =
-                    _provinceMatchesSelected(a.province, provinceBias)
-                        ? 0
-                        : 1;
-                final bIn =
-                    _provinceMatchesSelected(b.province, provinceBias)
-                        ? 0
-                        : 1;
-                if (aIn != bIn) return aIn.compareTo(bIn);
-              }
-              if (origin != null) {
-                return distKm(a).compareTo(distKm(b));
-              }
-              return 0;
-            });
-            final filtered = matches.take(30).toList();
-            // ป้ายบอกจังหวัดที่ดันขึ้นก่อน + จำนวนที่เข้าเงื่อนไข (ไม่ต้องเพิ่ม key l10n
-            // ใหม่ — โชว์ชื่อจังหวัดกับตัวเลขล้วนๆ ภาษาไหนก็เข้าใจ)
-            String? biasDisplay;
-            var biasCount = 0;
+          matches.sort((a, b) {
             if (provinceBias != null && provinceBias.trim().isNotEmpty) {
-              biasCount = matches
-                  .where(
-                    (p) => _provinceMatchesSelected(p.province, provinceBias),
-                  )
-                  .length;
-              biasDisplay = provinceBias;
+              final aIn = _provinceMatchesSelected(a.province, provinceBias)
+                  ? 0
+                  : 1;
+              final bIn = _provinceMatchesSelected(b.province, provinceBias)
+                  ? 0
+                  : 1;
+              if (aIn != bIn) return aIn.compareTo(bIn);
+            }
+            if (origin != null) {
+              return distKm(a).compareTo(distKm(b));
+            }
+            return 0;
+          });
+          // โชว์ทั้งหมดไม่ตัดท็อป (SliverList สร้างแถวแบบ lazy อยู่แล้ว)
+          final filtered = matches;
+          // ป้ายบอกจังหวัดที่ดันขึ้นก่อน + จำนวนที่เข้าเงื่อนไข (ไม่ต้องเพิ่ม key l10n
+          // ใหม่ — โชว์ชื่อจังหวัดกับตัวเลขล้วนๆ ภาษาไหนก็เข้าใจ)
+          String? biasDisplay;
+          var biasCount = 0;
+          if (provinceBias != null && provinceBias.trim().isNotEmpty) {
+            biasCount = matches
+                .where(
+                  (p) => _provinceMatchesSelected(p.province, provinceBias),
+                )
+                .length;
+            biasDisplay = provinceBias;
+            for (final opt in _provinceOptions) {
+              if (opt.value == provinceBias) {
+                biasDisplay = opt.label;
+                break;
+              }
+            }
+            if (biasDisplay == provinceBias) {
               for (final opt in _provinceOptions) {
-                if (opt.value == provinceBias) {
+                if (_canonBangkok(opt.label) == _canonBangkok(provinceBias)) {
                   biasDisplay = opt.label;
                   break;
                 }
               }
-              if (biasDisplay == provinceBias) {
-                for (final opt in _provinceOptions) {
-                  if (_canonBangkok(opt.label) ==
-                      _canonBangkok(provinceBias)) {
-                    biasDisplay = opt.label;
-                    break;
-                  }
-                }
-              }
             }
-            return DraggableScrollableSheet(
-              expand: false,
-              initialChildSize: .78,
-              maxChildSize: .92,
-              builder: (_, controller) => Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 14),
-                    child: Text(
-                      context.l10n.addAPlace,
-                      style: const TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    child: TextField(
-                      onChanged: (v) => setSheet(() => query = v),
-                      decoration: _inputDecoration(
-                        context.l10n.searchPlacesThailand,
-                        Icons.search,
-                      ),
-                    ),
-                  ),
-                  // กรองหมวดหมู่ — ชุดเดียวกับแผนที่ + ดูสถานที่ทั้งหมด
-                  PlaceCategoryChips(
-                    selected: selectedCategory,
-                    onSelected: (key) =>
-                        setSheet(() => selectedCategory = key),
-                  ),
-                  if (biasDisplay != null &&
-                      biasDisplay.trim().isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xffffe7a0),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.location_on,
-                              size: 14,
-                              color: Color(0xff986b00),
+          }
+          return DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: .78,
+            minChildSize: .4,
+            maxChildSize: .92,
+            builder: (_, controller) => Column(
+              children: [
+                // หัว sheet + ลิสต์อยู่ใน scroll view เดียวกัน — ดึง sheet เล็กแค่ไหนก็ไม่ overflow
+                // (ของเดิม header เป็น fixed นอก Expanded เลยล้นตอน sheet เหลือ ~240px)
+                Expanded(
+                  child: CustomScrollView(
+                    controller: controller,
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 14),
+                          child: Text(
+                            context.l10n.addAPlace,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 21,
+                              fontWeight: FontWeight.w900,
                             ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                '$biasDisplay ($biasCount)',
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xff986b00),
-                                ),
+                          ),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                          child: TextField(
+                            onChanged: (v) => setSheet(() => query = v),
+                            decoration: _inputDecoration(
+                              context.l10n.searchPlacesThailand,
+                              Icons.search,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // กรองหมวดหมู่ — ชุดเดียวกับแผนที่ + ดูสถานที่ทั้งหมด
+                      SliverToBoxAdapter(
+                        child: PlaceCategoryChips(
+                          selected: selectedCategory,
+                          onSelected: (key) =>
+                              setSheet(() => selectedCategory = key),
+                        ),
+                      ),
+                      if (biasDisplay != null && biasDisplay.trim().isNotEmpty)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xffffe7a0),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.location_on,
+                                    size: 14,
+                                    color: Color(0xff986b00),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      '$biasDisplay ($biasCount)',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xff986b00),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 8),
-                  Expanded(
-                    child: filtered.isEmpty
-                        ? ListView(
-                            controller: controller,
+                      const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                      if (filtered.isEmpty)
+                        SliverToBoxAdapter(
+                          child: Column(
                             children: [
                               const SizedBox(height: 60),
                               Icon(
@@ -582,266 +597,259 @@ extension _PlanComponents on _PlanScreenState {
                                 ),
                               ),
                             ],
-                          )
-                        : ListView.builder(
-                            controller: controller,
-                            itemCount: filtered.length,
-                            itemBuilder: (_, i) {
-                              final p = filtered[i];
-                              final isSelected = selectedIds.contains(p.id);
-                              final description = stripHtmlText(p.description);
-                              final distanceLabel = origin == null
-                                  ? null
-                                  : _distanceLabel(origin, p);
-                              return ListTile(
-                                selected: isSelected,
-                                selectedTileColor: const Color(0xfffff6d7),
-                                selectedColor: Colors.black87,
-                                // ล็อก 52x52 เสมอ — กัน ListTile วัด leading ได้เท่า
-                                // tile width ตอนรูปพัง (เช่น AVIF ถอดไม่ได้บน web)
-                                // errorBuilder เปลี่ยน decode-fail เป็น placeholder
-                                // แทน EXCEPTION CAUGHT BY IMAGE RESOURCE SERVICE
-                                leading: SizedBox(
-                                  width: 52,
-                                  height: 52,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: p.imageUrl.isEmpty
-                                        ? Container(
-                                            color: const Color(0xfff4f0e8),
-                                            child: const Icon(
-                                              Icons.place,
-                                              color: Colors.black38,
+                          ),
+                        )
+                      else
+                        SliverList.builder(
+                          itemCount: filtered.length,
+                          itemBuilder: (_, i) {
+                            final p = filtered[i];
+                            final isSelected = selectedIds.contains(p.id);
+                            final description = stripHtmlText(p.description);
+                            final distanceLabel = origin == null
+                                ? null
+                                : _distanceLabel(origin, p);
+                            return ListTile(
+                              // ล็อก 52x52 เสมอ — กัน ListTile วัด leading ได้เท่า
+                              // tile width ตอนรูปพัง (เช่น AVIF ถอดไม่ได้บน web)
+                              // errorBuilder เปลี่ยน decode-fail เป็น placeholder
+                              // แทน EXCEPTION CAUGHT BY IMAGE RESOURCE SERVICE
+                              leading: SizedBox(
+                                width: 52,
+                                height: 52,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: p.imageUrl.isEmpty
+                                      ? Container(
+                                          color: const Color(0xfff4f0e8),
+                                          child: const Icon(
+                                            Icons.place,
+                                            color: Colors.black38,
+                                          ),
+                                        )
+                                      : mediaNetworkImage(
+                                          p.imageUrl,
+                                          width: 52,
+                                          height: 52,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) =>
+                                              Container(
+                                                color: const Color(0xfff4f0e8),
+                                                child: const Icon(
+                                                  Icons.broken_image_outlined,
+                                                  color: Colors.black38,
+                                                ),
+                                              ),
+                                        ),
+                                ),
+                              ),
+                              title: Text(
+                                p.title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (p.province.isNotEmpty ||
+                                      p.category.isNotEmpty)
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 4,
+                                      crossAxisAlignment:
+                                          WrapCrossAlignment.center,
+                                      children: [
+                                        if (p.province.isNotEmpty)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 2,
                                             ),
-                                          )
-                                        : mediaNetworkImage(
-                                            p.imageUrl,
-                                            width: 52,
-                                            height: 52,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) =>
-                                                Container(
-                                              color: const Color(0xfff4f0e8),
-                                              child: const Icon(
-                                                Icons.broken_image_outlined,
-                                                color: Colors.black38,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xffffe7a0),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              p.province,
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                                color: Color(0xff986b00),
                                               ),
                                             ),
                                           ),
-                                  ),
-                                ),
-                                title: Text(
-                                  p.title,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (p.province.isNotEmpty ||
-                                        p.category.isNotEmpty)
-                                      Wrap(
-                                        spacing: 6,
-                                        runSpacing: 4,
-                                        crossAxisAlignment:
-                                            WrapCrossAlignment.center,
-                                        children: [
-                                          if (p.province.isNotEmpty)
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 2,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color: const Color(
-                                                  0xffffe7a0,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                              child: Text(
-                                                p.province,
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Color(0xff986b00),
-                                                ),
-                                              ),
+                                        if (p.category.isNotEmpty)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 2,
                                             ),
-                                          if (p.category.isNotEmpty)
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 2,
+                                            decoration: BoxDecoration(
+                                              color: placeCategoryColor(
+                                                p.category,
+                                              ).withValues(alpha: .12),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  placeCategoryIcon(p.category),
+                                                  size: 11,
+                                                  color: placeCategoryColor(
+                                                    p.category,
                                                   ),
-                                              decoration: BoxDecoration(
-                                                color:
-                                                    placeCategoryColor(
-                                                      p.category,
-                                                    ).withValues(alpha: .12),
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    placeCategoryIcon(
-                                                      p.category,
-                                                    ),
-                                                    size: 11,
+                                                ),
+                                                const SizedBox(width: 3),
+                                                Text(
+                                                  placeCategoryLabel(
+                                                    context.l10n,
+                                                    p.category,
+                                                  ),
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600,
                                                     color: placeCategoryColor(
                                                       p.category,
                                                     ),
                                                   ),
-                                                  const SizedBox(width: 3),
-                                                  Text(
-                                                    placeCategoryLabel(
-                                                      context.l10n,
-                                                      p.category,
-                                                    ),
-                                                    style: TextStyle(
-                                                      fontSize: 11,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: placeCategoryColor(
-                                                        p.category,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
+                                                ),
+                                              ],
                                             ),
-                                        ],
-                                      ),
-                                    if (p.province.isNotEmpty ||
-                                        p.category.isNotEmpty)
-                                      const SizedBox(height: 4),
-                                    if (description.isNotEmpty)
-                                      Text(
-                                        description,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                  ],
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (distanceLabel != null)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 3,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xfff4f0e8),
-                                          borderRadius: BorderRadius.circular(
-                                            10,
                                           ),
-                                        ),
-                                        child: Text(
-                                          distanceLabel,
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.black54,
-                                          ),
+                                      ],
+                                    ),
+                                  if (p.province.isNotEmpty ||
+                                      p.category.isNotEmpty)
+                                    const SizedBox(height: 4),
+                                  if (description.isNotEmpty)
+                                    Text(
+                                      description,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                ],
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (distanceLabel != null)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xfff4f0e8),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        distanceLabel,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black54,
                                         ),
                                       ),
-                                    const SizedBox(width: 6),
-                                    GestureDetector(
-                                      behavior: HitTestBehavior.opaque,
-                                      onTap: () {
-                                        // ติ๊กเลือก/ยกเลิก — ยังไม่เพิ่มจริงจนกว่าจะกดยืนยัน
-                                        // รายการซ้ำแจ้งเตือนทันที ไม่ให้ติ๊ก
-                                        if (_isPlaceAlreadyPicked(p)) {
-                                          _showPlanSnack(
-                                            context.l10n.placeAlreadyAdded(
-                                              p.title,
-                                            ),
-                                          );
-                                          return;
+                                    ),
+                                  const SizedBox(width: 6),
+                                  GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () {
+                                      // ติ๊กเลือก/ยกเลิก — ยังไม่เพิ่มจริงจนกว่าจะกดยืนยัน
+                                      // รายการซ้ำแจ้งเตือนทันที ไม่ให้ติ๊ก
+                                      if (_isPlaceAlreadyPicked(p)) {
+                                        _showPlanSnack(
+                                          context.l10n.placeAlreadyAdded(
+                                            p.title,
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      setSheet(() {
+                                        if (!selectedIds.remove(p.id)) {
+                                          selectedIds.add(p.id);
                                         }
-                                        setSheet(() {
-                                          if (!selectedIds.remove(p.id)) {
-                                            selectedIds.add(p.id);
-                                          }
-                                        });
-                                      },
-                                      child: Icon(
-                                        isSelected
-                                            ? Icons.check_circle
-                                            : Icons.add_circle,
-                                        color: _gold,
-                                      ),
+                                      });
+                                    },
+                                    child: isSelected
+                                        ? const CircleAvatar(
+                                            radius: 12,
+                                            backgroundColor: Colors.green,
+                                            child: Icon(
+                                              Icons.check,
+                                              color: Colors.white,
+                                              size: 16,
+                                            ),
+                                          )
+                                        : Icon(Icons.add_circle, color: _gold),
+                                  ),
+                                ],
+                              ),
+                              onTap: () {
+                                final detailId = int.tryParse(p.id);
+                                if (detailId == null) return;
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => DestinationDetailScreen(
+                                      destinationId: detailId,
+                                      fallbackName: p.title,
+                                      fallbackImageUrl: p.imageUrl,
                                     ),
-                                  ],
-                                ),
-                                onTap: () {
-                                  final detailId = int.tryParse(p.id);
-                                  if (detailId == null) return;
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => DestinationDetailScreen(
-                                        destinationId: detailId,
-                                        fallbackName: p.title,
-                                        fallbackImageUrl: p.imageUrl,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                    ],
                   ),
-                  // แถบยืนยัน — กดทีเดียวเพิ่มทุกที่ที่ติ๊กไว้
-                  SafeArea(
-                    top: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: _gold,
-                            foregroundColor: Colors.black,
-                            disabledBackgroundColor: const Color(
-                              0xffeee7da,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
+                ),
+                // แถบยืนยัน — กดทีเดียวเพิ่มทุกที่ที่ติ๊กไว้
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _gold,
+                          foregroundColor: Colors.black,
+                          disabledBackgroundColor: const Color(0xffeee7da),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                          onPressed: selectedIds.isEmpty
-                              ? null
-                              : () => _confirmSelectedPlaces(
-                                  sheetContext,
-                                  selectedIds,
-                                ),
-                          icon: const Icon(Icons.check),
-                          label: Text(
-                            selectedIds.isEmpty
-                                ? context.l10n.addAPlace
-                                : '${context.l10n.addAPlace} (${selectedIds.length})',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                            ),
+                        ),
+                        onPressed: selectedIds.isEmpty
+                            ? null
+                            : () => _confirmSelectedPlaces(
+                                sheetContext,
+                                selectedIds,
+                              ),
+                        icon: const Icon(Icons.check),
+                        label: Text(
+                          selectedIds.isEmpty
+                              ? context.l10n.addAPlace
+                              : '${context.l10n.addAPlace} (${selectedIds.length})',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
-            );
-          },
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -959,6 +967,7 @@ extension _PlanComponents on _PlanScreenState {
     if (renamed == null) return;
     await _renameCurrentPlan(renamed);
   }
+
   Widget _stat(String value, String label) => Expanded(
     child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -981,7 +990,11 @@ extension _PlanComponents on _PlanScreenState {
       ),
     ),
   );
-  Widget _price(IconData icon, double value) => Container(
+  Widget _price(
+    IconData icon,
+    double value, {
+    bool unspecifiedWhenZero = false,
+  }) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
     decoration: BoxDecoration(
       color: const Color(0xfff4f0e8),
@@ -992,7 +1005,7 @@ extension _PlanComponents on _PlanScreenState {
         Icon(icon, size: 15, color: const Color(0xff6b6257)),
         const SizedBox(width: 5),
         Text(
-          '฿${_money(value)}',
+          _costLabel(value, unspecifiedWhenZero: unspecifiedWhenZero),
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
@@ -1022,7 +1035,9 @@ extension _PlanComponents on _PlanScreenState {
 
   // "YYYY-MM-DD" จาก trips.start_date → DateTime — ใช้ไม่ได้คืน null (โชว์แค่เลขวัน)
   DateTime? _parsePlanStartDate(String value) {
-    final match = RegExp(r'^(\d{4})-(\d{1,2})-(\d{1,2})').firstMatch(value.trim());
+    final match = RegExp(
+      r'^(\d{4})-(\d{1,2})-(\d{1,2})',
+    ).firstMatch(value.trim());
     if (match == null) return null;
     final year = int.parse(match.group(1)!);
     final month = int.parse(match.group(2)!);
@@ -1031,10 +1046,22 @@ extension _PlanComponents on _PlanScreenState {
     if (day < 1 || day > 31) return null;
     return DateTime(year, month, day);
   }
+
   String _money(num n) => n.round().toString().replaceAllMapped(
     RegExp(r'\B(?=(\d{3})+(?!\d))'),
     (m) => ',',
   );
+
+  // ป้ายราคา — ค่า 0/ติดลบ:
+  // ค่าเข้าชม/ยอดรวมโชว์ "ฟรี" (ไม่มีค่าใช้จ่ายจริง)
+  // ค่าอาหาร/ค่าเดินทางโชว์ "ไม่ระบุ" (AI ไม่ได้ประเมินไว้ ไม่ใช่กินฟรี)
+  String _costLabel(num value, {bool unspecifiedWhenZero = false}) {
+    if (value > 0) return '฿${_money(value)}';
+    if (unspecifiedWhenZero) return context.l10n.unspecifiedCost;
+    return Localizations.localeOf(context).languageCode == 'th'
+        ? 'ฟรี'
+        : 'Free';
+  }
 
   // หน่วยนาทีสำหรับโชว์ — เกินชั่วโมงย่อเป็น ชม.
   // (เช่น 120 → "2 ชั่วโมง", 125 → "2 ชั่วโมง 5 นาที" แทนตัวเลขดิบยาว ๆ)
@@ -1047,16 +1074,17 @@ extension _PlanComponents on _PlanScreenState {
   }
 
   // กล่องโซ่เวลาของจุดแวะ — แยก 2 บรรทัดให้อ่านง่าย:
-  // บรรทัดหลัก: ถึง → เที่ยว → ออก / บรรทัดรอง (ถ้ามีขาเข้า): ออก → เดินทาง → ถึง
+  // บรรทัดบน: ขาเข้า (ออก → เดินทาง) ถ้ามี / บรรทัดล่าง: ถึง → เที่ยว → ออก
   // จุดแรกของวันที่มีขาเข้า (departure→stop0): day start คือ DEPARTURE
-  // จึงโชว์ "ออก HH:MM" ต้นทางในบรรทัดรอง (ออก = ถึง − เดินทาง)
-  // เที่ยวดึกขึ้นแดงทั้งบรรทัดหลัก — เห็นชัดแบบในภาพ (23:09 / 00:45)
+  // จึงโชว์ "ออก HH:MM" ต้นทางในบรรทัดบน (ออก = ถึง − เดินทาง)
+  // เที่ยวดึกขึ้นแดงทั้งบรรทัดล่าง — เห็นชัดแบบในภาพ (23:09 / 00:45)
   Widget _stopChainInfo(TravelStop stop, int selectedDayOrder) {
     final lateNight = _isLateNightVisit(stop);
     final visitWord = context.l10n.visitLabel;
     final arrive = stop.arrivalTime;
-    final leave =
-        _clockFromMinutes(_clockToMinutes(arrive) + stop.durationMinutes);
+    final leave = _clockFromMinutes(
+      _clockToMinutes(arrive) + stop.durationMinutes,
+    );
     final mainLine =
         '${context.l10n.arriveLabel} $arrive · $visitWord '
         '${_prettyMinutes(stop.durationMinutes)} · '
@@ -1072,46 +1100,50 @@ extension _PlanComponents on _PlanScreenState {
         subLine = '${context.l10n.travelLabel} ${_prettyMinutes(leg)}';
       }
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          mainLine,
-          style: TextStyle(
-            color: lateNight
-                ? const Color(0xffb84d36)
-                : const Color(0xff5b5347),
-            fontSize: 13,
-            height: 1.5,
-            fontWeight: lateNight ? FontWeight.w700 : FontWeight.w600,
-          ),
-        ),
-        if (subLine != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.directions,
-                  size: 13,
-                  color: Color(0xff6b6257),
-                ),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    subLine,
-                    style: const TextStyle(
-                      color: Color(0xff6b6257),
-                      fontSize: 12,
-                      height: 1.4,
+    return Padding(
+      // เว้นระยะจากป้ายจังหวัดด้านบนให้สมดุล (ทั้งกรณีมี/ไม่มีบรรทัดขาเข้า)
+      padding: const EdgeInsets.only(top: 5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (subLine != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 3),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.directions,
+                    size: 13,
+                    color: Color(0xff6b6257),
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      subLine,
+                      style: const TextStyle(
+                        color: Color(0xff6b6257),
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
+            ),
+          Text(
+            mainLine,
+            style: TextStyle(
+              color: lateNight
+                  ? const Color(0xffb84d36)
+                  : const Color(0xff5b5347),
+              fontSize: 13,
+              height: 1.5,
+              fontWeight: lateNight ? FontWeight.w700 : FontWeight.w600,
             ),
           ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1143,7 +1175,10 @@ extension _PlanComponents on _PlanScreenState {
   int? _flexibleTimeToMinutes(String value) {
     final text = value.trim();
     if (text.isEmpty || text == '00:00' || text == '00:00:00') return null;
-    final ampm = RegExp(r'([AP])\.?\s*M\.?', caseSensitive: false).firstMatch(text);
+    final ampm = RegExp(
+      r'([AP])\.?\s*M\.?',
+      caseSensitive: false,
+    ).firstMatch(text);
     final match = RegExp(r'(\d{1,2})\s*[:.]\s*(\d{2})').firstMatch(text);
     if (match == null) return null;
     var hour = int.tryParse(match.group(1) ?? '');
@@ -1180,7 +1215,8 @@ extension _PlanComponents on _PlanScreenState {
     if (arrival == null) return false;
     final departure = arrival + stop.durationMinutes;
     if (close == open) return false;
-    bool inOpen(int t) => close < open ? (t >= open || t < close) : (t >= open && t < close);
+    bool inOpen(int t) =>
+        close < open ? (t >= open || t < close) : (t >= open && t < close);
     final arrivalClock = arrival % 1440;
     final departureClock = departure % 1440;
     if (!inOpen(arrivalClock)) return true;
@@ -1269,7 +1305,11 @@ extension _PlanComponents on _PlanScreenState {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.bedtime_outlined, size: 13, color: Color(0xffb84d36)),
+              const Icon(
+                Icons.bedtime_outlined,
+                size: 13,
+                color: Color(0xffb84d36),
+              ),
               const SizedBox(width: 5),
               Flexible(
                 child: Text(
@@ -1302,7 +1342,11 @@ extension _PlanComponents on _PlanScreenState {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.schedule_outlined, size: 13, color: Color(0xff9a5b00)),
+                const Icon(
+                  Icons.schedule_outlined,
+                  size: 13,
+                  color: Color(0xff9a5b00),
+                ),
                 const SizedBox(width: 5),
                 Flexible(
                   child: Text(

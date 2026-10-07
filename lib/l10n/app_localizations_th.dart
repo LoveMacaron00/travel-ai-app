@@ -740,6 +740,15 @@ class AppLocalizationsTh extends AppLocalizations {
   String get mustVisitPlaces => 'สถานที่ที่ต้องไป';
 
   @override
+  String get unspecifiedCost => 'ไม่ระบุ';
+
+  @override
+  String get clearAllPlaces => 'ลบทั้งหมด';
+
+  @override
+  String get mustVisitCleared => 'นำสถานที่ที่ต้องไปออกทั้งหมดแล้ว';
+
+  @override
   String get addAPlace => 'เพิ่มสถานที่';
 
   @override
@@ -810,6 +819,19 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get removeFromPlan => 'นำออกจากแผน';
+
+  @override
+  String get moveToDay => 'ย้ายไปวันอื่น';
+
+  @override
+  String moveStopTitle(String name) {
+    return 'จะย้าย “$name” ไปวันไหน';
+  }
+
+  @override
+  String placeMoved(String name, int day) {
+    return 'ย้าย $name ไปวันที่ $day แล้ว';
+  }
 
   @override
   String get addDay => 'เพิ่มวัน';
@@ -923,7 +945,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get kmShort => 'กม.';
 
   @override
-  String get stopTotal => 'รวมจุดนี้';
+  String get stopTotal => 'ยอดรวม';
 
   @override
   String get journeyDetails => 'รายละเอียดการเดินทาง';

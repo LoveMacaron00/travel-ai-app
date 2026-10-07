@@ -294,6 +294,9 @@
   "whatDoYouEnjoy": "What are you interested in?",
   "howCanYouTravel": "How can you travel?",
   "mustVisitPlaces": "Must-visit places",
+  "unspecifiedCost": "Not specified",
+  "clearAllPlaces": "Clear all",
+  "mustVisitCleared": "Removed all must-visit places",
   "addAPlace": "Add a place",
   "placeAdded": "Added {name}",
   "@placeAdded": {
@@ -327,6 +330,18 @@
   "day": "DAY",
   "addAnotherPlace": "Add another place",
   "removeFromPlan": "Remove from plan",
+  "moveToDay": "Move to another day",
+  "moveStopTitle": "Which day should {name} move to?",
+  "@moveStopTitle": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "placeMoved": "Moved {name} to Day {day}",
+  "@placeMoved": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "day": {"type": "int"}
+    }
+  },
   "addDay": "Add day",
   "dayAdded": "Day {day} added",
   "@dayAdded": {
