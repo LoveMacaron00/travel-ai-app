@@ -67,6 +67,24 @@ class TravelDiaryService {
         field: 'image',
       );
 
+  // POST /api/mobile/diary/image/delete — ลบไฟล์รูป uploads ที่ถอดออกจาก entry แล้ว
+  // server ลบจริงเฉพาะไฟล์ที่ไม่มี entry ไหนอ้างอิงแล้ว (กันลบรูปที่ใช้อยู่)
+  // ใช้โดย: travel_diary_screen.dart (ตอนแก้ไข/ลบรูป) — พังเงียบเสมอ (ไฟล์ค้างดีกว่าลบพลาด)
+  Future<bool> deleteImage(String imageUrl) async {
+    if (imageUrl.trim().isEmpty) return false;
+    try {
+      final response = await _client.post(
+        '/mobile/diary/image/delete',
+        body: {'url': imageUrl},
+      );
+      if (response.statusCode != 200) return false;
+      final payload = ApiClient.decodeMap(response.body);
+      return payload?['deleted'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static List<Map<String, dynamic>>? _cachedProvinces;
 
   // GET /api/mobile/provinces/all — 77 จังหวัดทั้งหมด (ไทย/อังกฤษ + ภูมิภาค)

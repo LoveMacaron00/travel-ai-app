@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:myapp/l10n/l10n.dart';
@@ -81,6 +83,25 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
         _selectedCalendarDay = null;
       }
     });
+  }
+
+  /// รูปทั้งหมดที่ entry อ้างอิง (top-level + ทุก sub)
+  Set<String> _allEntryImages(TravelDiaryEntry entry) => {
+    ...entry.imageUrls,
+    for (final sub in entry.subEntries) ...sub.imageUrls,
+  };
+
+  /// ขอลบไฟล์รูปที่ entry ใหม่ไม่อ้างอิงแล้ว — server ตรวจซ้ำก่อนลบจริง
+  /// ยิงแบบไม่รอผล ไม่ block UI (พังเงียบ: ไฟล์ค้างดีกว่าลบพลาด)
+  void _cleanupRemovedImages(
+    Set<String> removedUrls,
+    TravelDiaryEntry keptEntry,
+  ) {
+    final kept = _allEntryImages(keptEntry);
+    for (final url in removedUrls) {
+      if (url.isEmpty || kept.contains(url)) continue;
+      unawaited(_diary.deleteImage(url));
+    }
   }
 
   /// ลบ entry — มี dialog ยืนยันก่อนเสมอ เพราะลบแล้วถอนคืนไม่ได้
@@ -346,6 +367,12 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     final ok = await _diary.upsert(updated);
     if (!mounted) return;
     if (ok) {
+      // รูปเก่าที่ entry ใหม่ไม่อ้างอิงแล้ว (ถูกแทนที่/ถอดออก) → ลบไฟล์ทิ้งด้วย
+      // ส่วนลบทั้ง entry ไม่ต้องทำอะไร — server ลบไฟล์ของ entry นั้นให้เอง
+      _cleanupRemovedImages(
+        _allEntryImages(entry).difference(_allEntryImages(updated)),
+        updated,
+      );
       await _loadEntries();
       if (mounted) {
         final l10n = context.l10n;
@@ -445,6 +472,11 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     final ok = await _diary.upsert(updated);
     if (!mounted) return;
     if (ok) {
+      // รูปที่ถอดออกจาก sub นี้ → ลบไฟล์ทิ้งด้วย
+      _cleanupRemovedImages(
+        sub.imageUrls.toSet().difference(finalImages.toSet()),
+        updated,
+      );
       await _loadEntries();
       if (mounted) {
         ScaffoldMessenger.of(
@@ -484,6 +516,8 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
     final ok = await _diary.upsert(updated);
     if (!mounted) return;
     if (ok) {
+      // รูปของ sub ที่ลบไป → ลบไฟล์ทิ้งด้วย
+      _cleanupRemovedImages(Set<String>.from(sub.imageUrls), updated);
       await _loadEntries();
       if (mounted) {
         ScaffoldMessenger.of(

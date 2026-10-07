@@ -412,7 +412,8 @@ extension _PlanComponents on _PlanScreenState {
     // ทริปล่วงหน้าเพิ่มสถานที่ได้ตามปกติ — มีแค่ระบบนำทางที่ล็อกจนถึงวันเดินทาง
     // (ไม่จำกัดจำนวนที่เลือกแล้ว)
     String query = '';
-    String selectedCategory = 'all';
+    // ค่าเริ่มต้นเป็นสถานที่ท่องเที่ยว (ไม่มีตัวเลือก "ทุกหมวดหมู่" ใน sheet นี้)
+    String selectedCategory = 'attraction';
     // รายการที่ติ๊กเลือกไว้ (id) — ยังไม่เพิ่มจริงจนกว่าจะกดยืนยัน
     final selectedIds = <String>{};
     // snapshot จุดเริ่มตอนเปิด sheet — กัน re-sort กลางคันขณะเลื่อน
@@ -534,6 +535,7 @@ extension _PlanComponents on _PlanScreenState {
                       SliverToBoxAdapter(
                         child: PlaceCategoryChips(
                           selected: selectedCategory,
+                          includeAll: false,
                           onSelected: (key) =>
                               setSheet(() => selectedCategory = key),
                         ),
@@ -602,14 +604,18 @@ extension _PlanComponents on _PlanScreenState {
                       else
                         SliverList.builder(
                           itemCount: filtered.length,
-                          itemBuilder: (_, i) {
-                            final p = filtered[i];
-                            final isSelected = selectedIds.contains(p.id);
-                            final description = stripHtmlText(p.description);
-                            final distanceLabel = origin == null
-                                ? null
-                                : _distanceLabel(origin, p);
-                            return ListTile(
+                            itemBuilder: (_, i) {
+                              final p = filtered[i];
+                              final isSelected = selectedIds.contains(p.id);
+                              final description = stripHtmlText(p.description);
+                              final distanceLabel = origin == null
+                                  ? null
+                                  : _distanceLabel(origin, p);
+                              return ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 6,
+                                ),
                               // ล็อก 52x52 เสมอ — กัน ListTile วัด leading ได้เท่า
                               // tile width ตอนรูปพัง (เช่น AVIF ถอดไม่ได้บน web)
                               // errorBuilder เปลี่ยน decode-fail เป็น placeholder
@@ -652,78 +658,27 @@ extension _PlanComponents on _PlanScreenState {
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (p.province.isNotEmpty ||
-                                      p.category.isNotEmpty)
-                                    Wrap(
-                                      spacing: 6,
-                                      runSpacing: 4,
-                                      crossAxisAlignment:
-                                          WrapCrossAlignment.center,
-                                      children: [
-                                        if (p.province.isNotEmpty)
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xffffe7a0),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            child: Text(
-                                              p.province,
-                                              style: const TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w600,
-                                                color: Color(0xff986b00),
-                                              ),
-                                            ),
-                                          ),
-                                        if (p.category.isNotEmpty)
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: placeCategoryColor(
-                                                p.category,
-                                              ).withValues(alpha: .12),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(
-                                                  placeCategoryIcon(p.category),
-                                                  size: 11,
-                                                  color: placeCategoryColor(
-                                                    p.category,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 3),
-                                                Text(
-                                                  placeCategoryLabel(
-                                                    context.l10n,
-                                                    p.category,
-                                                  ),
-                                                  style: TextStyle(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: placeCategoryColor(
-                                                      p.category,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                      ],
+                                  // โชว์แค่ป้ายจังหวัด — ป้ายหมวดหมู่เอาออก (กรองด้วย chips ด้านบนอยู่แล้ว)
+                                  if (p.province.isNotEmpty)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xffffe7a0),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        p.province,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xff986b00),
+                                        ),
+                                      ),
                                     ),
-                                  if (p.province.isNotEmpty ||
-                                      p.category.isNotEmpty)
+                                  if (p.province.isNotEmpty)
                                     const SizedBox(height: 4),
                                   if (description.isNotEmpty)
                                     Text(

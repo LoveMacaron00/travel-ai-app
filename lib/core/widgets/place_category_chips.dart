@@ -9,24 +9,30 @@ class PlaceCategoryChips extends StatelessWidget {
     required this.selected,
     required this.onSelected,
     this.padding = const EdgeInsets.symmetric(horizontal: 16),
+    // หน้าเลือกสถานที่ของแผนไม่เอาตัวเลือก "ทุกหมวดหมู่" (ค่าเริ่มต้นเป็นสถานที่ท่องเที่ยว)
+    this.includeAll = true,
   });
 
   final String selected;
   final ValueChanged<String> onSelected;
   final EdgeInsetsGeometry padding;
+  final bool includeAll;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final filters = includeAll
+        ? placeCategoryFilters
+        : placeCategoryFilters.where((key) => key != 'all').toList();
     return SizedBox(
       height: 40,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: padding,
-        itemCount: placeCategoryFilters.length,
+        itemCount: filters.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (_, index) {
-          final key = placeCategoryFilters[index];
+          final key = filters[index];
           final isSelected = selected.toLowerCase() == key;
           final color = placeCategoryColor(key);
           return ChoiceChip(
