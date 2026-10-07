@@ -604,18 +604,18 @@ extension _PlanComponents on _PlanScreenState {
                       else
                         SliverList.builder(
                           itemCount: filtered.length,
-                            itemBuilder: (_, i) {
-                              final p = filtered[i];
-                              final isSelected = selectedIds.contains(p.id);
-                              final description = stripHtmlText(p.description);
-                              final distanceLabel = origin == null
-                                  ? null
-                                  : _distanceLabel(origin, p);
-                              return ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 6,
-                                ),
+                          itemBuilder: (_, i) {
+                            final p = filtered[i];
+                            final isSelected = selectedIds.contains(p.id);
+                            final description = stripHtmlText(p.description);
+                            final distanceLabel = origin == null
+                                ? null
+                                : _distanceLabel(origin, p);
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 6,
+                              ),
                               // ล็อก 52x52 เสมอ — กัน ListTile วัด leading ได้เท่า
                               // tile width ตอนรูปพัง (เช่น AVIF ถอดไม่ได้บน web)
                               // errorBuilder เปลี่ยน decode-fail เป็น placeholder
@@ -886,15 +886,15 @@ extension _PlanComponents on _PlanScreenState {
         fillColor: const Color(0xfffbf8f1),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xff9e9e9e), width: 1),
+          borderSide: const BorderSide(color: Color(0xff9e9e9e), width: 0.2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xff9e9e9e), width: 1),
+          borderSide: const BorderSide(color: Color(0xff9e9e9e), width: 0.2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xff9e9e9e), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xff9e9e9e), width: 0.2),
         ),
       );
   Widget _roundIcon(IconData icon, VoidCallback onTap) => Material(
