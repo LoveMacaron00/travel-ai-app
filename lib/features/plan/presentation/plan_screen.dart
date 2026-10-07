@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myapp/core/config/app_config.dart';
 import 'package:myapp/l10n/l10n.dart';
 import 'package:myapp/features/plan/domain/place_marker.dart';
@@ -179,7 +180,8 @@ class _PlanScreenState extends State<PlanScreen> {
       if (selected == null || selected.trim().isEmpty) return true;
       var matchedAny = false;
       for (final p in _places) {
-        if (p.province.isEmpty || !_provinceMatchesSelected(p.province, selected)) {
+        if (p.province.isEmpty ||
+            !_provinceMatchesSelected(p.province, selected)) {
           continue;
         }
         matchedAny = true;
@@ -291,6 +293,7 @@ class _PlanScreenState extends State<PlanScreen> {
           _loadingExistingPlan = false;
           _showCreatedSuccess = false;
           _error = null;
+          _checkedInStopKeys.clear();
         });
       }
     }
@@ -352,6 +355,7 @@ class _PlanScreenState extends State<PlanScreen> {
         _showCreatedSuccess = false;
         _loadingExistingPlan = false;
       });
+      unawaited(_loadCheckedInStops());
       await _buildRoute(plan);
     } else {
       setState(() {
@@ -542,7 +546,8 @@ class _PlanScreenState extends State<PlanScreen> {
   void _onSharedLocationChanged() {
     if (!mounted) return;
     final plan = _plan;
-    final onFirstDay = plan != null &&
+    final onFirstDay =
+        plan != null &&
         plan.days.isNotEmpty &&
         (_selectedDayFor(plan)?.day == 1);
     setState(() {
@@ -772,8 +777,9 @@ class _PlanScreenState extends State<PlanScreen> {
       );
       // SSE warning event (ข้าง plan_data) — รวมเข้ากับ warnings ใน model
       // ให้แบนเนอร์หน้าผลลัพธ์แสดง แม้ plan_data เก่าจะไม่มี field นี้
-      final streamed =
-          ((result['warnings'] as List?) ?? const []).map((e) => '$e').toList();
+      final streamed = ((result['warnings'] as List?) ?? const [])
+          .map((e) => '$e')
+          .toList();
       if (streamed.isNotEmpty) {
         next = next.copyWith(
           warnings: {...next.warnings, ...streamed}.toList(),
@@ -786,7 +792,9 @@ class _PlanScreenState extends State<PlanScreen> {
       // sync จำนวนวันที่ server resolve กลับเข้าฟอร์ม (auto หรือยังไม่เลือกวัน)
       // ให้ช่องวันที่/ตัวนับตรงกับแผนจริง — กดสร้างใหม่จะเริ่มจากจำนวนวันจริงของแผนนี้
       final resolvedDays = next.days.length;
-      if ((_autoDays || _dates == null) && resolvedDays >= 1 && resolvedDays <= 7) {
+      if ((_autoDays || _dates == null) &&
+          resolvedDays >= 1 &&
+          resolvedDays <= 7) {
         _days = resolvedDays;
       }
       setState(() {
@@ -800,6 +808,7 @@ class _PlanScreenState extends State<PlanScreen> {
         _showCreatedSuccess = _isFutureTrip(next);
       });
       AppServices.tripGenerationStatus.completeSuccess(tripId);
+      unawaited(_loadCheckedInStops());
       await _buildRoute(next);
     } else {
       final msg = '${result['message'] ?? context.l10n.couldNotCreatePlan}';
@@ -993,10 +1002,7 @@ class _PlanScreenState extends State<PlanScreen> {
       title: plan.title,
       summary: plan.summary,
       totalEstimatedCost: nonNegative(
-        plan.totalEstimatedCost -
-            removedTransport -
-            removedFood -
-            removedEntry,
+        plan.totalEstimatedCost - removedTransport - removedFood - removedEntry,
       ),
       budgetBreakdown: breakdown,
       days: days,
@@ -1009,8 +1015,9 @@ class _PlanScreenState extends State<PlanScreen> {
   // sanitize ครบชุดทุกทริป: ตัดที่พัก/จุดแวะพัก ล้างค่าเดิน-ปั่นฟรี แล้วเหมาน้ำมันรายวัน
   // ยอดเงินทุกอย่างยึดตาม server (ไม่คำนวณใหม่จาก GPS สด) — เปิดดูเมื่อไรก็เท่าเดิม
   // มีแค่การจัดโชว์ (เหมาวัน) ไม่แตะยอดรวม
-  TravelPlan _sanitizePlan(TravelPlan plan) =>
-      _lumpDayFuelCostOnPlan(_zeroFreeModeCosts(_stripLodgingAndRestStops(plan)));
+  TravelPlan _sanitizePlan(TravelPlan plan) => _lumpDayFuelCostOnPlan(
+    _zeroFreeModeCosts(_stripLodgingAndRestStops(plan)),
+  );
 
   // เหมาค่าน้ำมันทั้งวันไว้ที่ขารถขาแรกของทุกวัน ขารถขาอื่นเป็น 0
   // ยอดรวมเท่าเดิมแค่ย้ายที่โชว์ — รันซ้ำได้ ไม่มีอะไรเปลี่ยนคืน plan เดิม
@@ -1261,23 +1268,20 @@ class _PlanScreenState extends State<PlanScreen> {
   List<TravelStop> _rechainDay(List<TravelStop> stops) {
     if (stops.isEmpty) return stops;
     final chained = <TravelStop>[
-      stops.first.copyWith(
-        arrivalTime: _firstStopArrival(stops.first),
-      ),
+      stops.first.copyWith(arrivalTime: _firstStopArrival(stops.first)),
     ];
     for (var i = 1; i < stops.length; i++) {
       final prev = chained[i - 1];
-      final leg =
-          stops[i].segments.isNotEmpty
-              ? stops[i].segments.first.estimatedMinutes
-              : (const Distance().as(
-                        LengthUnit.Kilometer,
-                        LatLng(prev.latitude, prev.longitude),
-                        LatLng(stops[i].latitude, stops[i].longitude),
-                      ) *
-                      2)
-                  .round()
-                  .clamp(5, 720);
+      final leg = stops[i].segments.isNotEmpty
+          ? stops[i].segments.first.estimatedMinutes
+          : (const Distance().as(
+                      LengthUnit.Kilometer,
+                      LatLng(prev.latitude, prev.longitude),
+                      LatLng(stops[i].latitude, stops[i].longitude),
+                    ) *
+                    2)
+                .round()
+                .clamp(5, 720);
       chained.add(
         stops[i].copyWith(
           arrivalTime: _clockFromMinutes(
@@ -1511,7 +1515,8 @@ class _PlanScreenState extends State<PlanScreen> {
     }
   }
 
-  TravelDay? _selectedDayFor(TravelPlan plan) {    if (plan.days.isEmpty) return null;
+  TravelDay? _selectedDayFor(TravelPlan plan) {
+    if (plan.days.isEmpty) return null;
     final index = _selectedDayIndex.clamp(0, plan.days.length - 1);
     return plan.days[index];
   }
@@ -1630,10 +1635,7 @@ class _PlanScreenState extends State<PlanScreen> {
             stops: List<TravelStop>.from(current.days[i].stops),
           ),
     ];
-    final updated = _withDeltaBudget(
-      current,
-      _renumberPlanDays(days),
-    );
+    final updated = _withDeltaBudget(current, _renumberPlanDays(days));
     setState(() {
       _plan = updated;
       _selectedDayIndex = _selectedDayIndex.clamp(0, updated.days.length - 1);
@@ -1725,11 +1727,10 @@ class _PlanScreenState extends State<PlanScreen> {
     // วันปลายทาง: ต่อท้ายแล้วต่อโซ่ใหม่ (ขาเข้าของจุดที่ย้ายคำนวณจากจุดก่อนหน้าใหม่)
     final newTargetStops = _lumpDayFuelCost(
       _rechainDay(
-        _recalculatedStopsPreservingCosts(
-          targetDay.stops,
-          [...targetDay.stops, moved],
-          isFirstDay: targetDay.day == 1,
-        ),
+        _recalculatedStopsPreservingCosts(targetDay.stops, [
+          ...targetDay.stops,
+          moved,
+        ], isFirstDay: targetDay.day == 1),
       ),
     );
 
@@ -1756,6 +1757,54 @@ class _PlanScreenState extends State<PlanScreen> {
     unawaited(_buildRoute(updated));
   }
 
+  // สถานะเช็คอินรายจุด — identity ของ stop ที่ไปถึงแล้วในทริปนี้
+  // (จาก callback หน้านำทาง + entry เช็คอินในไดอารี่ เทียบด้วย destinationId)
+  final Set<String> _checkedInStopKeys = {};
+
+  bool _isStopCheckedIn(TravelStop stop) =>
+      _checkedInStopKeys.contains(_stopIdentity(stop));
+
+  /// โหลดสถานะเช็คอิน: ที่เคยบันทึกไว้ของทริปนี้ + entry ในไดอารี่
+  /// (auto-diary อาจเช็คอินให้ก่อนแล้วโดยไม่ผ่านหน้านำทาง)
+  Future<void> _loadCheckedInStops() async {
+    final plan = _plan;
+    if (plan == null || plan.tripId <= 0) return;
+    final prefs = await SharedPreferences.getInstance();
+    final checked = Set<String>.from(
+      prefs.getStringList('plan_checked_in_${plan.tripId}') ?? const [],
+    );
+    try {
+      final entries = await AppServices.diary.load();
+      for (final entry in entries) {
+        if (entry.destinationId != null) {
+          checked.add('id:${entry.destinationId}');
+        }
+      }
+    } catch (_) {
+      // โหลดไดอารี่พังใช้แค่ค่าที่เก็บไว้ — ไม่ block หน้าผลลัพธ์
+    }
+    if (!mounted) return;
+    setState(() {
+      _checkedInStopKeys
+        ..clear()
+        ..addAll(checked);
+    });
+  }
+
+  /// มาร์กจุดว่าเช็คอินแล้ว + จำลงเครื่อง (รอดชีวิตข้ามการเปิดแอป)
+  Future<void> _markStopCheckedIn(TravelStop stop) async {
+    final plan = _plan;
+    _checkedInStopKeys.add(_stopIdentity(stop));
+    if (plan != null && plan.tripId > 0) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(
+        'plan_checked_in_${plan.tripId}',
+        _checkedInStopKeys.toList(),
+      );
+    }
+    if (mounted) setState(() {});
+  }
+
   // เช็คว่าสถานที่นี้อยู่ในวันที่เลือกแล้วหรือยัง — เทียบทั้ง id และชื่อ
   // (กัน AI เขียนชื่อเพี้ยน / destinationId ว่าง)
   bool _isDuplicateInSelectedDay(PlaceMarker place) {
@@ -1776,10 +1825,7 @@ class _PlanScreenState extends State<PlanScreen> {
       return false;
     }
 
-    _replaceSelectedDayStops([
-      ...day.stops,
-      _mustVisitStop(place, day.stops),
-    ]);
+    _replaceSelectedDayStops([...day.stops, _mustVisitStop(place, day.stops)]);
     return true;
   }
 
@@ -1802,8 +1848,7 @@ class _PlanScreenState extends State<PlanScreen> {
     }
     TravelStop withLegCost(TravelStop stop, double cost) {
       var segments = stop.segments;
-      if (segments.isNotEmpty &&
-          segments.first.mode.toLowerCase() == 'car') {
+      if (segments.isNotEmpty && segments.first.mode.toLowerCase() == 'car') {
         final first = segments.first;
         segments = [
           TravelSegment(
@@ -1856,11 +1901,7 @@ class _PlanScreenState extends State<PlanScreen> {
       if (prev != null) {
         final from = LatLng(prev.latitude, prev.longitude);
         final to = LatLng(rawNew.latitude, rawNew.longitude);
-        estimated = _estimateTransportCost(
-          from,
-          to,
-          rawNew.transportMode,
-        );
+        estimated = _estimateTransportCost(from, to, rawNew.transportMode);
         newSegments = [
           TravelSegment(
             mode: rawNew.transportMode,
@@ -1978,17 +2019,15 @@ class _PlanScreenState extends State<PlanScreen> {
   /// ส่ง start_time เสริมด้วยเพื่อให้โซ่เวลาของวันเริ่มจากเวลาที่ผู้ใช้เลือกเหมือนตอนสร้าง
   Future<void> _savePlanChanges(TravelPlan plan) async {
     if (plan.tripId <= 0) return;
-    final result = await AppServices.trips.updateTravelPlan(
-      plan.tripId,
-      {
-        ...plan.toJson(),
-        'start_time': _clockOf(_startTime),
-      },
-    );
+    final result = await AppServices.trips.updateTravelPlan(plan.tripId, {
+      ...plan.toJson(),
+      'start_time': _clockOf(_startTime),
+    });
     if (!mounted) return;
     if (result['success'] == true) {
-      final warnings =
-          ((result['warnings'] as List?) ?? const []).map((e) => '$e').toList();
+      final warnings = ((result['warnings'] as List?) ?? const [])
+          .map((e) => '$e')
+          .toList();
       if (warnings.isNotEmpty &&
           !_sameStringList(warnings, _plan?.warnings ?? const [])) {
         setState(() {
@@ -2076,7 +2115,9 @@ class _PlanScreenState extends State<PlanScreen> {
         raw = Map<String, dynamic>.from(trip['plan_data'] as Map? ?? {});
       } else {
         setState(() => _resettingPlan = false);
-        _showPlanSnack('${result['message'] ?? context.l10n.couldNotCreatePlan}');
+        _showPlanSnack(
+          '${result['message'] ?? context.l10n.couldNotCreatePlan}',
+        );
         return;
       }
     }
@@ -2090,10 +2131,10 @@ class _PlanScreenState extends State<PlanScreen> {
         startDate: plan.startDate,
       ),
     );
-    final saveResult = await AppServices.trips.updateTravelPlan(
-      plan.tripId,
-      {...restored.toJson(), 'start_time': _clockOf(_startTime)},
-    );
+    final saveResult = await AppServices.trips.updateTravelPlan(plan.tripId, {
+      ...restored.toJson(),
+      'start_time': _clockOf(_startTime),
+    });
     if (!mounted) return;
     if (saveResult['success'] != true) {
       setState(() => _resettingPlan = false);

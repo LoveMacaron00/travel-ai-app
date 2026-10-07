@@ -121,7 +121,7 @@ extension _PlanComponents on _PlanScreenState {
                     Text(
                       subtitle,
                       style: const TextStyle(
-                        color: Colors.black45,
+                        color: Colors.black87,
                         fontSize: 12,
                       ),
                     ),
@@ -173,11 +173,11 @@ extension _PlanComponents on _PlanScreenState {
                               ? context.l10n.findingLocation
                               : context.l10n.locationUnavailable)
                         : '${start.latitude.toStringAsFixed(5)}, ${start.longitude.toStringAsFixed(5)}',
-                    style: const TextStyle(color: Colors.black45, fontSize: 12),
+                    style: const TextStyle(color: Colors.black87, fontSize: 12),
                   ),
                   Text(
                     context.l10n.startPointHint,
-                    style: const TextStyle(color: Colors.black38, fontSize: 11),
+                    style: const TextStyle(color: Colors.black87, fontSize: 11),
                   ),
                 ],
               ),
@@ -235,7 +235,7 @@ extension _PlanComponents on _PlanScreenState {
     if (_dynamicInterests.isEmpty) {
       return Text(
         context.l10n.noResults,
-        style: const TextStyle(color: Colors.black38, fontSize: 13),
+        style: const TextStyle(color: Colors.black87, fontSize: 13),
       );
     }
     final items = _dynamicInterests;
@@ -292,7 +292,7 @@ extension _PlanComponents on _PlanScreenState {
     if (_dynamicModes.isEmpty) {
       return Text(
         context.l10n.noResults,
-        style: const TextStyle(color: Colors.black38, fontSize: 13),
+        style: const TextStyle(color: Colors.black87, fontSize: 13),
       );
     }
     final items = _dynamicModes;
@@ -592,7 +592,7 @@ extension _PlanComponents on _PlanScreenState {
                                 context.l10n.noResults,
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
-                                  color: Colors.black38,
+                                  color: Colors.black87,
                                   fontSize: 15,
                                 ),
                               ),
@@ -751,7 +751,7 @@ extension _PlanComponents on _PlanScreenState {
                                         style: const TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.black54,
+                                          color: Colors.black87,
                                         ),
                                       ),
                                     ),
@@ -915,16 +915,31 @@ extension _PlanComponents on _PlanScreenState {
   InputDecoration _inputDecoration(String? label, IconData icon) =>
       InputDecoration(
         labelText: label,
+        hintStyle: const TextStyle(color: Colors.black54),
+        helperStyle: const TextStyle(
+          color: Colors.black87,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        counterStyle: const TextStyle(
+          color: Colors.black87,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
         prefixIcon: Icon(icon, color: _gold),
         filled: true,
         fillColor: const Color(0xfffbf8f1),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xffe6dbc8)),
+          borderSide: const BorderSide(color: Color(0xff9e9e9e), width: 1),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xffe6dbc8)),
+          borderSide: const BorderSide(color: Color(0xff9e9e9e), width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xff9e9e9e), width: 1.5),
         ),
       );
   Widget _roundIcon(IconData icon, VoidCallback onTap) => Material(
@@ -984,7 +999,7 @@ extension _PlanComponents on _PlanScreenState {
           ),
           Text(
             label,
-            style: const TextStyle(color: Colors.black45, fontSize: 11),
+            style: const TextStyle(color: Colors.black87, fontSize: 11),
           ),
         ],
       ),
@@ -1373,7 +1388,7 @@ extension _PlanComponents on _PlanScreenState {
                 const SizedBox(width: 4),
                 Text(
                   '${context.l10n.openingHours} $range',
-                  style: const TextStyle(fontSize: 11, color: Colors.black45),
+                  style: const TextStyle(fontSize: 11, color: Colors.black87),
                 ),
               ],
             ),

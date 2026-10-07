@@ -7,10 +7,17 @@ bool usesRoadRoute(String mode) =>
       mode.toLowerCase(),
     );
 
-/// สีเส้นตามพาหนะ — หน้าแผนกับหน้านำทางเคยนิยามซ้ำกัน ต่างกันแค่สี fallback
-/// จึงรับ fallback เป็น param เพื่อให้พิกเซลเหมือนเดิมทุกประการ
-/// (หน้าแผน: ทอง `_gold` 0xffe9ad0c / หน้านำทาง: 0xffe8ad10)
+/// สีเส้นนำทาง — สีฟ้าแบบ Google Maps ทุกพาหนะ (0xff1a73e8)
+/// (เดิมให้สีตามพาหนะ: รถ=ทอง เดิน=เทา ฯลฯ — เปลี่ยนตามดีไซน์ให้เป็นฟ้าเส้นเดียว)
+/// รับ fallback เป็น param คงไว้เพื่อไม่ต้องแก้ caller (หน้าแผน/หน้านำทาง/ชิปขาเดินทาง)
 Color routeLineColor(
+  String mode, {
+  Color fallback = const Color(0xff1a73e8),
+}) => const Color(0xff1a73e8);
+
+/// สีพื้นชิปขาเดินทาง — สีเดิมตามพาหนะ (รถ=ทอง เดิน=เทา ฯลฯ)
+/// แยกจากสีเส้นบนแผนที่ซึ่งเป็นฟ้าเส้นเดียวแล้ว
+Color routeChipColor(
   String mode, {
   Color fallback = const Color(0xffe9ad0c),
 }) => switch (mode.toLowerCase()) {

@@ -38,7 +38,7 @@ class ProfileScreenState extends State<ProfileScreen> {
   String _username = '';
   List<String> _interests = [];
   String _profileImageUrl = '';
-  
+
   bool _loadingPlans = false;
   List<Map<String, dynamic>> _savedPlans = [];
   bool _autoDiaryEnabled = true;
@@ -57,12 +57,14 @@ class ProfileScreenState extends State<ProfileScreen> {
     if (mounted) setState(() => _loadingPlans = true);
     final result = await AppServices.trips.listMyPlans();
     if (!mounted) return;
-    
+
     if (result['success'] == true) {
       final allPlans = List<Map<String, dynamic>>.from(result['data'] ?? []);
       // Filter out trips that don't have plan_data (e.g. generation failed or incomplete)
       setState(() {
-        _savedPlans = allPlans.where((plan) => plan['plan_data'] != null).toList();
+        _savedPlans = allPlans
+            .where((plan) => plan['plan_data'] != null)
+            .toList();
         _loadingPlans = false;
       });
     } else {
@@ -407,15 +409,17 @@ class ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         setState(() => _loadingPlans = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message'] ?? 'Failed to delete plan'),
-          ),
+          SnackBar(content: Text(result['message'] ?? 'Failed to delete plan')),
         );
       }
     }
   }
 
-  Widget _savedPlanCard(Map<String, dynamic> plan, AppLocalizations l10n, Color brandGold) {
+  Widget _savedPlanCard(
+    Map<String, dynamic> plan,
+    AppLocalizations l10n,
+    Color brandGold,
+  ) {
     final int id = plan['id'];
     final String destination = plan['destination'] ?? 'Unknown';
     final String province = plan['province'] ?? '';
@@ -428,15 +432,20 @@ class ProfileScreenState extends State<ProfileScreen> {
               ? '$destination, $province'
               : destination);
     // created_at จาก API เป็น ISO string — แสดงกำกับไว้ให้แยกจากระยะเวลาทริป
-    final createdAt = DateTime.tryParse('${plan['created_at'] ?? ''}')?.toLocal();
+    final createdAt = DateTime.tryParse(
+      '${plan['created_at'] ?? ''}',
+    )?.toLocal();
     final dateText = createdAt == null
         ? null
-        : DateFormat('d MMM yyyy', Localizations.localeOf(context).languageCode)
-              .format(createdAt);
+        : DateFormat(
+            'd MMM yyyy',
+            Localizations.localeOf(context).languageCode,
+          ).format(createdAt);
     // start_date "YYYY-MM-DD" — วันเริ่มทริปจริง (null = ยังไม่ระบุ เช่น ทริป auto ไม่เลือกวัน)
     DateTime? tripStart;
-    final startMatch = RegExp(r'^(\d{4})-(\d{1,2})-(\d{1,2})')
-        .firstMatch('${plan['start_date'] ?? ''}');
+    final startMatch = RegExp(
+      r'^(\d{4})-(\d{1,2})-(\d{1,2})',
+    ).firstMatch('${plan['start_date'] ?? ''}');
     if (startMatch != null) {
       final y = int.parse(startMatch.group(1)!);
       final m = int.parse(startMatch.group(2)!);
@@ -447,9 +456,11 @@ class ProfileScreenState extends State<ProfileScreen> {
     }
     final startText = tripStart == null
         ? null
-        : DateFormat('d MMM yyyy', Localizations.localeOf(context).languageCode)
-              .format(tripStart);
-        
+        : DateFormat(
+            'd MMM yyyy',
+            Localizations.localeOf(context).languageCode,
+          ).format(tripStart);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: Material(
@@ -462,7 +473,10 @@ class ProfileScreenState extends State<ProfileScreen> {
           side: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
         ),
         child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 6,
+          ),
           leading: Container(
             width: 42,
             height: 42,
@@ -486,7 +500,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                 if (startText != null) l10n.planStartsOn(startText),
                 if (dateText != null) l10n.planCreatedAt(dateText),
               ].join(' · '),
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: const TextStyle(fontSize: 12, color: Colors.black87),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -501,13 +515,13 @@ class ProfileScreenState extends State<ProfileScreen> {
               }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'rename',
-                child: Text(l10n.renamePlan),
-              ),
+              PopupMenuItem(value: 'rename', child: Text(l10n.renamePlan)),
               PopupMenuItem(
                 value: 'delete',
-                child: Text(l10n.deletePlan, style: const TextStyle(color: Colors.red)),
+                child: Text(
+                  l10n.deletePlan,
+                  style: const TextStyle(color: Colors.red),
+                ),
               ),
             ],
           ),
@@ -517,7 +531,9 @@ class ProfileScreenState extends State<ProfileScreen> {
             } else {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => PlanScreen(initialTripId: id)),
+                MaterialPageRoute(
+                  builder: (_) => PlanScreen(initialTripId: id),
+                ),
               ).then((_) => _loadSavedPlans());
             }
           },
@@ -572,352 +588,350 @@ class ProfileScreenState extends State<ProfileScreen> {
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // ส่วนรูปโปรไฟล์ผู้ใช้
-            Center(
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: CircleAvatar(
-                  radius: 54,
-                  backgroundColor: Colors.grey,
-                  backgroundImage: mediaImageProvider(
-                    AppServices.media.fullUrl(_profileImageUrl).isNotEmpty
-                        ? AppServices.media.fullUrl(_profileImageUrl)
-                        : AppServices.media.defaultAvatarUrl,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // ชื่อผู้ใช้และอีเมล
-            Text(
-              _username.isNotEmpty ? _username : l10n.setYourName,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            Text(
-              userEmail,
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-            const SizedBox(height: 30),
-
-            // ส่วนความสนใจ
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      l10n.myInterests,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black54,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: _showEditInterestsDialog,
-                      child: Text(
-                        l10n.edit,
-                        style: const TextStyle(
-                          color: brandGold,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _interests.isEmpty
-                    ? Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Text(
-                          l10n.noInterests,
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 13,
-                          ),
-                        ),
-                      )
-                    : Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _interests.map((interest) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xffffe7a0),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: brandGold,
-                                width: 1,
-                              ),
-                            ),
-                            child: Text(
-                              _interestLabel(context, interest),
-                              style: const TextStyle(
-                                color: Color(0xff7a5a00),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-              ],
-            ),
-            const Divider(height: 40, thickness: 1),
-
-            Material(
-              color: const Color(0xfffff8e4),
-              borderRadius: BorderRadius.circular(18),
-              clipBehavior: Clip.antiAlias,
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                leading: Container(
-                  width: 46,
-                  height: 46,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // ส่วนรูปโปรไฟล์ผู้ใช้
+              Center(
+                child: Container(
                   decoration: BoxDecoration(
-                    color: brandGold.withValues(alpha: 0.18),
                     shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
                   ),
-                  child: const Icon(Icons.public, color: brandGold),
-                ),
-                title: Text(
-                  l10n.travelFootprint,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 3),
-                  child: Text(
-                    l10n.travelFootprintSubtitle,
-                    style: const TextStyle(fontSize: 12, height: 1.3),
-                  ),
-                ),
-                trailing: const Icon(Icons.chevron_right, color: brandGold),
-                onTap: () {
-                  if (widget.onFootprintTap != null) {
-                    widget.onFootprintTap!.call();
-                    return;
-                  }
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const TravelFootprintScreen(),
+                  child: CircleAvatar(
+                    radius: 54,
+                    backgroundColor: Colors.grey,
+                    backgroundImage: mediaImageProvider(
+                      AppServices.media.fullUrl(_profileImageUrl).isNotEmpty
+                          ? AppServices.media.fullUrl(_profileImageUrl)
+                          : AppServices.media.defaultAvatarUrl,
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
-            ),
-            const Divider(height: 40, thickness: 1),
+              const SizedBox(height: 20),
 
-            // Saved Plans Section
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      l10n.savedPlans,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black54,
-                      ),
-                    ),
-                    if (_loadingPlans)
-                      const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: brandGold,
+              // ชื่อผู้ใช้และอีเมล
+              Text(
+                _username.isNotEmpty ? _username : l10n.setYourName,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              Text(
+                userEmail,
+                style: const TextStyle(fontSize: 14, color: Colors.black87),
+              ),
+              const SizedBox(height: 30),
+
+              // ส่วนความสนใจ
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        l10n.myInterests,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (!_loadingPlans && _savedPlans.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Text(
-                      l10n.noSavedPlans,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 13,
-                      ),
-                    ),
-                  )
-                else
-        ..._savedPlans.map((plan) => _savedPlanCard(plan, l10n, brandGold)),
-              ],
-            ),
-            const Divider(height: 40, thickness: 1),
-
-            // ส่วนการตั้งค่า
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.settings,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black54,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // รายการตั้งค่าบัญชี
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(
-                    Icons.manage_accounts_outlined,
-                    color: Colors.black54,
-                  ),
-                  title: Text(l10n.accountSettings),
-                  trailing: const Icon(Icons.chevron_right, size: 20),
-                  onTap: () async {
-                    if (widget.onAccountSettingsTap != null) {
-                      widget.onAccountSettingsTap!.call();
-                      return;
-                    }
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AccountSettingsScreen(),
-                      ),
-                    );
-                    // โหลดข้อมูลโปรไฟล์ใหม่เมื่อกลับจากหน้าตั้งค่าบัญชี
-                    if (mounted) setState(() => _loadUserData());
-                  },
-                ),
-
-                // การเลือกภาษา
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(
-                    Icons.translate_outlined,
-                    color: Colors.black54,
-                  ),
-                  title: Text(l10n.language),
-                  trailing: Text(
-                    AppServices.locale.languageCode == 'th'
-                        ? l10n.languageThai
-                        : l10n.languageEnglish,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  onTap: _showLanguagePicker,
-                ),
-
-                // Auto Diary
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  activeThumbColor: brandGold,
-                  secondary: const Icon(
-                    Icons.location_on_outlined,
-                    color: Colors.black54,
-                  ),
-                  title: Text(l10n.autoDiary),
-                  subtitle: Text(
-                    l10n.autoDiarySubtitle,
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  value: _autoDiaryEnabled,
-                  onChanged: (value) async {
-                    setState(() => _autoDiaryEnabled = value);
-                    final messenger = ScaffoldMessenger.of(context);
-                    await AppServices.diaryAutomation.toggle(value);
-                    if (mounted) {
-                      messenger.showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            value
-                                ? l10n.autoDiaryEnabled
-                                : l10n.autoDiaryDisabled,
+                      TextButton(
+                        onPressed: _showEditInterestsDialog,
+                        child: Text(
+                          l10n.edit,
+                          style: const TextStyle(
+                            color: brandGold,
+                            fontWeight: FontWeight.bold,
                           ),
-                          duration: const Duration(seconds: 2),
                         ),
-                      );
-                    }
-                  },
-                ),
-                // Feedback — plain like Account Settings / Language / Auto Diary (no yellow)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(
-                    Icons.feedback_outlined,
-                    color: Colors.black54,
+                      ),
+                    ],
                   ),
-                  title: Text(l10n.sendFeedback),
-                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  const SizedBox(height: 8),
+                  _interests.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Text(
+                            l10n.noInterests,
+                            style: const TextStyle(
+                              color: Colors.black87,
+                              fontSize: 13,
+                            ),
+                          ),
+                        )
+                      : Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _interests.map((interest) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: brandGold,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                _interestLabel(context, interest),
+                                style: const TextStyle(
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                ],
+              ),
+              const Divider(height: 40, thickness: 1),
+
+              Material(
+                color: const Color(0xfffff8e4),
+                borderRadius: BorderRadius.circular(18),
+                clipBehavior: Clip.antiAlias,
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  leading: Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: brandGold.withValues(alpha: 0.18),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.public, color: brandGold),
+                  ),
+                  title: Text(
+                    l10n.travelFootprint,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 3),
+                    child: Text(
+                      l10n.travelFootprintSubtitle,
+                      style: const TextStyle(fontSize: 12, height: 1.3),
+                    ),
+                  ),
+                  trailing: const Icon(Icons.chevron_right, color: brandGold),
                   onTap: () {
-                    if (widget.onFeedbackTap != null) {
-                      widget.onFeedbackTap!();
+                    if (widget.onFootprintTap != null) {
+                      widget.onFootprintTap!.call();
                       return;
                     }
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const FeedbackHistoryScreen(),
+                        builder: (_) => const TravelFootprintScreen(),
                       ),
                     );
                   },
                 ),
-              ],
-            ),
-            const SizedBox(height: 40),
-
-            // ปุ่มออกจากระบบ
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: brandGold,
-                  foregroundColor: Colors.black,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                onPressed: _handleLogout,
-                child: Text(l10n.logOut),
               ),
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
+              const Divider(height: 40, thickness: 1),
+
+              // Saved Plans Section
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        l10n.savedPlans,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      if (_loadingPlans)
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: brandGold,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (!_loadingPlans && _savedPlans.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        l10n.noSavedPlans,
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 13,
+                        ),
+                      ),
+                    )
+                  else
+                    ..._savedPlans.map(
+                      (plan) => _savedPlanCard(plan, l10n, brandGold),
+                    ),
+                ],
+              ),
+              const Divider(height: 40, thickness: 1),
+
+              // ส่วนการตั้งค่า
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.settings,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // รายการตั้งค่าบัญชี
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(
+                      Icons.manage_accounts_outlined,
+                      color: Colors.black54,
+                    ),
+                    title: Text(l10n.accountSettings),
+                    trailing: const Icon(Icons.chevron_right, size: 20),
+                    onTap: () async {
+                      if (widget.onAccountSettingsTap != null) {
+                        widget.onAccountSettingsTap!.call();
+                        return;
+                      }
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AccountSettingsScreen(),
+                        ),
+                      );
+                      // โหลดข้อมูลโปรไฟล์ใหม่เมื่อกลับจากหน้าตั้งค่าบัญชี
+                      if (mounted) setState(() => _loadUserData());
+                    },
+                  ),
+
+                  // การเลือกภาษา
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(
+                      Icons.translate_outlined,
+                      color: Colors.black54,
+                    ),
+                    title: Text(l10n.language),
+                    trailing: Text(
+                      AppServices.locale.languageCode == 'th'
+                          ? l10n.languageThai
+                          : l10n.languageEnglish,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    onTap: _showLanguagePicker,
+                  ),
+
+                  // Auto Diary
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    activeThumbColor: brandGold,
+                    secondary: const Icon(
+                      Icons.location_on_outlined,
+                      color: Colors.black54,
+                    ),
+                    title: Text(l10n.autoDiary),
+                    subtitle: Text(
+                      l10n.autoDiarySubtitle,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    value: _autoDiaryEnabled,
+                    onChanged: (value) async {
+                      setState(() => _autoDiaryEnabled = value);
+                      final messenger = ScaffoldMessenger.of(context);
+                      await AppServices.diaryAutomation.toggle(value);
+                      if (mounted) {
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              value
+                                  ? l10n.autoDiaryEnabled
+                                  : l10n.autoDiaryDisabled,
+                            ),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  // Feedback — plain like Account Settings / Language / Auto Diary (no yellow)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(
+                      Icons.feedback_outlined,
+                      color: Colors.black54,
+                    ),
+                    title: Text(l10n.sendFeedback),
+                    trailing: const Icon(Icons.chevron_right, size: 20),
+                    onTap: () {
+                      if (widget.onFeedbackTap != null) {
+                        widget.onFeedbackTap!();
+                        return;
+                      }
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FeedbackHistoryScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 40),
+
+              // ปุ่มออกจากระบบ
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: brandGold,
+                    foregroundColor: Colors.black,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  onPressed: _handleLogout,
+                  child: Text(l10n.logOut),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );

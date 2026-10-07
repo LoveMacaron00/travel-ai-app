@@ -388,7 +388,7 @@
   "activities": "กิจกรรม",
   "accommodation": "ที่พัก",
   "kmShort": "กม.",
-  "stopTotal": "ยอดรวม",
+  "stopTotal": "จุดรวมยอด",
   "journeyDetails": "รายละเอียดการเดินทาง",
   "navigateToPlace": "นำทางไปสถานที่นี้",
   "minutesShort": "นาที",
@@ -399,6 +399,8 @@
     "placeholders": {"distance": {"type": "String"}}
   },
   "navigateTo": "นำทางไปยัง",
+  "arrivedAtDestination": "ถึงที่หมายแล้ว",
+  "checkedIn": "เช็คอินแล้ว",
   "thailand": "ประเทศไทย",
   "locationDetails": "รายละเอียดสถานที่ตั้ง",
   "address": "ที่อยู่",

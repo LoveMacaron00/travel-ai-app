@@ -985,6 +985,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navigateTo => 'Navigate to';
 
   @override
+  String get arrivedAtDestination => 'You\'ve arrived';
+
+  @override
+  String get checkedIn => 'Checked in';
+
+  @override
   String get thailand => 'Thailand';
 
   @override

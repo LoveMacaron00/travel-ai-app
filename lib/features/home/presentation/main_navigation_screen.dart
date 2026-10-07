@@ -40,11 +40,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     super.initState();
     _screens = List<Widget?>.filled(4, null);
     _screens[0] = _createScreen(0);
-    
+
     // Register navigation callback for showing destinations on map
-    AppServices.navigator.registerShowDestinationCallback(_showDestinationOnMap);
+    AppServices.navigator.registerShowDestinationCallback(
+      _showDestinationOnMap,
+    );
     AppServices.tripGenerationStatus.addListener(_onTripStatusChanged);
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       if (LocationService.instance.currentPosition == null) {
@@ -93,7 +95,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _selectedIndex = 2;
       // ใช้ UniqueKey เพื่อให้กดดู trip เดิมซ้ำหลังกดย้อนกลับแล้วยังโหลดใหม่ได้ (ไม่ติด state เดิมที่ _plan==null)
       _screens[2] = PlanScreen(
-        key: ValueKey('plan_${tripId}_${DateTime.now().millisecondsSinceEpoch}'),
+        key: ValueKey(
+          'plan_${tripId}_${DateTime.now().millisecondsSinceEpoch}',
+        ),
         initialTripId: tripId,
         onBackToHome: () => _selectTab(0),
         onBackFromSavedView: () {
@@ -253,7 +257,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final status = AppServices.tripGenerationStatus;
     if (!status.isActive) return const SizedBox.shrink();
     // ถ้าอยู่หน้า Plan อยู่แล้ว ไม่ต้องโชว์ tap bar ซ้อนกับหน้ากำลังสร้าง
-    final isOnPlanTab = _selectedIndex == 2 &&
+    final isOnPlanTab =
+        _selectedIndex == 2 &&
         !_showingDiary &&
         !_showingFeedback &&
         !_showingFootprint &&
@@ -321,7 +326,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: isSuccess || isError ? Colors.white24 : Colors.black12,
+                    color: isSuccess || isError
+                        ? Colors.white24
+                        : Colors.black12,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -341,7 +348,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: isSuccess || isError ? Colors.white : Colors.black87,
+                          color: isSuccess || isError
+                              ? Colors.white
+                              : Colors.black87,
                           fontWeight: FontWeight.w800,
                           fontSize: 13,
                         ),
@@ -352,7 +361,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: isSuccess || isError ? Colors.white70 : Colors.black54,
+                            color: isSuccess || isError
+                                ? Colors.white70
+                                : Colors.black54,
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
                           ),
@@ -386,7 +397,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final l10n = context.l10n;
 
     return PopScope(
-      canPop: !_showingDiary &&
+      canPop:
+          !_showingDiary &&
           !_showingFeedback &&
           !_showingFootprint &&
           !_showingAccountSettings &&
@@ -427,8 +439,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 onOpenDiary: _showDiary,
               )
             : _showingAccountSettings
-                ? AccountSettingsScreen(onBack: _hideAccountSettings)
-                : IndexedStack(
+            ? AccountSettingsScreen(onBack: _hideAccountSettings)
+            : IndexedStack(
                 index: _selectedIndex,
                 children: List.generate(
                   _screens.length,
@@ -448,7 +460,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               type: BottomNavigationBarType.fixed,
               backgroundColor: Colors.white,
               selectedItemColor: brandGold,
-              unselectedItemColor: Colors.black38,
+              unselectedItemColor: Colors.black87,
               showUnselectedLabels: true,
               currentIndex: _selectedIndex,
               onTap: _onItemTapped,

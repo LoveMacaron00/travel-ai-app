@@ -277,10 +277,12 @@ extension _PlanDetailsView on _PlanScreenState {
                           ? () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    PlanNavigationScreen(destination: stop),
+                                builder: (_) => PlanNavigationScreen(
+                                  destination: stop,
+                                  onArrived: () => _markStopCheckedIn(stop),
+                                ),
                               ),
-                            )
+                            ).then((_) => _loadCheckedInStops())
                           : null,
                       icon: Icon(
                         canNavigate ? Icons.navigation : Icons.lock_outline,
@@ -302,7 +304,7 @@ extension _PlanDetailsView on _PlanScreenState {
                           child: Text(
                             lockedMessage,
                             style: const TextStyle(
-                              color: Colors.black54,
+                              color: Colors.black87,
                               fontSize: 12,
                             ),
                           ),

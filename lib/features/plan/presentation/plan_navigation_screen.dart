@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:myapp/core/config/app_config.dart';
 import 'package:myapp/l10n/l10n.dart';
+import 'package:myapp/features/diary/domain/travel_diary_entry.dart';
 import 'package:myapp/features/plan/domain/travel_plan.dart';
 import 'package:myapp/core/di/app_services.dart';
 import 'package:myapp/core/widgets/rest_stop_icon.dart';
@@ -12,7 +13,15 @@ import 'package:myapp/core/widgets/route_style.dart';
 
 class PlanNavigationScreen extends StatefulWidget {
   final TravelStop destination;
-  const PlanNavigationScreen({super.key, required this.destination});
+
+  /// เรียกครั้งเดียวเมื่อ GPS ถึงที่หมายครั้งแรก — ให้หน้าแผนมาร์กสถานะเช็คอิน
+  final VoidCallback? onArrived;
+
+  const PlanNavigationScreen({
+    super.key,
+    required this.destination,
+    this.onArrived,
+  });
   @override
   State<PlanNavigationScreen> createState() => _PlanNavigationScreenState();
 }
@@ -24,6 +33,12 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
   List<LatLng> _route = [];
   double _remainingKm = 0;
   bool _loading = true;
+
+  /// รัศมีถือว่าถึงที่หมาย (กม.) — ตรงกับความคลาดเคลื่อน GPS + พิกัดทางเข้า
+  static const _arrivalRadiusKm = 0.15;
+
+  bool _arrived = false;
+  bool _arrivalRecorded = false;
 
   @override
   void initState() {
@@ -81,7 +96,14 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
       _position = next;
       _remainingKm = km;
       _loading = false;
+      // เข้ารัศมีที่หมายครั้งแรก — มาร์กถึง + บันทึกเช็คอิน (ครั้งเดียวต่อรอบนำทาง)
+      if (!_arrived && km <= _arrivalRadiusKm) _arrived = true;
     });
+    if (_arrived && !_arrivalRecorded) {
+      _arrivalRecorded = true;
+      widget.onArrived?.call();
+      unawaited(_recordArrivalCheckIn(p));
+    }
     _map.move(next, 16);
     if (refreshRoute || _route.isEmpty) {
       final mode = widget.destination.transportMode.toLowerCase();
@@ -116,6 +138,62 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
           );
         }
       }
+    }
+  }
+
+  /// บันทึกเช็คอินตอนถึงที่หมาย — กติกาเดียวกับ auto-diary:
+  /// มี entry ของที่เดียวกันใน 90 นาทีหลัง → อัปเดต lastSeen แทนสร้างซ้ำ
+  Future<void> _recordArrivalCheckIn(Position p) async {
+    try {
+      final now = DateTime.now();
+      final stop = widget.destination;
+      final stopDestId = int.tryParse(stop.destinationId);
+      final entries = await AppServices.diary.load();
+      TravelDiaryEntry? recent;
+      for (final entry in entries) {
+        final samePlace =
+            (stopDestId != null && entry.destinationId == stopDestId) ||
+            (entry.title.trim().isNotEmpty &&
+                entry.title.trim().toLowerCase() ==
+                    stop.place.trim().toLowerCase());
+        if (!samePlace) continue;
+        final lastSeen = entry.lastSeenAt ?? entry.date;
+        if (now.difference(lastSeen) < const Duration(minutes: 90)) {
+          recent = entry;
+          break;
+        }
+      }
+      if (recent != null) {
+        await AppServices.diary.upsert(
+          recent.copyWith(
+            lastSeenAt: now,
+            latitude: p.latitude,
+            longitude: p.longitude,
+          ),
+        );
+      } else {
+        await AppServices.diary.upsert(
+          TravelDiaryEntry(
+            id: 'gps_nav_${now.microsecondsSinceEpoch}',
+            date: now,
+            lastSeenAt: now,
+            title: stop.place,
+            note: '',
+            province: stop.province,
+            latitude: p.latitude,
+            longitude: p.longitude,
+            destinationId: stopDestId,
+            source: 'gps',
+          ),
+        );
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.checkInSuccess)));
+      }
+    } catch (_) {
+      // บันทึกเช็คอินพังเงียบ — สถานะถึงที่หมายบนจอยังโชว์ปกติ
     }
   }
 
@@ -202,17 +280,35 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
                       vertical: 11,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: _arrived ? const Color(0xff1e7a4c) : Colors.white,
                       borderRadius: BorderRadius.circular(22),
                       boxShadow: const [
                         BoxShadow(color: Colors.black12, blurRadius: 12),
                       ],
                     ),
-                    child: Text(
-                      context.l10n.kilometersLeft(
-                        _remainingKm.toStringAsFixed(1),
-                      ),
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_arrived) ...[
+                          const Icon(
+                            Icons.check_circle,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                        ],
+                        Text(
+                          _arrived
+                              ? context.l10n.arrivedAtDestination
+                              : context.l10n.kilometersLeft(
+                                  _remainingKm.toStringAsFixed(1),
+                                ),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: _arrived ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -259,6 +355,29 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
+                        // ถึงที่หมายแล้ว — โชว์สถานะเช็คอินใต้ชื่อสถานที่
+                        if (_arrived) ...[
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.check_circle,
+                                color: Color(0xff4caf50),
+                                size: 16,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                context.l10n.checkedIn,
+                                style: const TextStyle(
+                                  color: Color(0xff81c784),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -361,5 +480,4 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
       ],
     );
   }
-
 }

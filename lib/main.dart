@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/features/auth/presentation/welcome_screen.dart';
 import 'package:myapp/features/home/presentation/main_navigation_screen.dart';
@@ -71,6 +72,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         theme: ThemeData(
           primarySwatch: Colors.amber,
           useMaterial3: false,
+          // ฟอนต์ Sarabun (TH Sarabun แบบมีหัว) ทั้งแอป — ไทยอ่านง่ายขึ้น
+          // โค้ดไม่มีที่ไหนตั้ง fontFamily เอง เลยสืบทอดจาก theme นี้ทั้งหมด
+          textTheme: GoogleFonts.sarabunTextTheme(),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFF4C025),

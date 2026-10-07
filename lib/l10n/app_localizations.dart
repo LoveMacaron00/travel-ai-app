@@ -1886,6 +1886,18 @@ abstract class AppLocalizations {
   /// **'Navigate to'**
   String get navigateTo;
 
+  /// No description provided for @arrivedAtDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve arrived'**
+  String get arrivedAtDestination;
+
+  /// No description provided for @checkedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked in'**
+  String get checkedIn;
+
   /// No description provided for @thailand.
   ///
   /// In en, this message translates to:

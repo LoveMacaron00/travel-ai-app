@@ -90,7 +90,7 @@ extension _PlanMainView on _PlanScreenState {
                 Text(
                   context.l10n.planSavedViewOnly,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.black54, height: 1.45),
+                  style: const TextStyle(color: Colors.black87, height: 1.45),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -264,7 +264,7 @@ extension _PlanMainView on _PlanScreenState {
                       fontWeight: FontWeight.w700,
                       color: _autoDays
                           ? const Color(0xff986b00)
-                          : Colors.black54,
+                          : Colors.black87,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -289,7 +289,7 @@ extension _PlanMainView on _PlanScreenState {
                   child: _autoDays
                       ? Text(
                           context.l10n.autoDaysHint,
-                          style: const TextStyle(color: Colors.black45),
+                          style: const TextStyle(color: Colors.black87),
                         )
                       : Text(
                           _dates == null
@@ -364,7 +364,7 @@ extension _PlanMainView on _PlanScreenState {
               Text(
                 '${_mustVisit.length}',
                 style: const TextStyle(
-                  color: Colors.black45,
+                  color: Colors.black87,
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
                 ),
@@ -584,7 +584,7 @@ extension _PlanMainView on _PlanScreenState {
                         _stat('${plan.allStops.length}', context.l10n.places),
                         _stat('${plan.days.length}', context.l10n.days),
                         _stat(
-                          '฿${_money(plan.totalEstimatedCost)}',
+                          _costLabel(plan.totalEstimatedCost),
                           context.l10n.estimated,
                         ),
                       ],
@@ -612,7 +612,7 @@ extension _PlanMainView on _PlanScreenState {
                         Text(
                           plan.summary,
                           style: const TextStyle(
-                            color: Colors.black54,
+                            color: Colors.black87,
                             height: 1.45,
                           ),
                         ),
@@ -645,8 +645,8 @@ extension _PlanMainView on _PlanScreenState {
                           child: Text(
                             context.l10n.aiPlanDisclaimer,
                             style: const TextStyle(
-                              color: Color(0xff684d0a),
-                              fontSize: 12,
+                              color: Colors.black87,
+                              fontSize: 13,
                               height: 1.4,
                             ),
                           ),
@@ -721,7 +721,7 @@ extension _PlanMainView on _PlanScreenState {
                         child: Text(
                           context.l10n.emptyDayHint,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.black45),
+                          style: const TextStyle(color: Colors.black87),
                         ),
                       ),
                     ),
@@ -789,9 +789,9 @@ extension _PlanMainView on _PlanScreenState {
             Text(
               context.l10n.planWarningsTitle,
               style: const TextStyle(
-                color: Color(0xff9a5b00),
+                color: Colors.black87,
                 fontWeight: FontWeight.w800,
-                fontSize: 13,
+                fontSize: 14,
               ),
             ),
           ],
@@ -806,8 +806,8 @@ extension _PlanMainView on _PlanScreenState {
                 const Text(
                   '• ',
                   style: TextStyle(
-                    color: Color(0xff684d0a),
-                    fontSize: 12,
+                    color: Colors.black87,
+                    fontSize: 13,
                     height: 1.4,
                   ),
                 ),
@@ -815,8 +815,8 @@ extension _PlanMainView on _PlanScreenState {
                   child: Text(
                     warning,
                     style: const TextStyle(
-                      color: Color(0xff684d0a),
-                      fontSize: 12,
+                      color: Colors.black87,
+                      fontSize: 13,
                       height: 1.4,
                     ),
                   ),
@@ -1087,6 +1087,38 @@ extension _PlanMainView on _PlanScreenState {
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
+                              // ไปถึงแล้ว (นำทางถึง/auto-diary เช็คอิน) — ป้ายเขียวใต้ชื่อสถานที่
+                              if (_isStopCheckedIn(stop))
+                                Container(
+                                  margin: const EdgeInsets.only(top: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xffe6f4ea),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.check_circle,
+                                        size: 11,
+                                        color: Color(0xff1e7a4c),
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        context.l10n.checkedIn,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xff1e7a4c),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               if (_provinceForStop(stop).isNotEmpty)
                                 Container(
                                   margin: const EdgeInsets.only(
@@ -1180,7 +1212,7 @@ extension _PlanMainView on _PlanScreenState {
                                     vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: routeLineColor(
+                                    color: routeChipColor(
                                       segment.mode,
                                     ).withValues(alpha: .18),
                                     borderRadius: BorderRadius.circular(10),
@@ -1230,10 +1262,12 @@ extension _PlanMainView on _PlanScreenState {
                               ? () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) =>
-                                        PlanNavigationScreen(destination: stop),
+                                    builder: (_) => PlanNavigationScreen(
+                                      destination: stop,
+                                      onArrived: () => _markStopCheckedIn(stop),
+                                    ),
                                   ),
-                                )
+                                ).then((_) => _loadCheckedInStops())
                               : null,
                           icon: Icon(
                             canNavigate ? Icons.navigation : Icons.lock_outline,
