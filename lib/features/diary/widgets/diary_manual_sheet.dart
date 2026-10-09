@@ -278,7 +278,7 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
         (Localizations.localeOf(context).languageCode == 'th' ? 543 : 0);
     return Text(
       '${context.l10n.diaryPickDate}: ${picked.day}/${picked.month}/$year',
-      style: const TextStyle(color: Colors.black87, fontSize: 14),
+      style: const TextStyle(color: Colors.black, fontSize: 14),
     );
   }
 
@@ -626,7 +626,7 @@ class _DiaryManualSheetContentState extends State<_DiaryManualSheetContent> {
                             : context.l10n.selectLocationOnMap,
                         style: TextStyle(
                           color: _selectedLocation != null
-                              ? Colors.black87
+                              ? Colors.black
                               : Colors.grey,
                           fontSize: 14,
                         ),

@@ -162,7 +162,7 @@ class DiaryCalendarCard extends StatelessWidget {
                         fontSize: 13,
                         color: isSelected
                             ? _calendarGold
-                            : Colors.black87,
+                            : Colors.black,
                         fontWeight: isSelected
                             ? FontWeight.w800
                             : FontWeight.w500,
@@ -305,7 +305,7 @@ class DiaryCalendarCard extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                             color: isCurrent
                                 ? Colors.white
-                                : Colors.black87,
+                                : Colors.black,
                           ),
                         ),
                       ),

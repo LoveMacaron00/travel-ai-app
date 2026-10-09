@@ -603,7 +603,7 @@ class MapScreenState extends State<MapScreen> {
                 style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Colors.black,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),

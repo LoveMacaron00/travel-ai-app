@@ -305,7 +305,7 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
                                 ),
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
-                            color: _arrived ? Colors.white : Colors.black87,
+                            color: _arrived ? Colors.white : Colors.black,
                           ),
                         ),
                       ],
@@ -429,7 +429,7 @@ class _PlanNavigationScreenState extends State<PlanNavigationScreen> {
         ? const Color(0xff5a1f8f)
         : stop.isRestStop
         ? const Color(0xff1f5f9f)
-        : Colors.black87;
+        : Colors.black;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [

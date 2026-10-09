@@ -70,13 +70,13 @@ class _FeedbackHistoryScreenState extends State<FeedbackHistoryScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: widget.onBack ?? () => Navigator.maybePop(context),
         ),
         title: Text(
           l10n.feedbackHistory,
           style: const TextStyle(
-            color: Colors.black87,
+            color: Colors.black,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -196,7 +196,7 @@ class _FeedbackHistoryScreenState extends State<FeedbackHistoryScreen> {
               message,
               style: const TextStyle(
                 fontSize: 14,
-                color: Colors.black87,
+                color: Colors.black,
               ),
             ),
             
@@ -221,7 +221,7 @@ class _FeedbackHistoryScreenState extends State<FeedbackHistoryScreen> {
                       adminReply.toString(),
                       style: const TextStyle(
                         fontSize: 14,
-                        color: Colors.black87,
+                        color: Colors.black,
                       ),
                     ),
                   ],

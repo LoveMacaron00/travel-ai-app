@@ -90,7 +90,7 @@ extension _PlanMainView on _PlanScreenState {
                 Text(
                   context.l10n.planSavedViewOnly,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.black87, height: 1.45),
+                  style: const TextStyle(color: Colors.black, height: 1.45),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -264,7 +264,7 @@ extension _PlanMainView on _PlanScreenState {
                       fontWeight: FontWeight.w700,
                       color: _autoDays
                           ? const Color(0xff986b00)
-                          : Colors.black87,
+                          : Colors.black,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -289,7 +289,7 @@ extension _PlanMainView on _PlanScreenState {
                   child: _autoDays
                       ? Text(
                           context.l10n.autoDaysHint,
-                          style: const TextStyle(color: Colors.black87),
+                          style: const TextStyle(color: Colors.black),
                         )
                       : Text(
                           _dates == null
@@ -364,7 +364,7 @@ extension _PlanMainView on _PlanScreenState {
               Text(
                 '${_mustVisit.length}',
                 style: const TextStyle(
-                  color: Colors.black87,
+                  color: Colors.black,
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
                 ),
@@ -612,7 +612,7 @@ extension _PlanMainView on _PlanScreenState {
                         Text(
                           plan.summary,
                           style: const TextStyle(
-                            color: Colors.black87,
+                            color: Colors.black,
                             height: 1.45,
                           ),
                         ),
@@ -645,7 +645,7 @@ extension _PlanMainView on _PlanScreenState {
                           child: Text(
                             context.l10n.aiPlanDisclaimer,
                             style: const TextStyle(
-                              color: Colors.black87,
+                              color: Colors.black,
                               fontSize: 13,
                               height: 1.4,
                             ),
@@ -721,7 +721,7 @@ extension _PlanMainView on _PlanScreenState {
                         child: Text(
                           context.l10n.emptyDayHint,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.black87),
+                          style: const TextStyle(color: Colors.black),
                         ),
                       ),
                     ),
@@ -789,7 +789,7 @@ extension _PlanMainView on _PlanScreenState {
             Text(
               context.l10n.planWarningsTitle,
               style: const TextStyle(
-                color: Colors.black87,
+                color: Colors.black,
                 fontWeight: FontWeight.w800,
                 fontSize: 14,
               ),
@@ -806,7 +806,7 @@ extension _PlanMainView on _PlanScreenState {
                 const Text(
                   '• ',
                   style: TextStyle(
-                    color: Colors.black87,
+                    color: Colors.black,
                     fontSize: 13,
                     height: 1.4,
                   ),
@@ -815,7 +815,7 @@ extension _PlanMainView on _PlanScreenState {
                   child: Text(
                     warning,
                     style: const TextStyle(
-                      color: Colors.black87,
+                      color: Colors.black,
                       fontSize: 13,
                       height: 1.4,
                     ),
@@ -1031,6 +1031,73 @@ extension _PlanMainView on _PlanScreenState {
               children: [
                 Column(
                   children: [
+                    // มีเช็คอินเท่านั้นถึงมีแถวขวาบน — ไม่มีคือไม่เว้นระยะเลย
+                    // (แยกแถวกันบีบคอลัมน์กลางจน overflow)
+                    if (_isStopCheckedIn(stop))
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xffe6f4ea),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: const Color(0xffa3d9b1),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.check_circle,
+                                  size: 16,
+                                  color: Color(0xff1e7a4c),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  context.l10n.checkedIn,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xff1e7a4c),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(
+                            width: 36,
+                            height: 36,
+                            child: PopupMenuButton<String>(
+                              padding: EdgeInsets.zero,
+                              onSelected: (v) {
+                                if (v == 'move') {
+                                  _showMoveStopDialog(stop, reorderIndex);
+                                }
+                                if (v == 'remove') _removeStop(reorderIndex);
+                              },
+                              itemBuilder: (_) => [
+                                // ย้ายวันได้เฉพาะแผนที่มีมากกว่า 1 วัน
+                                if ((_plan?.days.length ?? 0) > 1)
+                                  PopupMenuItem(
+                                    value: 'move',
+                                    child: Text(context.l10n.moveToDay),
+                                  ),
+                                PopupMenuItem(
+                                  value: 'remove',
+                                  child: Text(context.l10n.removeFromPlan),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    if (_isStopCheckedIn(stop)) const SizedBox(height: 4),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1087,38 +1154,6 @@ extension _PlanMainView on _PlanScreenState {
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
-                              // ไปถึงแล้ว (นำทางถึง/auto-diary เช็คอิน) — ป้ายเขียวใต้ชื่อสถานที่
-                              if (_isStopCheckedIn(stop))
-                                Container(
-                                  margin: const EdgeInsets.only(top: 4),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xffe6f4ea),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.check_circle,
-                                        size: 11,
-                                        color: Color(0xff1e7a4c),
-                                      ),
-                                      const SizedBox(width: 3),
-                                      Text(
-                                        context.l10n.checkedIn,
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xff1e7a4c),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               if (_provinceForStop(stop).isNotEmpty)
                                 Container(
                                   margin: const EdgeInsets.only(
@@ -1175,26 +1210,32 @@ extension _PlanMainView on _PlanScreenState {
                             ],
                           ),
                         ),
-                        PopupMenuButton<String>(
-                          onSelected: (v) {
-                            if (v == 'move') {
-                              _showMoveStopDialog(stop, reorderIndex);
-                            }
-                            if (v == 'remove') _removeStop(reorderIndex);
-                          },
-                          itemBuilder: (_) => [
-                            // ย้ายวันได้เฉพาะแผนที่มีมากกว่า 1 วัน
-                            if ((_plan?.days.length ?? 0) > 1)
-                              PopupMenuItem(
-                                value: 'move',
-                                child: Text(context.l10n.moveToDay),
-                              ),
-                            PopupMenuItem(
-                              value: 'remove',
-                              child: Text(context.l10n.removeFromPlan),
+                        // ไม่มีเช็คอิน = เมนูอยู่ท้ายแถวเนื้อหาเดิม ไม่เสียพื้นที่แถวบน
+                        if (!_isStopCheckedIn(stop))
+                          SizedBox(
+                            width: 36,
+                            height: 36,
+                            child: PopupMenuButton<String>(
+                              padding: EdgeInsets.zero,
+                              onSelected: (v) {
+                                if (v == 'move') {
+                                  _showMoveStopDialog(stop, reorderIndex);
+                                }
+                                if (v == 'remove') _removeStop(reorderIndex);
+                              },
+                              itemBuilder: (_) => [
+                                if ((_plan?.days.length ?? 0) > 1)
+                                  PopupMenuItem(
+                                    value: 'move',
+                                    child: Text(context.l10n.moveToDay),
+                                  ),
+                                PopupMenuItem(
+                                  value: 'remove',
+                                  child: Text(context.l10n.removeFromPlan),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 12),

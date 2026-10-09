@@ -500,7 +500,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                 if (startText != null) l10n.planStartsOn(startText),
                 if (dateText != null) l10n.planCreatedAt(dateText),
               ].join(' · '),
-              style: const TextStyle(fontSize: 12, color: Colors.black87),
+              style: const TextStyle(fontSize: 12, color: Colors.black),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -554,13 +554,13 @@ class ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: widget.onBackTap,
         ),
         title: Text(
           l10n.profile,
           style: const TextStyle(
-            color: Colors.black87,
+            color: Colors.black,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -623,12 +623,12 @@ class ProfileScreenState extends State<ProfileScreen> {
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Colors.black,
                 ),
               ),
               Text(
                 userEmail,
-                style: const TextStyle(fontSize: 14, color: Colors.black87),
+                style: const TextStyle(fontSize: 14, color: Colors.black),
               ),
               const SizedBox(height: 30),
 
@@ -644,7 +644,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: Colors.black,
                         ),
                       ),
                       TextButton(
@@ -666,7 +666,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                           child: Text(
                             l10n.noInterests,
                             style: const TextStyle(
-                              color: Colors.black87,
+                              color: Colors.black,
                               fontSize: 13,
                             ),
                           ),
@@ -687,7 +687,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                               child: Text(
                                 _interestLabel(context, interest),
                                 style: const TextStyle(
-                                  color: Colors.black87,
+                                  color: Colors.black,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,
                                 ),
@@ -757,7 +757,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: Colors.black,
                         ),
                       ),
                       if (_loadingPlans)
@@ -778,7 +778,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                       child: Text(
                         l10n.noSavedPlans,
                         style: const TextStyle(
-                          color: Colors.black87,
+                          color: Colors.black,
                           fontSize: 13,
                         ),
                       ),
@@ -800,7 +800,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Colors.black,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -844,7 +844,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                           : l10n.languageEnglish,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: Colors.black,
                       ),
                     ),
                     onTap: _showLanguagePicker,

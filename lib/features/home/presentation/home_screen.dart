@@ -237,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black87,
+                                color: Colors.black,
                               ),
                             ),
                           ],
@@ -311,7 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Colors.black,
                       ),
                     ),
                     TextButton(
@@ -523,7 +523,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
-                              color: Colors.black87,
+                              color: Colors.black,
                             ),
                           ),
                         ],
@@ -624,7 +624,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: Colors.black87,
+                color: Colors.black,
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
               ),

@@ -131,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   icon: const Icon(
                     Icons.arrow_back,
                     size: 24,
-                    color: Colors.black87,
+                    color: Colors.black,
                   ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(

@@ -560,7 +560,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
             if (widget.onBack != null) {
               widget.onBack!();

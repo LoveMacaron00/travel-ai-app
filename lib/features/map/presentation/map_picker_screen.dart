@@ -66,7 +66,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       appBar: AppBar(
         title: Text(context.l10n.selectLocation),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        foregroundColor: Colors.black,
         elevation: 0,
         actions: [
           IconButton(

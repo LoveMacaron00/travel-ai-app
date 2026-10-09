@@ -285,7 +285,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         height: 16,
         child: CircularProgressIndicator(
           strokeWidth: 2.2,
-          color: Colors.black87,
+          color: Colors.black,
         ),
       );
     } else if (isSuccess) {
@@ -334,7 +334,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   child: Icon(
                     icon,
                     size: 16,
-                    color: isSuccess || isError ? Colors.white : Colors.black87,
+                    color: isSuccess || isError ? Colors.white : Colors.black,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -350,7 +350,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                         style: TextStyle(
                           color: isSuccess || isError
                               ? Colors.white
-                              : Colors.black87,
+                              : Colors.black,
                           fontWeight: FontWeight.w800,
                           fontSize: 13,
                         ),
@@ -460,7 +460,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               type: BottomNavigationBarType.fixed,
               backgroundColor: Colors.white,
               selectedItemColor: brandGold,
-              unselectedItemColor: Colors.black87,
+              unselectedItemColor: Colors.black,
               showUnselectedLabels: true,
               currentIndex: _selectedIndex,
               onTap: _onItemTapped,

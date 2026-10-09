@@ -121,7 +121,7 @@ extension _PlanComponents on _PlanScreenState {
                     Text(
                       subtitle,
                       style: const TextStyle(
-                        color: Colors.black87,
+                        color: Colors.black,
                         fontSize: 12,
                       ),
                     ),
@@ -173,11 +173,11 @@ extension _PlanComponents on _PlanScreenState {
                               ? context.l10n.findingLocation
                               : context.l10n.locationUnavailable)
                         : '${start.latitude.toStringAsFixed(5)}, ${start.longitude.toStringAsFixed(5)}',
-                    style: const TextStyle(color: Colors.black87, fontSize: 12),
+                    style: const TextStyle(color: Colors.black, fontSize: 12),
                   ),
                   Text(
                     context.l10n.startPointHint,
-                    style: const TextStyle(color: Colors.black87, fontSize: 11),
+                    style: const TextStyle(color: Colors.black, fontSize: 11),
                   ),
                 ],
               ),
@@ -235,7 +235,7 @@ extension _PlanComponents on _PlanScreenState {
     if (_dynamicInterests.isEmpty) {
       return Text(
         context.l10n.noResults,
-        style: const TextStyle(color: Colors.black87, fontSize: 13),
+        style: const TextStyle(color: Colors.black, fontSize: 13),
       );
     }
     final items = _dynamicInterests;
@@ -292,7 +292,7 @@ extension _PlanComponents on _PlanScreenState {
     if (_dynamicModes.isEmpty) {
       return Text(
         context.l10n.noResults,
-        style: const TextStyle(color: Colors.black87, fontSize: 13),
+        style: const TextStyle(color: Colors.black, fontSize: 13),
       );
     }
     final items = _dynamicModes;
@@ -594,7 +594,7 @@ extension _PlanComponents on _PlanScreenState {
                                 context.l10n.noResults,
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
-                                  color: Colors.black87,
+                                  color: Colors.black,
                                   fontSize: 15,
                                 ),
                               ),
@@ -706,7 +706,7 @@ extension _PlanComponents on _PlanScreenState {
                                         style: const TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.black87,
+                                          color: Colors.black,
                                         ),
                                       ),
                                     ),
@@ -730,17 +730,26 @@ extension _PlanComponents on _PlanScreenState {
                                         }
                                       });
                                     },
-                                    child: isSelected
-                                        ? const CircleAvatar(
-                                            radius: 12,
-                                            backgroundColor: Colors.green,
-                                            child: Icon(
-                                              Icons.check,
-                                              color: Colors.white,
-                                              size: 16,
+                                    child: Container(
+                                      width: 48,
+                                      height: 48,
+                                      alignment: Alignment.center,
+                                      child: isSelected
+                                          ? const CircleAvatar(
+                                              radius: 18,
+                                              backgroundColor: Colors.green,
+                                              child: Icon(
+                                                Icons.check,
+                                                color: Colors.white,
+                                                size: 24,
+                                              ),
+                                            )
+                                          : Icon(
+                                              Icons.add_circle,
+                                              color: _gold,
+                                              size: 38,
                                             ),
-                                          )
-                                        : Icon(Icons.add_circle, color: _gold),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -872,12 +881,12 @@ extension _PlanComponents on _PlanScreenState {
         labelText: label,
         hintStyle: const TextStyle(color: Colors.black54),
         helperStyle: const TextStyle(
-          color: Colors.black87,
+          color: Colors.black,
           fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
         counterStyle: const TextStyle(
-          color: Colors.black87,
+          color: Colors.black,
           fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
@@ -954,7 +963,7 @@ extension _PlanComponents on _PlanScreenState {
           ),
           Text(
             label,
-            style: const TextStyle(color: Colors.black87, fontSize: 11),
+            style: const TextStyle(color: Colors.black, fontSize: 11),
           ),
         ],
       ),
@@ -1341,9 +1350,11 @@ extension _PlanComponents on _PlanScreenState {
               children: [
                 const Icon(Icons.access_time, size: 12, color: Colors.black38),
                 const SizedBox(width: 4),
-                Text(
-                  '${context.l10n.openingHours} $range',
-                  style: const TextStyle(fontSize: 11, color: Colors.black87),
+                Flexible(
+                  child: Text(
+                    '${context.l10n.openingHours} $range',
+                    style: const TextStyle(fontSize: 11, color: Colors.black),
+                  ),
                 ),
               ],
             ),

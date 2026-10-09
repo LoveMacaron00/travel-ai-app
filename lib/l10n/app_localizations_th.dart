@@ -945,7 +945,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get kmShort => 'กม.';
 
   @override
-  String get stopTotal => 'จุดรวมยอด';
+  String get stopTotal => 'ยอดรวมค่าใช้จ่าย';
 
   @override
   String get journeyDetails => 'รายละเอียดการเดินทาง';

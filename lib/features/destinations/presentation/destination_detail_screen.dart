@@ -182,7 +182,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                             colors: [
                               Colors.black38,
                               Colors.transparent,
-                              Colors.black87,
+                              Colors.black,
                             ],
                             stops: [0, .42, 1],
                           ),
@@ -390,7 +390,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                           Text(
                             hours,
                             style: const TextStyle(
-                              color: Colors.black87,
+                              color: Colors.black,
                               height: 1.45,
                             ),
                           ),
@@ -427,7 +427,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                           Text(
                             description,
                             style: const TextStyle(
-                              color: Colors.black87,
+                              color: Colors.black,
                               height: 1.55,
                               fontSize: 15,
                             ),

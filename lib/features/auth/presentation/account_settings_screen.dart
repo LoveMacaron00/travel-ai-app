@@ -188,7 +188,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Colors.black,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -308,13 +308,13 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: widget.onBack ?? () => Navigator.maybePop(context),
         ),
         title: Text(
           l10n.accountSettings,
           style: const TextStyle(
-            color: Colors.black87,
+            color: Colors.black,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -478,7 +478,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         value,
         style: const TextStyle(
           fontSize: 15,
-          color: Colors.black87,
+          color: Colors.black,
           fontWeight: FontWeight.w600,
         ),
       ),

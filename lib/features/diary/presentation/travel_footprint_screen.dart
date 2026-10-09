@@ -144,7 +144,7 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
       backgroundColor: _footprintCanvas,
       surfaceTintColor: Colors.transparent,
       leading: BackButton(
-        color: Colors.black87,
+        color: Colors.black,
         onPressed: widget.onBack ?? () => Navigator.maybePop(context),
       ),
       title: Text(
@@ -431,7 +431,7 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
                       OutlinedButton.icon(
                         onPressed: () => _openDiary(focusEntryId: entry.id),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.black87,
+                          foregroundColor: Colors.black,
                           side: const BorderSide(color: _footprintBorder),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -539,7 +539,7 @@ class _TravelFootprintScreenState extends State<TravelFootprintScreen> {
         onTap: () => _focusMarker(entry),
         child: Container(
           decoration: BoxDecoration(
-            color: isSelected ? Colors.black87 : _footprintGold,
+            color: isSelected ? Colors.black : _footprintGold,
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: isSelected ? 4 : 3),
             boxShadow: const [

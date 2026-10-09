@@ -609,13 +609,13 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       leading: BackButton(
-        color: Colors.black87,
+        color: Colors.black,
         onPressed: widget.onBack ?? () => Navigator.maybePop(context),
       ),
       title: Text(
         context.l10n.smartTravelDiary,
         style: const TextStyle(
-          color: Colors.black87,
+          color: Colors.black,
           fontSize: 20,
           fontWeight: FontWeight.w700,
         ),
@@ -874,7 +874,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
           OutlinedButton.icon(
             onPressed: _addManualDiary,
             style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.black87,
+              foregroundColor: Colors.black,
               minimumSize: const Size(190, 48),
               side: const BorderSide(color: _diaryGold),
               shape: RoundedRectangleBorder(
@@ -1274,7 +1274,7 @@ class _TravelDiaryScreenState extends State<TravelDiaryScreen> {
               style: const TextStyle(
                 fontSize: 14,
                 height: 1.42,
-                color: Colors.black87,
+                color: Colors.black,
               ),
             ),
           ],

@@ -304,7 +304,7 @@ extension _PlanDetailsView on _PlanScreenState {
                           child: Text(
                             lockedMessage,
                             style: const TextStyle(
-                              color: Colors.black87,
+                              color: Colors.black,
                               fontSize: 12,
                             ),
                           ),
@@ -470,7 +470,7 @@ extension _PlanDetailsView on _PlanScreenState {
             style: const TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Colors.black,
             ),
           ),
         ),

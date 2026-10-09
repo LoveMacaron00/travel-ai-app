@@ -316,7 +316,7 @@ class _DiarySubEntrySheetContentState
                   child: OutlinedButton.icon(
                     onPressed: () => _pickImage(ImageSource.camera),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.black87,
+                      foregroundColor: Colors.black,
                       side: const BorderSide(color: _sheetBorder),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -339,7 +339,7 @@ class _DiarySubEntrySheetContentState
                   child: OutlinedButton.icon(
                     onPressed: _pickMultipleImages,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.black87,
+                      foregroundColor: Colors.black,
                       side: const BorderSide(color: _sheetBorder),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
