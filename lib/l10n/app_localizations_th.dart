@@ -1075,16 +1075,16 @@ class AppLocalizationsTh extends AppLocalizations {
   String get placeNameHint => 'เช่น ดอยสุเทพ, วัดพระแก้ว';
 
   @override
-  String get autoDiary => 'ไดอารี่อัตโนมัติ';
+  String get autoDiary => 'เช็คอินไดอารี่อัตโนมัติ';
 
   @override
   String get autoDiarySubtitle => 'บันทึกสถานที่ที่คุณไปอัตโนมัติผ่าน GPS';
 
   @override
-  String get autoDiaryEnabled => 'เปิดไดอารี่อัตโนมัติแล้ว';
+  String get autoDiaryEnabled => 'เปิดเช็คอินไดอารี่อัตโนมัติแล้ว';
 
   @override
-  String get autoDiaryDisabled => 'ปิดไดอารี่อัตโนมัติแล้ว';
+  String get autoDiaryDisabled => 'ปิดเช็คอินไดอารี่อัตโนมัติแล้ว';
 
   @override
   String get selectLocation => 'เลือกตำแหน่ง';

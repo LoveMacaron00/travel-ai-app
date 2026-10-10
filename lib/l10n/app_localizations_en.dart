@@ -220,7 +220,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get memorySaved => 'Memory saved';
 
   @override
-  String get travelFootprint => 'Travel Log';
+  String get travelFootprint => 'Travel Footprint';
 
   @override
   String get travelFootprintSubtitle =>
@@ -1088,17 +1088,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placeNameHint => 'e.g. Doi Suthep, Grand Palace';
 
   @override
-  String get autoDiary => 'Auto Diary';
+  String get autoDiary => 'Auto Check-in Diary';
 
   @override
   String get autoDiarySubtitle =>
       'Automatically record places you visit via GPS';
 
   @override
-  String get autoDiaryEnabled => 'Auto Diary is on';
+  String get autoDiaryEnabled => 'Auto Check-in Diary is on';
 
   @override
-  String get autoDiaryDisabled => 'Auto Diary is off';
+  String get autoDiaryDisabled => 'Auto Check-in Diary is off';
 
   @override
   String get selectLocation => 'Select Location';

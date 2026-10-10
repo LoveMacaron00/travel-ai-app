@@ -497,7 +497,7 @@ abstract class AppLocalizations {
   /// No description provided for @travelFootprint.
   ///
   /// In en, this message translates to:
-  /// **'Travel Log'**
+  /// **'Travel Footprint'**
   String get travelFootprint;
 
   /// No description provided for @travelFootprintSubtitle.
@@ -2075,7 +2075,7 @@ abstract class AppLocalizations {
   /// No description provided for @autoDiary.
   ///
   /// In en, this message translates to:
-  /// **'Auto Diary'**
+  /// **'Auto Check-in Diary'**
   String get autoDiary;
 
   /// No description provided for @autoDiarySubtitle.
@@ -2087,13 +2087,13 @@ abstract class AppLocalizations {
   /// No description provided for @autoDiaryEnabled.
   ///
   /// In en, this message translates to:
-  /// **'Auto Diary is on'**
+  /// **'Auto Check-in Diary is on'**
   String get autoDiaryEnabled;
 
   /// No description provided for @autoDiaryDisabled.
   ///
   /// In en, this message translates to:
-  /// **'Auto Diary is off'**
+  /// **'Auto Check-in Diary is off'**
   String get autoDiaryDisabled;
 
   /// No description provided for @selectLocation.
