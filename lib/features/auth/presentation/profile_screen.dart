@@ -175,12 +175,12 @@ class ProfileScreenState extends State<ProfileScreen> {
                       label: Text(_interestLabel(context, interest)),
                       selected: isSelected,
                       selectedColor: const Color(0xffffe7a0),
-                      checkmarkColor: const Color(0xff7a5a00),
+                      checkmarkColor: Colors.black,
                       labelStyle: const TextStyle(
-                        color: Color(0xff7a5a00),
+                        color: Colors.black,
                         fontWeight: FontWeight.w600,
                       ),
-                      side: const BorderSide(color: Color(0xFFF4C025)),
+                      side: BorderSide.none,
                       onSelected: (selected) {
                         setStateDialog(() {
                           if (selected) {
