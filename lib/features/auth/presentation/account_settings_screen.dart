@@ -120,54 +120,6 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     }
   }
 
-  void _showUrlInputDialog() {
-    final controller = TextEditingController(text: _profileImageUrl);
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Text(context.l10n.editProfileImageUrl),
-          content: TextField(
-            controller: controller,
-            decoration: InputDecoration(
-              hintText: context.l10n.imageUrlHint,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: _brandGold),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(context.l10n.cancel),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _brandGold,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onPressed: () {
-                Navigator.pop(context);
-                _updateProfile(profileImageUrl: controller.text.trim());
-              },
-              child: Text(context.l10n.save),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _showEditProfileImageBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -207,15 +159,6 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                   onTap: () {
                     Navigator.pop(context);
                     _pickAndUploadImage(ImageSource.camera);
-                  },
-                ),
-                const Divider(height: 1),
-                _buildBottomSheetTile(
-                  icon: Icons.link,
-                  label: context.l10n.enterImageUrl,
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showUrlInputDialog();
                   },
                 ),
               ],
